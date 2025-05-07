@@ -24,6 +24,25 @@ const OrderListComponent = () => {
   const { onLogout } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const cancelOrder = async (id) => {
+    if (!confirm('정말 취소하시겠습니까?')) return;
+    try {
+      const res = await axiosInstance.patch(`${API_BASE_URL}${ORDER}/${id}`);
+      // 주문 취소를 백엔드로 요청하고, 문제가 없었다면 주문 목록을 다시 렌더링.
+      setOrderList((prevList) => {
+        return prevList.map((order) =>
+          order.id === id ? { ...order, orderStatus: 'CANCELED' } : order,
+        );
+        // const cancelOrder = prevList.find((order) => order.id === id);
+        // cancelOrder.orderStatus = 'CANCELED';
+        // const filtered = prevList.filter((order) => order.id !== id);
+        // return [...filtered, cancelOrder];
+      });
+    } catch (e) {
+      handleAxiosError(e, onLogout, navigate);
+    }
+  };
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -62,7 +81,11 @@ const OrderListComponent = () => {
                 </TableCell>
                 <TableCell>
                   {order.orderStatus === 'ORDERED' && (
-                    <Button color='secondary' size='small'>
+                    <Button
+                      color='secondary'
+                      size='small'
+                      onClick={() => cancelOrder(order.id)}
+                    >
                       CANCEL
                     </Button>
                   )}
