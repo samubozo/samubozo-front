@@ -12,37 +12,37 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest # 작업이 실행될 환경 설정
 
-  steps:
-    # 미리 정의된 액션을 쓰겠다.
-    # actions/checkout@v4 -> 레포지토리의 코드를 워크플로우로 가져옵니다.
-    - uses: actions/checkout@v4
+    steps:
+      # 미리 정의된 액션을 쓰겠다.
+      # actions/checkout@v4 -> 레포지토리의 코드를 워크플로우로 가져옵니다.
+      - uses: actions/checkout@v4
 
-    # npm을 사용하기위해 Node.js를 설치.
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      # npm을 사용하기위해 Node.js를 설치.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    # 배포하려는 프로젝트의 의존성 라이브러리 설치하기
-    # run 속성을 통해 커맨드라인 명령어 실행 가능.
-    - name: Install Dependencies
-      run: npm install
+      # 배포하려는 프로젝트의 의존성 라이브러리 설치하기
+      # run 속성을 통해 커맨드라인 명령어 실행 가능.
+      - name: Install Dependencies
+        run: npm install
 
-    # 프로젝트 빌드 단계
-    # CI=false -> CI 환경에서는 경고가 오류로 취급돼서 빌드 실패 가능성 up. 경고를 오류로 처리하지 마라.
-    - name: Build React App
-      run: CI=false npm run build
+      # 프로젝트 빌드 단계
+      # CI=false -> CI 환경에서는 경고가 오류로 취급돼서 빌드 실패 가능성 up. 경고를 오류로 처리하지 마라.
+      - name: Build React App
+        run: CI=false npm run build
 
-    - name: Deploy to AWS s3
-      uses: jakejarvis/s3-sync-action@master
-      with:
-        args: --delete # S3 버킷에서 로컬에 없는 파일은 지워라.
+      - name: Deploy to AWS s3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --delete # S3 버킷에서 로컬에 없는 파일은 지워라.
 
-      # github actions가 s3에 접근해서 파일을 업로드 할 때 필요로 하는 값을 환경 변수로 세팅
-      # 외부로 노출되면 안되는 값을 secrets에 세팅하고 그 값을 불러오고 있습니다.
-      env:
-        AWS_S3_BUCKET: ${{ secrets.S3_BUCKET }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        SOURCE_DIR: 'dist' # 빌드된 파일이 있는 디렉토리
+        # github actions가 s3에 접근해서 파일을 업로드 할 때 필요로 하는 값을 환경 변수로 세팅
+        # 외부로 노출되면 안되는 값을 secrets에 세팅하고 그 값을 불러오고 있습니다.
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: 'dist' # 빌드된 파일이 있는 디렉토리
