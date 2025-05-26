@@ -67,9 +67,48 @@ const MemberCreate = () => {
       alert('인증 코드가 이메일로 발송되었습니다.');
     } catch (error) {
       console.error('이메일 발송 오류: ', error);
-      alert('인증 이메일 발송 중 오류 발생!');
+      if (error.response.data.statusMessage === 'Blocking') {
+        alert('인증 차된된 이메일 입니다. 잠시 후 다시 시도해 주세요!');
+      } else {
+        alert('인증 이메일 발송 중 오류 발생!');
+      }
     } finally {
       setEmailSendLoading(false); // 전송되든 에러가 나든 로딩이 끝났음을 알려주기.
+    }
+  };
+
+  const verifyEmailCode = async () => {
+    if (!verificationCode.trim()) {
+      alert('인증 코드를 입력해 주세요!');
+      return;
+    }
+
+    setVerifyLoading(true);
+    try {
+      const res = await axios.post(`${API_BASE_URL}${USER}/verify`, {
+        email,
+        code: verificationCode,
+      });
+
+      console.log('응답된 데이터: ', res.data);
+      setIsEmailVerified(true);
+      alert('이메일 인증이 완료되었습니다!');
+    } catch (error) {
+      console.error('인증 확인 오류: ', error);
+      const msg = error.response.data.statusMessage;
+      if (msg === 'authCode expired!') {
+        alert('인증 시간이 만료되었습니다. 인증 코드부터 다시 발급해 주세요!');
+      } else if (msg.indexOf('wrong') !== -1) {
+        alert(
+          `인증 코드가 올바르지 않습니다!, 남은 횟수: ${msg.split(', ')[1]}`,
+        );
+      } else if (msg === 'Blocking') {
+        alert('임시 차단된 이메일입니다. 잠시 후 다시 시도해 주세요!');
+      } else {
+        alert('기타 오류 발생!');
+      }
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -238,8 +277,9 @@ const MemberCreate = () => {
                   color='primary'
                   variant='contained'
                   fullWidth
+                  disabled={!isEmailVerified}
                 >
-                  등록
+                  회원가입
                 </Button>
               </CardActions>
             </form>
