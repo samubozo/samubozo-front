@@ -23,6 +23,9 @@ export const AuthContextProvider = (props) => {
     localStorage.setItem('ACCESS_TOKEN', loginData.token);
     localStorage.setItem('USER_ID', loginData.id);
     localStorage.setItem('USER_ROLE', loginData.role);
+    if (loginData.provider) {
+      localStorage.setItem('PROVIDER', loginData.provider);
+    }
 
     setIsLoggedIn(true);
     setUserRole(loginData.role);
