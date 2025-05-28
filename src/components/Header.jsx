@@ -6,16 +6,20 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/UserContext';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { API_BASE_URL, ORDER, SSE } from '../configs/host-config';
+import { NotificationAdd } from '@mui/icons-material';
 
 const Header = () => {
   // 로그인 상태에 따라 메뉴를 다르게 제공하고 싶다 -> Context에서 뽑아오면 되겠구나!
   const { isLoggedIn, onLogout, userRole } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const [liveQuantity, setLiveQuantity] = useState(0); // 실시간 주문 수
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     console.log('role: ', userRole);
@@ -37,6 +41,13 @@ const Header = () => {
       // 30초마다 발생하는 알림. (연결을 유지하기 위해)
       sse.addEventListener('heartbeat', () => {
         console.log('Received heartbeat');
+      });
+
+      sse.addEventListener('ordered', (e) => {
+        const orderData = JSON.parse(e.data);
+        console.log(orderData);
+        setLiveQuantity((prev) => prev + 1);
+        setMessage(orderData.userEmail + '님의 주문!');
       });
     }
   }, [userRole]);
@@ -66,8 +77,8 @@ const Header = () => {
                   <Button color='inherit' component={Link} to='/product/manage'>
                     상품관리
                   </Button>
-                  <Button color='inherit' href='/order/list'>
-                    실시간 주문 ()
+                  <Button color='inherit' onClick={() => setLiveQuantity(0)}>
+                    실시간 주문 <NotificationAdd /> ({liveQuantity}) {message}
                   </Button>
                 </>
               )}
