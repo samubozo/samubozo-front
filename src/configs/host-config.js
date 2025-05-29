@@ -14,7 +14,7 @@ let backendHostName;
 if (clientHostName === 'localhost') {
   // 개발 중
   backendHostName = 'http://localhost:8000';
-} else if (clientHostName === 'http://playdatashop8917.store') {
+} else if (clientHostName === 'https://playdatashop8917.store') {
   // 배포해서 현재 서비스 중
   backendHostName = 'http://3.38.133.159:8000';
 }
