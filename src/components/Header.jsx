@@ -65,9 +65,9 @@ const Header = () => {
         console.log(event);
       });
 
-      // 30초마다 발생하는 알림. (연결을 유지하기 위해)
-      currentSSE.current.addEventListener('heartbeat', () => {
-        console.log('Received heartbeat');
+      currentSSE.current.addEventListener('pending-order', (e) => {
+        const orderData = JSON.parse(e.data);
+        console.log(orderData);
       });
 
       currentSSE.current.addEventListener('new-order', (e) => {
