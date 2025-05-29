@@ -8,7 +8,7 @@ const Home = () => {
         Welcome to the Home Page!!
       </Typography>
       <Typography variant='body1' align='center'>
-        This is the homepage of the application~!!!
+        This is the homepage of the application!
       </Typography>
     </Container>
   );
