@@ -43,6 +43,21 @@ const Header = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          /*
+          heartbeatTimeout: 2분동안 아무 메시지도 안 오면 연결이 끊어졌다 판단
+          2분 후 자동으로 연결을 끊고 재연결 시도
+
+          retryDelayGrowth: 재연결 실패 시 대기시간 증가 비율 -> 1.5배씩 증가.
+          1번째 시도 -> 1초 대기
+          2번째 시도 -> 1.5초 대기
+          3번째 시도 -> 2.25초 대기...
+
+          maxRetryDelay: 재연결 대기시간 최대 30초.
+          아무리 많이 실패해도 30초 이상은 기다리지 않음.
+          */
+          heartbeatTimeout: 30000,
+          retryDelayGrowth: 1.5,
+          maxRetryDelay: 30000,
         },
       );
 
