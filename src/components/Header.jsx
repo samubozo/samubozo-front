@@ -147,12 +147,6 @@ const Header = () => {
               </Button>
               {isLoggedIn && (
                 <>
-                  <Button color='inherit' component={Link} to='/order/cart'>
-                    장바구니
-                  </Button>
-                  <Button color='inherit' component={Link} to='/mypage'>
-                    마이페이지
-                  </Button>
                   <Button color='inherit' onClick={handleLogout}>
                     로그아웃
                   </Button>

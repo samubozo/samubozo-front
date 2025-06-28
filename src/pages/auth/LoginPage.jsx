@@ -12,10 +12,11 @@ import {
 } from '@mui/material';
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../context/UserContext';
+
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
-import { API_BASE_URL, USER } from '../configs/host-config';
+import { API_BASE_URL, USER } from '../../configs/host-config';
+import AuthContext from '../../context/UserContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
