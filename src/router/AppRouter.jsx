@@ -18,6 +18,10 @@ const AppRouter = () => {
       <Route element={<LayoutHeader />}>
         <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/employee' element={<Employee />} />
+        <Route path='/attendance' element={<Employee />} />
+        <Route path='/salary' element={<Employee />} />
+        <Route path='/calendar' element={<Employee />} />
+        <Route path='/message' element={<Employee />} />
       </Route>
     </Routes>
   );
