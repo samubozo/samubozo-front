@@ -1,0 +1,210 @@
+.outer-bg {
+  position: relative; // nav 기준점이 됨!
+  min-height: 100vh;
+  background: #fff;
+  width: 100%;
+}
+
+.register-nav {
+  position: absolute; // ★ outer-bg 기준
+  top: 5px; // 원하는 만큼 조절
+  right: 10px; // 원하는 만큼 조절
+  font-size: 0.9rem;
+  color: #222;
+  z-index: 10;
+  a {
+    color: #222;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  .icon {
+    margin-left: 0.3rem;
+  }
+}
+// Register.scss
+.register-wrap {
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.register-container {
+  margin-top: 130px;
+  border: 8px solid #66be80;
+  border-radius: 24px;
+  width: 1200px;
+  background: #fff;
+  padding: 1px 36px 46px 36px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.register-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.register-logo {
+  height: 70px;
+  position: absolute;
+  right: 44%;
+  top: 40px;
+}
+
+.register-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.register-main-title {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 600;
+  margin-top: 15px;
+  margin-bottom: 25px;
+  letter-spacing: -1px;
+}
+
+.register-form {
+  width: 100%;
+}
+
+.register-grid {
+  display: flex;
+  gap: 38px;
+  margin-bottom: 36px;
+}
+
+.register-left,
+.register-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 17px;
+    margin-bottom: 7px;
+    margin-top: 15px;
+    font-weight: 500;
+  }
+  input,
+  select {
+    border: 2px solid #66be80;
+    border-radius: 3px;
+    font-size: 17px;
+    padding: 11px 14px;
+    outline: none;
+    margin-bottom: 6px;
+    &:focus {
+      border-color: #269d51;
+    }
+  }
+}
+
+.email-row {
+  display: flex;
+  gap: 10px;
+  input[type='email'] {
+    flex: 1;
+  }
+  .email-btn {
+    padding: 0 24px;
+    background: #66be80;
+    color: #fff;
+    font-size: 18px;
+    border: none;
+    height: 46px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.18s;
+    &:hover {
+      background: #5ab475;
+    }
+  }
+}
+
+.row-inline {
+  display: flex;
+  gap: 18px;
+  .birth-col,
+  .gender-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .gender-btns {
+    display: flex;
+    gap: 6px;
+    button {
+      flex: 1;
+      padding: 13px 0;
+      font-size: 16px;
+      background: #fff;
+      border: 2px solid #66be80;
+      color: #222;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+      &.active {
+        background: #66be80;
+        color: #fff;
+      }
+      transition:
+        background 0.18s,
+        color 0.18s;
+    }
+  }
+}
+
+.input-icon {
+  position: relative;
+  input[type='date'] {
+    width: 100%;
+  }
+}
+
+select {
+  appearance: none;
+  background: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 6L0.669873 0.75L9.33013 0.75L5 6Z' fill='%2348B96C'/%3E%3C/svg%3E%0A");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+  padding-right: 38px !important;
+}
+
+.register-submit {
+  width: 100%;
+  margin-top: 28px;
+  padding: 15px 0;
+  background: #66be80;
+  color: #fff;
+  font-size: 26px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: background 0.18s;
+  &:hover {
+    background: #5ab475;
+  }
+}
+
+@media (max-width: 900px) {
+  .register-container {
+    width: 97vw;
+    min-width: 0;
+    padding: 24px 8px;
+  }
+  .register-grid {
+    flex-direction: column;
+    gap: 0;
+  }
+}

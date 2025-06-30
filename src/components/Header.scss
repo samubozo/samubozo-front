@@ -1,0 +1,141 @@
+.header-wrap {
+  width: 100%;
+  background: #fff;
+  min-width: 1280px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #e4e4e4;
+  position: relative;
+}
+
+// 좌상단 고정 정보
+.header-fixed-left {
+  position: absolute;
+  top: 100px; // ★ 여백 더 위로
+  left: 10px; // ★ 좌측 여백 넓힘
+  display: flex;
+  align-items: center;
+  gap: 14px; // ★ 간격 넓힘
+  font-size: 18px; // ★ 폰트 키움
+  z-index: 10;
+  .gmt {
+    font-weight: 500;
+  }
+  .user-info {
+    font-weight: 400;
+  }
+  .admin-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    input[type='checkbox'] {
+      margin: 0 2px 0 0;
+      width: 16px; // ★ 체크박스 키움
+      height: 16px;
+      vertical-align: middle;
+    }
+    span {
+      font-size: 16px; // ★ 폰트 키움
+      font-weight: 400;
+    }
+  }
+}
+
+.header-main-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  min-height: 82px; // ★ 높이 키움
+  padding-top: 25px; // ★ 패딩 넓힘
+}
+
+.header-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px; // ★ 로고-텍스트 간격 키움
+  .header-logo {
+    height: 58px;
+    object-fit: contain;
+  }
+  .header-logo-title {
+    font-size: 29px; // ★ 텍스트 크기 키움
+    font-weight: bold;
+    color: #66be80;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+}
+
+.header-right {
+  position: absolute;
+  right: 3px; // ★ 오른쪽 여백 더 넓게
+  top: 10px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  .header-link {
+    color: #222;
+    text-decoration: none;
+    font-size: 18px;
+  }
+  .header-divider {
+    margin: 0 9px;
+    color: #aaa;
+  }
+  .header-icons {
+    display: inline-flex;
+    align-items: center;
+    .icon {
+      margin-left: 5px;
+      border: 0;
+      background-color: transparent;
+      cursor: pointer;
+    }
+  }
+}
+
+// 초록 네비 바 (아래쪽)
+.header-nav {
+  margin-top: 20px;
+  background: #66be80;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 55px; // ★ 네비바 높이 키움
+}
+
+.header-nav-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  a {
+    text-decoration: none;
+    color: white;
+  }
+  li {
+    font-size: 25px; // ★ 메뉴 글자 크기 키움
+    color: #fff;
+    padding: 0 40px; // ★ 메뉴 가로 여백 키움
+    height: 55px; // ★ 네비바 높이에 맞춤
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      color 0.12s;
+    border-radius: 0;
+    &.active {
+      background: #fff;
+      font-weight: 700;
+      box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.02);
+      a {
+        color: #222;
+      }
+    }
+    &:not(.active):hover {
+      background: #5caf7b;
+    }
+  }
+}

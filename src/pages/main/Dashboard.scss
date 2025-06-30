@@ -1,0 +1,219 @@
+.dashboard-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 30px;
+  padding: 40px;
+  background: #fff;
+}
+
+.dashboard-stats {
+  width: 100%; // (원본 660 → 540, 약 82%)
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(80, 150, 120, 0.1);
+  padding: 38px 34px 32px 34px;
+  border: 1.5px solid #f1f1f1;
+  .stat-circles {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 40px;
+    .stat-circle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      .stat-count {
+        width: 60px; // (원본 85px → 70px)
+        height: 60px;
+        background: #66be80;
+        border-radius: 50%;
+        color: #fff;
+        font-size: 1.65rem; // (원본 2.1rem → 1.65rem)
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 7px;
+        box-shadow: 0 2px 4px rgba(50, 80, 70, 0.03);
+      }
+      .stat-label {
+        color: #636a6e;
+        font-size: 1rem; // (원본 1.18rem → 1.0rem)
+        font-weight: 600;
+        margin-top: 2px;
+        letter-spacing: -0.5px;
+      }
+    }
+  }
+  .stat-bars {
+    margin-top: 10px;
+    .stat-bar-row {
+      margin-bottom: 40px; // (원본 36px → 28px)
+      &:last-child {
+        margin-bottom: 0;
+      }
+      .stat-bar-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px; // (원본 6px → 5px)
+        .stat-bar-label {
+          color: #474e52;
+          font-size: 0.93rem; // (원본 1.11rem → 0.93rem)
+          font-weight: 600;
+          letter-spacing: -0.2px;
+        }
+        .stat-bar-value {
+          color: #636a6e;
+          font-size: 0.95rem; // (원본 1.1rem → 0.95rem)
+          font-weight: 600;
+        }
+      }
+      .stat-bar-bg {
+        width: 100%;
+        height: 11px; // (원본 13px → 11px)
+        border-radius: 8px;
+        background: #e7eaed;
+        overflow: hidden;
+        .stat-bar-fg {
+          height: 100%;
+          background: #66be80;
+          border-radius: 8px;
+        }
+      }
+    }
+  }
+}
+/* ----- 오른쪽 ----- */
+.dashboard-profile {
+  min-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(80, 150, 120, 0.1);
+  padding: 38px 36px 32px 36px;
+  border: 1.5px solid #f1f1f1;
+  .profile-upper {
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+    align-items: flex-start;
+    margin-bottom: 90px;
+
+    .profile-imgbox {
+      position: relative;
+      width: 170px;
+      height: 170px;
+      background: #ededed;
+      border-radius: 10px;
+      .profile-img-label {
+        position: absolute;
+        top: 8px;
+        left: 10px;
+        background: #cccccc;
+        color: #fff;
+        font-size: 14px;
+        padding: 2px 12px;
+        border-radius: 5px;
+        font-weight: 600;
+        z-index: 1;
+      }
+      .profile-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        opacity: 0.5;
+        background: #fff;
+        /* 이미지 들어가면 background-image로 교체 */
+      }
+    }
+    .profile-info {
+      min-width: 260px;
+      .profile-title {
+        font-size: 29px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        .profile-team {
+          font-size: 19px;
+          color: #888;
+          font-weight: 500;
+          margin-left: 10px;
+        }
+      }
+      hr {
+        border: none;
+        border-top: 2px solid #bbb;
+        margin: 8px 0 25px 0;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        li {
+          display: flex;
+          align-items: center;
+          font-size: 18px;
+          margin-bottom: 15px;
+          .profile-pin {
+            width: 12px;
+            height: 12px;
+            background: #66be80;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 2px 0 #111 inset;
+            display: inline-block;
+            content: '';
+          }
+          .profile-value {
+            flex: 1;
+            text-align: right;
+            font-weight: 700;
+            font-size: 18px;
+            color: #1e1e1e;
+            margin-left: 38px;
+          }
+        }
+      }
+    }
+  }
+
+  .profile-table {
+    width: 100%;
+    max-width: 460px;
+    border-collapse: collapse;
+    margin-top: 12px;
+    box-shadow: 0 0 0 1px #9d9d9d;
+    border-radius: 8px;
+    overflow: hidden;
+    .profile-table-row {
+      display: flex;
+      .profile-table-cell {
+        flex: 1;
+        text-align: center;
+        padding: 22px 0;
+        font-size: 1.36rem;
+        font-weight: 700;
+        border-right: 1px solid #9d9d9d;
+        border-bottom: 1px solid #9d9d9d;
+        background: #fff;
+        color: #25663b;
+        box-sizing: border-box;
+        &.cell-head {
+          background: #e3f2e9;
+        }
+        &.cell-green {
+          background: #66be80;
+          color: #fff;
+        }
+        &:last-child {
+          border-right: none;
+        }
+      }
+      &:last-child .profile-table-cell {
+        border-bottom: none;
+      }
+    }
+  }
+}
