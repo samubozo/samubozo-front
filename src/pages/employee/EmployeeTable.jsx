@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './EmployeeTable.scss';
 import EmployeeDetail from './EmployeeDetail';
+import * as XLSX from 'xlsx';
 
 const employees = [
   {
@@ -60,10 +61,49 @@ const employees = [
   },
 ];
 
+const columnMap = {
+  id: '사번',
+  name: '성명',
+  position: '직책',
+  department: '부서',
+  joinDate: '입사일자',
+  phone: '핸드폰',
+  email: '회사이메일',
+  address: '주소',
+  isRetired: '퇴사',
+};
+
+const orderedKeys = [
+  'id',
+  'name',
+  'position',
+  'department',
+  'joinDate',
+  'phone',
+  'email',
+  'address',
+  'isRetired',
+];
+
 const EmployeeTable = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownValue, setDropdownValue] = useState('성명');
+
+  const handleExcelDownload = () => {
+    const mappedData = employees.map((emp) => {
+      const row = {};
+      orderedKeys.forEach((key) => {
+        row[columnMap[key]] = emp[key];
+      });
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(mappedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '직원정보');
+    XLSX.writeFile(workbook, '직원정보.xlsx');
+  };
 
   return (
     <div className='employee-wrapper'>
@@ -113,6 +153,9 @@ const EmployeeTable = () => {
       <div className='basic-info-title'>
         <span className='arrow'>&#9654;</span>
         <span>기본정보</span>
+        <button className='excel' onClick={handleExcelDownload}>
+          Excel 다운로드
+        </button>
       </div>
       <div className='employee-table-wrap'>
         <table className='employee-table'>
@@ -150,7 +193,7 @@ const EmployeeTable = () => {
           </tbody>
         </table>
       </div>
-      <EmployeeDetail selectedEmployee={employees[selectedRow]}/>
+      <EmployeeDetail selectedEmployee={employees[selectedRow]} />
     </div>
   );
 };

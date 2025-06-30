@@ -115,15 +115,22 @@
 
 .basic-info-title {
   display: flex;
+  justify-content: space-between; // ← 추가: 좌우 정렬
   align-items: center;
   font-size: 20px;
   font-weight: 500;
   color: #30512e;
   margin: 50px 0 8px 2px;
+
   .arrow {
     font-size: 26px;
     margin-right: 7px;
     color: #4cb072;
+  }
+
+  // 텍스트와 버튼을 한 줄에 예쁘게 보이게 하려면 span + button 간격도 고려
+  span {
+    margin-right: auto;
   }
 }
 
@@ -177,4 +184,77 @@
     color: #2e2e2e;
   }
 }
+.excel {
+  background: #45bd74;
+  color: #fff;
+  border: none;
+  min-width: 120px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 7px;
+  height: 38px;
+  margin-left: 10px; // 왼쪽 간격만 유지
+  margin-right: 0; // 오른쪽 간격 제거
+  padding: 0 16px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
 
+  &:hover {
+    background: #3ba965;
+  }
+
+  &:active {
+    background: #2f874f;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(69, 189, 116, 0.4);
+  }
+}
+
+/* --- 인쇄 전용 스타일 --- */
+@media print {
+  body * {
+    visibility: hidden; /* 모든 요소를 숨깁니다. */
+  }
+
+  .employee-detail-wrap,
+  .employee-detail-wrap * {
+    visibility: visible; /* 원하는 영역과 그 자식 요소만 보이게 합니다. */
+  }
+
+  .employee-detail-wrap {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%; /* 인쇄 시 전체 너비를 사용하도록 조정 */
+    margin: 0; /* 마진 제거 */
+    padding: 20px; /* 적절한 패딩 추가 */
+    box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+  }
+
+  /* 인쇄 시 필요 없는 요소 숨기기 */
+  .tab-menu,
+  .emp-table-btn-row,
+  .modal-backdrop {
+    display: none;
+  }
+
+  /* input과 select 박스의 배경색 및 테두리 조정 */
+  .info-table input,
+  .info-table select,
+  .emp-table input,
+  .emp-table select,
+  .emp-table textarea {
+    background-color: transparent !important; /* 배경 투명하게 */
+    border: 1px solid #ccc !important; /* 테두리 유지 */
+    -webkit-print-color-adjust: exact; /* 배경색/이미지 인쇄 강제 */
+    print-color-adjust: exact; /* 표준 */
+  }
+
+  /* 드롭다운 화살표 등 인쇄 시 불필요한 UI 요소 숨기기 */
+  .custom-select-wrap .arrow {
+    display: none;
+  }
+}
