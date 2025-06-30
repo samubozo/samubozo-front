@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './EmployeeDetail.scss';
 const DEFAULT_POSITIONS = [
-  { id: 1, order: 1, name: "팀장" },
-  { id: 2, order: 2, name: "대리" },
-  { id: 3, order: 3, name: "사원" }
+  { id: 1, order: 1, name: '팀장' },
+  { id: 2, order: 2, name: '대리' },
+  { id: 3, order: 3, name: '사원' },
 ];
 
-const EmployeeDetail = ({selectedEmployee}) => {
+const EmployeeDetail = ({ selectedEmployee }) => {
   const [dept, setDept] = useState('경영지원');
   const [position, setPosition] = useState('팀장');
   const [status, setStatus] = useState('재직');
@@ -23,23 +23,25 @@ const EmployeeDetail = ({selectedEmployee}) => {
   const [employeeAddress, setEmployeeAddress] = useState('');
 
   useEffect(() => {
-    setEmployeeName(selectedEmployee?.name)
-    setEmployeePhone(selectedEmployee?.phone)
-  },[selectedEmployee])
-// 직책 관련 상태
+    setEmployeeName(selectedEmployee?.name);
+    setEmployeePhone(selectedEmployee?.phone);
+  }, [selectedEmployee]);
+  // 직책 관련 상태
   const [positions, setPositions] = useState([...DEFAULT_POSITIONS]);
-  const [selectedPositionId, setSelectedPositionId] = useState(positions[0]?.id);
+  const [selectedPositionId, setSelectedPositionId] = useState(
+    positions[0]?.id,
+  );
   const [showPositionDropdown, setShowPositionDropdown] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
   // 모달 입력 상태
-  const [newOrder, setNewOrder] = useState("");
-  const [newName, setNewName] = useState("");
+  const [newOrder, setNewOrder] = useState('');
+  const [newName, setNewName] = useState('');
 
   // 모달 열기
   const openAddModal = () => {
-    setNewOrder("");
-    setNewName("");
+    setNewOrder('');
+    setNewName('');
     setShowAddModal(true);
     setShowPositionDropdown(false);
   };
@@ -53,24 +55,24 @@ const EmployeeDetail = ({selectedEmployee}) => {
   const handleAddPosition = () => {
     if (!newOrder.trim() || !newName.trim()) return;
     // id는 가장 큰 id+1
-    const nextId = Math.max(...positions.map(p => p.id), 0) + 1;
+    const nextId = Math.max(...positions.map((p) => p.id), 0) + 1;
     setPositions([
       ...positions,
-      { id: nextId, order: parseInt(newOrder, 10), name: newName }
+      { id: nextId, order: parseInt(newOrder, 10), name: newName },
     ]);
     setShowAddModal(false);
     setSelectedPositionId(nextId);
   };
 
   // 직책 선택
-  const handleSelectPosition = id => {
+  const handleSelectPosition = (id) => {
     setSelectedPositionId(id);
     setShowPositionDropdown(false);
   };
 
   // 직책 삭제
-  const handleRemovePosition = id => {
-    let arr = positions.filter(p => p.id !== id);
+  const handleRemovePosition = (id) => {
+    let arr = positions.filter((p) => p.id !== id);
     setPositions(arr);
     if (selectedPositionId === id && arr.length > 0)
       setSelectedPositionId(arr[0].id);
@@ -80,17 +82,22 @@ const EmployeeDetail = ({selectedEmployee}) => {
   // 드롭다운 외부 클릭 닫기
   React.useEffect(() => {
     if (!showPositionDropdown) return;
-    const handler = e => {
+    const handler = (e) => {
       if (
-        !e.target.closest(".custom-select-wrap") &&
-        !e.target.closest(".custom-dropdown")
+        !e.target.closest('.custom-select-wrap') &&
+        !e.target.closest('.custom-dropdown')
       ) {
         setShowPositionDropdown(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [showPositionDropdown]);
+
+  // 상세 정보 출력 (인쇄) 함수
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className='employee-detail-wrap'>
@@ -199,49 +206,45 @@ const EmployeeDetail = ({selectedEmployee}) => {
         </div>
       </div>
 
-      <div className="emp-table-section-wrap">
-        <table className="emp-table">
+      <div className='emp-table-section-wrap'>
+        <table className='emp-table'>
           <tbody>
             <tr>
-              <td className="table-label">부서</td>
+              <td className='table-label'>부서</td>
               <td>
-                <select value={dept} onChange={e => setDept(e.target.value)}>
+                <select value={dept} onChange={(e) => setDept(e.target.value)}>
                   <option>경영지원</option>
                   <option>영업팀</option>
                   <option>개발팀</option>
                 </select>
               </td>
-              <td className="table-label">직책</td>
+              <td className='table-label'>직책</td>
               <td>
                 {/* 커스텀 셀렉트 박스 */}
-                <div className="custom-select-wrap">
+                <div className='custom-select-wrap'>
                   <div
-                    className="custom-select"
-                    onClick={() =>
-                      setShowPositionDropdown(d => !d)
-                    }
+                    className='custom-select'
+                    onClick={() => setShowPositionDropdown((d) => !d)}
                   >
-                    {positions.find(p => p.id === selectedPositionId)?.name ||
-                      "선택"}
-                    <span className="arrow">▼</span>
+                    {positions.find((p) => p.id === selectedPositionId)?.name ||
+                      '선택'}
+                    <span className='arrow'>▼</span>
                   </div>
                   {showPositionDropdown && (
-                    <div className="custom-dropdown">
-                      {positions.map(pos => (
+                    <div className='custom-dropdown'>
+                      {positions.map((pos) => (
                         <div
                           key={pos.id}
                           className={
-                            "dropdown-item" +
-                            (selectedPositionId === pos.id
-                              ? " selected"
-                              : "")
+                            'dropdown-item' +
+                            (selectedPositionId === pos.id ? ' selected' : '')
                           }
                           onClick={() => handleSelectPosition(pos.id)}
                         >
                           {pos.name}
                           <span
-                            className="item-remove"
-                            onClick={e => {
+                            className='item-remove'
+                            onClick={(e) => {
                               e.stopPropagation();
                               handleRemovePosition(pos.id);
                             }}
@@ -250,10 +253,7 @@ const EmployeeDetail = ({selectedEmployee}) => {
                           </span>
                         </div>
                       ))}
-                      <div
-                        className="dropdown-add"
-                        onClick={openAddModal}
-                      >
+                      <div className='dropdown-add' onClick={openAddModal}>
                         <span>추가</span>
                       </div>
                     </div>
@@ -262,83 +262,89 @@ const EmployeeDetail = ({selectedEmployee}) => {
               </td>
             </tr>
             <tr>
-              <td className="table-label">재직구분</td>
+              <td className='table-label'>재직구분</td>
               <td>
-                <select value={status} onChange={e => setStatus(e.target.value)}>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
                   <option>재직</option>
                   <option>퇴직</option>
                 </select>
               </td>
-              <td className="table-label">역할</td>
+              <td className='table-label'>역할</td>
               <td>
-                <select value={role} onChange={e => setRole(e.target.value)}>
+                <select value={role} onChange={(e) => setRole(e.target.value)}>
                   <option>인사담당자</option>
                   <option>일반</option>
                 </select>
               </td>
             </tr>
             <tr>
-              <td className="table-label">입사일자</td>
+              <td className='table-label'>입사일자</td>
               <td>
                 <input value={joinDate} readOnly />
-                <span className="calendar-ico">📅</span>
+                <span className='calendar-ico'>📅</span>
               </td>
-              <td className="table-label">퇴직일자</td>
+              <td className='table-label'>퇴직일자</td>
               <td>
                 <input value={leaveDate} readOnly />
               </td>
             </tr>
             <tr>
-              <td className="table-label">비고</td>
+              <td className='table-label'>비고</td>
               <td colSpan={3}>
                 <textarea
                   value={memo}
-                  onChange={e => setMemo(e.target.value)}
-                  placeholder=""
+                  onChange={(e) => setMemo(e.target.value)}
+                  placeholder=''
                 />
               </td>
             </tr>
           </tbody>
         </table>
-        <div className="emp-table-btn-row">
-          <button className="excel">엑셀 다운로드</button>
-          <button className="leave">퇴사자 등록</button>
-          <div className="right-btns">
-            <button className="delete">삭제</button>
-            <button className="edit">수정</button>
-            <button className="save">저장</button>
+        <div className='emp-table-btn-row'>
+          <button className='excel' onClick={handlePrint}>
+            상세 정보 출력
+          </button>{' '}
+          {/* 수정된 부분 */}
+          <button className='leave'>퇴사자 등록</button>
+          <div className='right-btns'>
+            <button className='delete'>삭제</button>
+            <button className='edit'>수정</button>
+            <button className='save'>저장</button>
           </div>
         </div>
       </div>
       {/* 직책 추가 모달 */}
       {showAddModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <div className="modal-title">직책 추가</div>
-            <div className="modal-field">
+        <div className='modal-backdrop'>
+          <div className='modal-content'>
+            <div className='modal-title'>직책 추가</div>
+            <div className='modal-field'>
               <label>우선순위</label>
               <input
-                type="number"
+                type='number'
                 value={newOrder}
-                onChange={e => setNewOrder(e.target.value)}
+                onChange={(e) => setNewOrder(e.target.value)}
               />
             </div>
-            <div className="modal-field">
+            <div className='modal-field'>
               <label>직책명</label>
               <input
                 value={newName}
-                onChange={e => setNewName(e.target.value)}
+                onChange={(e) => setNewName(e.target.value)}
               />
             </div>
-            <div className="modal-btn-row">
+            <div className='modal-btn-row'>
               <button
-                className="modal-confirm"
+                className='modal-confirm'
                 onClick={handleAddPosition}
                 disabled={!newOrder.trim() || !newName.trim()}
               >
                 확인
               </button>
-              <button className="modal-cancel" onClick={closeAddModal}>
+              <button className='modal-cancel' onClick={closeAddModal}>
                 취소
               </button>
             </div>
