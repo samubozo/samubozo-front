@@ -1,10 +1,12 @@
-.employee-detail-wrap {
+.employeeDetailWrap {
+  // .employee-detail-wrap
   background: #fff;
   margin: 30px auto;
   width: 100%;
   font-family: 'Noto Sans KR', sans-serif;
 
-  .basic-info-title {
+  .basicInfoTitle {
+    // .basic-info-title
     display: flex;
     align-items: center;
     font-size: 20px;
@@ -17,7 +19,8 @@
       color: #4cb072;
     }
   }
-  .tab-menu {
+  .tabMenu {
+    // .tab-menu
     display: flex;
     border-bottom: 1.5px solid #e3e3e3;
     margin-top: 14px;
@@ -36,13 +39,16 @@
       }
     }
   }
-  .detail-body {
+  .detailBody {
+    // .detail-body
     display: flex;
     align-items: flex-start;
-    .profile-section {
+    .profileSection {
+      // .profile-section
       min-width: 210px;
       padding-right: 24px;
-      .profile-img {
+      .profileImg {
+        // .profile-img
         width: 210px;
         height: 310px;
         border: 1.5px solid #e6e6e6;
@@ -52,15 +58,18 @@
         align-items: center;
         justify-content: center;
         margin-top: 4px;
-        .profile-img-placeholder {
+        .profileImgPlaceholder {
+          // .profile-img-placeholder
           color: #bbb;
           font-size: 22px;
         }
       }
     }
-    .info-table-section {
+    .infoTableSection {
+      // .info-table-section
       flex: 1;
-      .info-table {
+      .infoTable {
+        // .info-table
         width: 100%;
         border-collapse: collapse;
         td {
@@ -68,7 +77,8 @@
           padding: 0 12px;
           height: 52px;
         }
-        .table-label {
+        .tableLabel {
+          // .table-label
           background: #f5f6fa;
           color: #444;
           font-size: 15px;
@@ -91,7 +101,8 @@
           }
         }
 
-        .account-row {
+        .accountRow {
+          // .account-row
           display: flex;
           align-items: center;
           gap: 8px;
@@ -99,7 +110,8 @@
             min-width: 110px;
             margin: 0;
           }
-          .acc-name {
+          .accName {
+            // .acc-name
             margin-left: 18px;
             font-size: 15px;
             color: #888;
@@ -109,9 +121,11 @@
     }
   }
 
-  .emp-table-section-wrap {
+  .empTableSectionWrap {
+    // .emp-table-section-wrap
     margin-top: 28px;
-    .emp-table {
+    .empTable {
+      // .emp-table
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 10px;
@@ -120,7 +134,8 @@
         padding: 0 12px;
         height: 54px;
       }
-      .table-label {
+      .tableLabel {
+        // .table-label
         background: #f5f6fa;
         color: #444;
         font-size: 15px;
@@ -150,14 +165,16 @@
         resize: none;
         background: #fff;
       }
-      .calendar-ico {
+      .calendarIco {
+        // .calendar-ico
         margin-left: 5px;
         cursor: pointer;
         font-size: 18px;
         vertical-align: middle;
       }
     }
-    .emp-table-btn-row {
+    .empTableBtnRow {
+      // .emp-table-btn-row
       display: flex;
       align-items: flex-start;
       gap: 14px;
@@ -184,7 +201,8 @@
         height: 38px;
         margin-right: 30px;
       }
-      .right-btns {
+      .rightBtns {
+        // .right-btns
         display: flex;
         gap: 8px;
         margin-left: auto;
@@ -218,13 +236,14 @@
   }
 }
 
-
-.custom-select-wrap {
+.customSelectWrap {
+  // .custom-select-wrap (외부에서 독립적으로 사용되므로 최상위 유지)
   position: relative;
   display: inline-block;
   width: 220px;
   z-index: 10;
-  .custom-select {
+  .customSelect {
+    // .custom-select
     width: 100%;
     height: 38px;
     border: 1px solid #bcbcbc;
@@ -243,7 +262,8 @@
       margin-left: 8px;
     }
   }
-  .custom-dropdown {
+  .customDropdown {
+    // .custom-dropdown
     position: absolute;
     top: 41px;
     left: 0;
@@ -253,7 +273,8 @@
     background: #fff;
     box-shadow: 0 2px 8px rgba(30, 30, 30, 0.06);
     z-index: 99;
-    .dropdown-item {
+    .dropdownItem {
+      // .dropdown-item
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -262,10 +283,12 @@
       cursor: pointer;
       &:hover,
       &.selected {
+        // .selected는 하이픈 없음
         background: #eaf8e5;
         color: #1fa366;
       }
-      .item-remove {
+      .itemRemove {
+        // .item-remove
         margin-left: 18px;
         font-size: 18px;
         color: #b2b2b2;
@@ -275,7 +298,8 @@
         }
       }
     }
-    .dropdown-add {
+    .dropdownAdd {
+      // .dropdown-add
       padding: 12px 0;
       background: #eaf8e5;
       color: #1fa366;
@@ -297,29 +321,36 @@
 }
 
 // 모달
-.modal-backdrop {
+.modalBackdrop {
+  // .modal-backdrop
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.08);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.08);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  .modal-content {
+  .modalContent {
+    // .modal-content
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 6px 32px rgba(40,80,80,0.08);
+    box-shadow: 0 6px 32px rgba(40, 80, 80, 0.08);
     padding: 30px 38px 24px 38px;
     min-width: 340px;
     min-height: 190px;
-    .modal-title {
+    .modalTitle {
+      // .modal-title
       font-size: 22px;
       font-weight: 700;
       text-align: center;
       margin-bottom: 22px;
       color: #444;
     }
-    .modal-field {
+    .modalField {
+      // .modal-field
       display: flex;
       align-items: center;
       margin-bottom: 16px;
@@ -339,7 +370,8 @@
         flex: 1;
       }
     }
-    .modal-btn-row {
+    .modalBtnRow {
+      // .modal-btn-row
       display: flex;
       justify-content: center;
       gap: 18px;
@@ -353,7 +385,8 @@
         border: none;
         cursor: pointer;
       }
-      .modal-confirm {
+      .modalConfirm {
+        // .modal-confirm
         background: #45bd74;
         color: #fff;
         &:disabled {
@@ -362,10 +395,58 @@
           cursor: not-allowed;
         }
       }
-      .modal-cancel {
+      .modalCancel {
+        // .modal-cancel
         background: #f3f3f3;
         color: #333;
       }
     }
+  }
+}
+
+/* --- 인쇄 전용 스타일 --- */
+@media print {
+  body * {
+    visibility: hidden; /* 모든 요소를 숨깁니다. */
+  }
+
+  .employeeDetailWrap,
+  .employeeDetailWrap * {
+    visibility: visible; /* 원하는 영역과 그 자식 요소만 보이게 합니다. */
+  }
+
+  .employeeDetailWrap {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  /* 인쇄 시 필요 없는 요소 숨기기 */
+  .tabMenu,        // 탭 메뉴 숨기기
+  .empTableBtnRow, // 이 부분이 바로 버튼 행을 숨기는 부분입니다.
+  .modalBackdrop {
+    // 모달 백드롭 숨기기
+    display: none !important;
+  }
+
+  /* input과 select 박스의 배경색 및 테두리 조정 */
+  .infoTable input,
+  .infoTable select,
+  .empTable input,
+  .empTable select,
+  .empTable textarea {
+    background-color: transparent !important;
+    border: 1px solid #ccc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 드롭다운 화살표 등 인쇄 시 불필요한 UI 요소 숨기기 */
+  .customSelectWrap .arrow {
+    display: none;
   }
 }

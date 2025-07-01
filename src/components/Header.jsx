@@ -1,49 +1,50 @@
 import React from 'react';
-import './Header.scss';
+import styles from './Header.module.scss';
 import Logo from '../assets/samubozo-logo2.png';
 import { NavLink } from 'react-router-dom';
+console.log(styles);
 
 const Header = () => {
   return (
-    <header className='header-wrap'>
-      <div className='header-fixed-left'>
-        <span className='gmt'>GMT+09:00</span>
-        <span className='user-info'>신현국 팀장(경영지원)</span>
-        <span className='admin-checkbox'>
+    <header className={styles.headerWrap}>
+      <div className={styles.headerFixedLeft}>
+        <span className={styles.gmt}>GMT+09:00</span>
+        <span className={styles.userInfo}>신현국 팀장(경영지원)</span>
+        <span className={styles.adminCheckbox}>
           <input type='checkbox' />
           <span>관리자</span>
         </span>
       </div>
 
-      <div className='header-main-row'>
-        <div className='header-logo-row'>
-          <img src={Logo} alt='로고' className='header-logo' />
+      <div className={styles.headerMainRow}>
+        <div className={styles.headerLogoRow}>
+          <img src={Logo} alt='로고' className={styles.headerLogo} />
         </div>
-        <div className='header-right'>
-          <NavLink to='/' className='header-link'>
+        <div className={styles.headerRight}>
+          <NavLink to='/' className={styles.headerLink}>
             홈
           </NavLink>
-          <span className='header-divider'>|</span>
-          <NavLink to='/' className='header-link'>
+          <span className={styles.headerDivider}>|</span>
+          <NavLink to='/' className={styles.headerLink}>
             조직도
           </NavLink>
-          <span className='header-divider'>|</span>
-          <NavLink to='/' className='header-link'>
+          <span className={styles.headerDivider}>|</span>
+          <NavLink to='/' className={styles.headerLink}>
             전자결제
           </NavLink>
-          <div className='header-icons'>
-            <button className='icon'>👤</button>
+          <div className={styles.headerIcons}>
+            <button className={styles.icon}>👤</button>
           </div>
         </div>
       </div>
 
-      <nav className='header-nav'>
-        <ul className='header-nav-list'>
+      <nav className={styles.headerNav}>
+        <ul className={styles.headerNavList}>
           <li>
             <NavLink
               to='/dashboard'
               className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
+                isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
             >
               메인
@@ -53,7 +54,7 @@ const Header = () => {
             <NavLink
               to='/employee'
               className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
+                isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
             >
               인사관리
@@ -63,7 +64,7 @@ const Header = () => {
             <NavLink
               to='/attendance'
               className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
+                isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
             >
               근태관리
@@ -73,7 +74,7 @@ const Header = () => {
             <NavLink
               to='/salary'
               className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
+                isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
             >
               급여관리
@@ -83,7 +84,7 @@ const Header = () => {
             <NavLink
               to='/calendar'
               className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
+                isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
             >
               일정관리
@@ -93,7 +94,7 @@ const Header = () => {
             <NavLink
               to='/message'
               className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
+                isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
             >
               쪽지함

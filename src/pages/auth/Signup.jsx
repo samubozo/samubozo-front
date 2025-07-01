@@ -1,40 +1,71 @@
 import React, { useState } from 'react';
-import './Signup.scss';
+import styles from './Signup.module.scss'; // styles import
 import { Link } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
-import VerifyModal from "./VerifyModal"; // 경로 맞게!
+import VerifyModal from './VerifyModal'; // 경로 맞게!
+
 const Signup = () => {
   const [gender, setGender] = useState('');
-const [showModal, setShowModal] = useState(false);
-const [timer, setTimer] = useState("00:00");
+  const [showModal, setShowModal] = useState(false);
+  const [timer, setTimer] = useState('00:00'); // 타이머 상태 추가
+
   return (
-    <div className='outer-bg'>
-        {showModal && (
+    <div className={styles.outerBg}>
+      {' '}
+      {/* styles.outerBg 적용 */}
+      {showModal && (
         <VerifyModal
-          email="aaa***@samubozo.com"
-          timer={timer}
-          onResend={() => {/* 재발송 로직 */}}
-          onComplete={code => {/* 완료 로직 */}}
+          email='aaa***@samubozo.com' // 실제 이메일 값으로 대체 필요
+          timer={timer} // 타이머 값 전달
+          onResend={() => {
+            /* 재발송 로직 */
+          }}
+          onComplete={(code) => {
+            /* 완료 로직 */
+          }}
           onClose={() => setShowModal(false)}
         />
       )}
-      <div className='register-nav'>
+      <div className={styles.registerNav}>
+        {' '}
+        {/* styles.registerNav 적용 */}
         <Link to={'/'}>로그인</Link> | <Link to={'/'}>ID 찾기</Link> |{' '}
         <Link to={'/'}>PW 찾기</Link>
-        <span className='icon'>👤</span>
+        <span className={styles.icon}>👤</span> {/* styles.icon 적용 */}
       </div>
-      <img src={Logo} alt='로고' className='register-logo' />
-      <div className='register-wrap'>
-        <div className='register-container'>
-          <div className='register-header'></div>
-          <h2 className='register-main-title'>회원가입</h2>
-          <form className='register-form'>
-            <div className='register-grid'>
-              <div className='register-left'>
+      <img src={Logo} alt='로고' className={styles.registerLogo} />{' '}
+      {/* styles.registerLogo 적용 */}
+      <div className={styles.registerWrap}>
+        {' '}
+        {/* styles.registerWrap 적용 */}
+        <div className={styles.registerContainer}>
+          {' '}
+          {/* styles.registerContainer 적용 */}
+          <div className={styles.registerHeader}></div>{' '}
+          {/* styles.registerHeader 적용 */}
+          <h2 className={styles.registerMainTitle}>회원가입</h2>{' '}
+          {/* styles.registerMainTitle 적용 */}
+          <form className={styles.registerForm}>
+            {' '}
+            {/* styles.registerForm 적용 */}
+            <div className={styles.registerGrid}>
+              {' '}
+              {/* styles.registerGrid 적용 */}
+              <div className={styles.registerLeft}>
+                {' '}
+                {/* styles.registerLeft 적용 */}
                 <label>이메일</label>
-                <div className='email-row'>
+                <div className={styles.emailRow}>
+                  {' '}
+                  {/* styles.emailRow 적용 */}
                   <input type='email' placeholder='이메일을 입력하세요.' />
-                  <button onClick={() => setShowModal(true)}type='button' className='email-btn'>
+                  <button
+                    onClick={() => setShowModal(true)}
+                    type='button'
+                    className={styles.emailBtn}
+                  >
+                    {' '}
+                    {/* styles.emailBtn 적용 */}
                     인증
                   </button>
                 </div>
@@ -47,26 +78,36 @@ const [timer, setTimer] = useState("00:00");
                 />
                 <label>이름</label>
                 <input type='text' placeholder='이름을 입력하세요.' />
-                <div className='row-inline'>
-                  <div className='birth-col'>
+                <div className={styles.rowInline}>
+                  {' '}
+                  {/* styles.rowInline 적용 */}
+                  <div className={styles.birthCol}>
+                    {' '}
+                    {/* styles.birthCol 적용 */}
                     <label>생년월일</label>
-                    <div className='input-icon'>
+                    <div className={styles.inputIcon}>
+                      {' '}
+                      {/* styles.inputIcon 적용 */}
                       <input type='date' />
                     </div>
                   </div>
-                  <div className='gender-col'>
+                  <div className={styles.genderCol}>
+                    {' '}
+                    {/* styles.genderCol 적용 */}
                     <label>성별</label>
-                    <div className='gender-btns'>
+                    <div className={styles.genderBtns}>
+                      {' '}
+                      {/* styles.genderBtns 적용 */}
                       <button
                         type='button'
-                        className={gender === '남자' ? 'active' : ''}
+                        className={gender === '남자' ? styles.active : ''} // styles.active 적용
                         onClick={() => setGender('남자')}
                       >
                         남자
                       </button>
                       <button
                         type='button'
-                        className={gender === '여자' ? 'active' : ''}
+                        className={gender === '여자' ? styles.active : ''} // styles.active 적용
                         onClick={() => setGender('여자')}
                       >
                         여자
@@ -75,13 +116,17 @@ const [timer, setTimer] = useState("00:00");
                   </div>
                 </div>
               </div>
-              <div className='register-right'>
+              <div className={styles.registerRight}>
+                {' '}
+                {/* styles.registerRight 적용 */}
                 <label>연락처</label>
                 <input type='text' placeholder='연락처를 입력하세요.' />
                 <label>주소</label>
                 <input type='text' placeholder='주소를 입력하세요.' />
                 <label>입사일</label>
-                <div className='input-icon'>
+                <div className={styles.inputIcon}>
+                  {' '}
+                  {/* styles.inputIcon 적용 */}
                   <input type='date' />
                 </div>
                 <label>부서</label>
@@ -99,7 +144,9 @@ const [timer, setTimer] = useState("00:00");
                 </select>
               </div>
             </div>
-            <button className='register-submit' type='submit'>
+            <button className={styles.registerSubmit} type='submit'>
+              {' '}
+              {/* styles.registerSubmit 적용 */}
               회원가입
             </button>
           </form>

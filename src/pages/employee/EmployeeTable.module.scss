@@ -1,4 +1,5 @@
-.employee-wrapper {
+.employeeWrapper {
+  // .employee-wrapper
   background: #fff;
   padding: 12px 16px 0 12px;
   border-radius: 12px;
@@ -7,20 +8,23 @@
   margin: 0 auto;
 }
 
-.employee-search-box {
+.searchBox {
+  // .employee-search-box -> .searchBox (JSX에서 이미 이렇게 사용 중)
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px;
   background-color: #f5f5f5;
   border-radius: 5px;
-  .search-label {
+  .searchLabel {
+    // .search-label
     font-size: 18px;
     font-weight: 500;
     margin-right: 6px;
     margin-left: 50px;
   }
-  .dropdown-box {
+  .dropdownBox {
+    // .dropdown-box
     position: relative;
     width: 110px;
     height: 44px;
@@ -30,7 +34,8 @@
     cursor: pointer;
     margin-right: 2px;
 
-    .dropdown-selected {
+    .dropdownSelected {
+      // .dropdown-selected
       height: 100%;
       display: flex;
       align-items: center;
@@ -40,12 +45,14 @@
       justify-content: space-between;
     }
 
-    .dropdown-arrow {
+    .dropdownArrow {
+      // .dropdown-arrow
       margin-left: 20px;
       font-size: 17px;
       color: #7b7b7b;
     }
-    .dropdown-options {
+    .dropdownOptions {
+      // .dropdown-options
       position: absolute;
       left: 0;
       top: 43px;
@@ -66,7 +73,8 @@
     }
   }
 
-  .search-input {
+  .searchInput {
+    // .search-input
     width: 250px;
     height: 44px;
     font-size: 18px;
@@ -76,7 +84,8 @@
     margin-right: 12px;
     outline: none;
   }
-  .retired-label {
+  .retiredLabel {
+    // .retired-label
     font-size: 18px;
     margin-right: 18px;
     display: flex;
@@ -89,7 +98,8 @@
       margin-right: 3px;
     }
   }
-  .search-btn {
+  .searchBtn {
+    // .search-btn
     height: 44px;
     width: 90px;
     background: #62b87a;
@@ -103,7 +113,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    .search-icon {
+    .searchIcon {
+      // .search-icon
       font-size: 24px;
       margin-right: 2px;
     }
@@ -113,9 +124,10 @@
   }
 }
 
-.basic-info-title {
+.basicInfoTitle {
+  // .basic-info-title
   display: flex;
-  justify-content: space-between; // ← 추가: 좌우 정렬
+  justify-content: space-between;
   align-items: center;
   font-size: 20px;
   font-weight: 500;
@@ -128,19 +140,20 @@
     color: #4cb072;
   }
 
-  // 텍스트와 버튼을 한 줄에 예쁘게 보이게 하려면 span + button 간격도 고려
   span {
     margin-right: auto;
   }
 }
 
-.employee-table-wrap {
+.tableWrap {
+  // .employee-table-wrap -> .tableWrap (JSX에서 이미 이렇게 사용 중)
   overflow-x: auto;
   background: #fff;
   box-shadow: 0 1px 8px rgba(52, 77, 64, 0.08);
 }
 
-.employee-table {
+.table {
+  // .employee-table -> .table (JSX에서 이미 이렇게 사용 중)
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
@@ -184,6 +197,15 @@
     color: #2e2e2e;
   }
 }
+
+.noData {
+  // JSX에서 추가된 .noData 클래스 정의
+  text-align: center;
+  padding: 20px;
+  color: #888;
+  font-size: 16px;
+}
+
 .excel {
   background: #45bd74;
   color: #fff;
@@ -193,8 +215,8 @@
   font-weight: 500;
   border-radius: 7px;
   height: 38px;
-  margin-left: 10px; // 왼쪽 간격만 유지
-  margin-right: 0; // 오른쪽 간격 제거
+  margin-left: 10px;
+  margin-right: 0;
   padding: 0 16px;
   cursor: pointer;
   transition: background 0.2s ease-in-out;
@@ -216,45 +238,47 @@
 /* --- 인쇄 전용 스타일 --- */
 @media print {
   body * {
-    visibility: hidden; /* 모든 요소를 숨깁니다. */
+    visibility: hidden;
   }
 
-  .employee-detail-wrap,
-  .employee-detail-wrap * {
-    visibility: visible; /* 원하는 영역과 그 자식 요소만 보이게 합니다. */
+  .employeeDetailWrap, // .employee-detail-wrap (EmployeeDetail 컴포넌트에서 사용)
+  .employeeDetailWrap * {
+    visibility: visible;
   }
 
-  .employee-detail-wrap {
+  .employeeDetailWrap {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%; /* 인쇄 시 전체 너비를 사용하도록 조정 */
-    margin: 0; /* 마진 제거 */
-    padding: 20px; /* 적절한 패딩 추가 */
-    box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
   }
 
   /* 인쇄 시 필요 없는 요소 숨기기 */
-  .tab-menu,
-  .emp-table-btn-row,
-  .modal-backdrop {
+  .tabMenu, // .tab-menu (EmployeeDetail 컴포넌트에서 사용)
+  .empTableBtnRow, // .emp-table-btn-row (EmployeeDetail 컴포넌트에서 사용)
+  .modalBackdrop {
+    // .modal-backdrop (EmployeeDetail 컴포넌트에서 사용)
     display: none;
   }
 
   /* input과 select 박스의 배경색 및 테두리 조정 */
-  .info-table input,
-  .info-table select,
-  .emp-table input,
-  .emp-table select,
-  .emp-table textarea {
-    background-color: transparent !important; /* 배경 투명하게 */
-    border: 1px solid #ccc !important; /* 테두리 유지 */
-    -webkit-print-color-adjust: exact; /* 배경색/이미지 인쇄 강제 */
-    print-color-adjust: exact; /* 표준 */
+  .infoTable input, // .info-table (EmployeeDetail 컴포넌트에서 사용)
+  .infoTable select,
+  .empTable input, // .emp-table (EmployeeDetail 컴포넌트에서 사용)
+  .empTable select,
+  .empTable textarea {
+    background-color: transparent !important;
+    border: 1px solid #ccc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   /* 드롭다운 화살표 등 인쇄 시 불필요한 UI 요소 숨기기 */
-  .custom-select-wrap .arrow {
+  .customSelectWrap .arrow {
+    // .custom-select-wrap (EmployeeDetail 컴포넌트에서 사용)
     display: none;
   }
 }

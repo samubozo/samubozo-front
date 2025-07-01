@@ -1,5 +1,5 @@
-// VerifyModal.scss
-.modal-dim {
+.modalDim {
+  // .modal-dim
   position: fixed;
   z-index: 99999;
   left: 0;
@@ -12,7 +12,8 @@
   align-items: center;
 }
 
-.verify-modal {
+.verifyModal {
+  // .verify-modal
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 3px 18px 0 rgba(0, 0, 0, 0.13);
@@ -24,28 +25,32 @@
   align-items: center;
 }
 
-.modal-title {
+.modalTitle {
+  // .modal-title
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 22px;
   text-align: center;
 }
 
-.modal-email {
+.modalEmail {
+  // .modal-email
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 28px;
   text-align: center;
 }
 
-.modal-row {
+.modalRow {
+  // .modal-row
   display: flex;
   align-items: center;
   width: 100%;
   margin-bottom: 24px;
 }
 
-.modal-timer {
+.modalTimer {
+  // .modal-timer
   min-width: 58px;
   color: #ff3030;
   font-size: 18px;
@@ -54,7 +59,8 @@
   margin-right: 10px;
 }
 
-.modal-input {
+.modalInput {
+  // .modal-input
   flex: 1;
   height: 38px;
   font-size: 19px;
@@ -65,7 +71,8 @@
   outline: none;
 }
 
-.modal-resend {
+.modalResend {
+  // .modal-resend
   background: none;
   border: none;
   color: #2476ff;
@@ -76,14 +83,16 @@
   padding: 0;
 }
 
-.modal-btns {
+.modalBtns {
+  // .modal-btns
   width: 100%;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
 }
 
-.modal-complete {
+.modalComplete {
+  // .modal-complete
   background: #66be80;
   color: #fff;
   font-size: 18px;
@@ -98,7 +107,8 @@
   }
 }
 
-.modal-cancel {
+.modalCancel {
+  // .modal-cancel
   background: none;
   border: none;
   color: #9c9c9c;

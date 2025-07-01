@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import './EmployeeTable.scss';
+import React, { useState, useMemo, useEffect } from 'react';
+import styles from './EmployeeTable.module.scss';
 import EmployeeDetail from './EmployeeDetail';
 import * as XLSX from 'xlsx';
 
@@ -59,17 +59,6 @@ const employees = [
     address: '서울특별시 서초구 효령로 335',
     isRetired: 'N',
   },
-  {
-    id: 6,
-    name: '퇴직자1',
-    position: '과장',
-    department: '인사부',
-    joinDate: '2020.01.01',
-    phone: '010-1234-5678',
-    email: 'retired1@samubozo.com',
-    address: '서울특별시 퇴직동',
-    isRetired: 'Y', // 퇴직자 데이터 추가
-  },
 ];
 
 const columnMap = {
@@ -103,126 +92,71 @@ const EmployeeTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [includeRetired, setIncludeRetired] = useState(false);
 
+  // 필터링된 직원 목록을 useMemo로 캐싱하여 성능 최적화
   const filteredEmployees = useMemo(() => {
+    // 검색 기준 키 설정 (성명 또는 부서)
     const searchKey = dropdownValue === '성명' ? 'name' : 'department';
 
     return employees.filter((employee) => {
+      // 퇴직자 포함 옵션이 체크되지 않았고 직원이 퇴직자라면 필터링
       if (!includeRetired && employee.isRetired === 'Y') {
         return false;
       }
+      // 검색어가 없으면 모든 직원 포함
       if (!searchTerm) {
         return true;
       }
+      // 검색어가 있으면 해당 키의 값에 검색어가 포함되는지 확인
       return String(employee[searchKey])
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
     });
   }, [searchTerm, dropdownValue, includeRetired]);
 
-  React.useEffect(() => {
+  // 필터링된 직원이 변경될 때 선택된 행 초기화
+  useEffect(() => {
     setSelectedRow(null);
   }, [filteredEmployees]);
 
+  // 검색 버튼 클릭 핸들러 (실제 검색은 useMemo에서 처리되므로, 여기서는 콘솔 로그만)
   const handleSearch = () => {
     console.log('검색 버튼 클릭됨!');
+    // 실제 검색 로직은 searchTerm, dropdownValue, includeRetired 상태 변경 시 useMemo에 의해 자동 실행
   };
 
   const handleExcelDownload = () => {
-    const dataToDownload = filteredEmployees;
-
-    // 1. 엑셀에 표시될 헤더 이름들 (한글)
-    const headers = orderedKeys.map((key) => columnMap[key]);
-
-    // 2. 엑셀에 실제로 들어갈 데이터 (원본 키를 유지)
-    const excelDataForSheet = dataToDownload.map((emp) => {
+    const mappedData = filteredEmployees.map((emp) => {
       const row = {};
       orderedKeys.forEach((key) => {
-        row[key] = emp[key] !== undefined && emp[key] !== null ? emp[key] : '';
+        row[columnMap[key]] = emp[key];
       });
       return row;
     });
 
-    // 3. 빈 워크시트 생성
-    const worksheet = XLSX.utils.aoa_to_sheet([]); // 빈 배열로 초기화
-
-    // 4. 1행에 헤더 추가
-    XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 'A1' });
-
-    // 5. 2행부터 데이터 추가 (헤더 바로 아래)
-    // sheet_add_json 사용 시 fields 옵션으로 순서와 키를 명시해야 합니다.
-    XLSX.utils.sheet_add_json(worksheet, excelDataForSheet, {
-      origin: 'A2', // 데이터를 A2 셀부터 시작
-      skipHeader: true, // json_to_sheet처럼 자동으로 헤더를 생성하는 것을 건너뜀
-      header: orderedKeys, // 어떤 키를 어떤 순서로 넣을지 명시 (이것은 데이터 매핑에 사용됨)
-    });
-
-    // 6. 헤더 스타일 정의 (1행에만 적용)
-    const headerStyle = {
-      fill: {
-        patternType: 'solid',
-        fgColor: { rgb: 'DCE6F1' }, // 연한 파랑
-      },
-      font: {
-        bold: true,
-      },
-      alignment: {
-        horizontal: 'center',
-        vertical: 'center',
-      },
-      border: {
-        top: { style: 'thin', color: { rgb: '000000' } },
-        bottom: { style: 'thin', color: { rgb: '000000' } },
-        left: { style: 'thin', color: { rgb: '000000' } },
-        right: { style: 'thin', color: { rgb: '000000' } },
-      },
-    };
-
-    // 7. 각 헤더 셀에 스타일 적용 (0번째 행, 즉 A1부터 시작하는 헤더 행)
-    for (let C = 0; C < headers.length; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
-      // 헤더 셀이 이미 sheet_add_aoa로 생성되었으므로 존재할 것입니다.
-      // 하지만 혹시 모를 경우를 대비해 안전하게 참조합니다.
-      const cell = worksheet[cellAddress] || {};
-      cell.s = headerStyle;
-      worksheet[cellAddress] = cell; // 변경된 셀 객체를 워크시트에 다시 할당
-    }
-
-    // 8. 컬럼 너비 자동 조정
-    const wscols = orderedKeys.map((key) => {
-      const headerText = columnMap[key] || '';
-      const maxLength = Math.max(
-        headerText.length,
-        ...dataToDownload.map((e) => String(e[key] || '').length),
-      );
-      return { wch: maxLength + 2 };
-    });
-    worksheet['!cols'] = wscols;
-
+    const worksheet = XLSX.utils.json_to_sheet(mappedData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '직원정보');
-
-    // 9. 스타일 정보를 포함해 파일 저장
-    XLSX.writeFile(workbook, '직원정보.xlsx', { cellStyles: true });
+    XLSX.writeFile(workbook, '직원정보.xlsx');
   };
 
   return (
-    <div className='employee-wrapper'>
-      <div className='employee-search-box'>
-        <span className='search-label'>검색어</span>
+    <div className={styles.employeeWrapper}>
+      <div className={styles.searchBox}>
+        <span className={styles.searchLabel}>검색어</span>
         <div
-          className='dropdown-box'
+          className={styles.dropdownBox}
           tabIndex={0}
           onBlur={() => setDropdownOpen(false)}
         >
           <div
-            className='dropdown-selected'
+            className={styles.dropdownSelected}
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             {dropdownValue}
-            <span className='dropdown-arrow'>&#9662;</span>
+            <span className={styles.dropdownArrow}>&#9662;</span>
           </div>
           {dropdownOpen && (
-            <div className='dropdown-options'>
+            <div className={styles.dropdownOptions}>
               <div
                 onClick={() => {
                   setDropdownValue('성명');
@@ -243,7 +177,7 @@ const EmployeeTable = () => {
           )}
         </div>
         <input
-          className='search-input'
+          className={styles.searchInput}
           type='text'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -253,7 +187,7 @@ const EmployeeTable = () => {
             }
           }}
         />
-        <label className='retired-label'>
+        <label className={styles.retiredLabel}>
           <input
             type='checkbox'
             checked={includeRetired}
@@ -261,19 +195,19 @@ const EmployeeTable = () => {
           />{' '}
           퇴직자포함
         </label>
-        <button className='search-btn' onClick={handleSearch}>
-          <span className='search-icon'>&#128269;</span> 검색
+        <button className={styles.searchBtn} onClick={handleSearch}>
+          <span className={styles.searchIcon}>&#128269;</span> 검색
         </button>
       </div>
-      <div className='basic-info-title'>
-        <span className='arrow'>&#9654;</span>
+      <div className={styles.basicInfoTitle}>
+        <span className={styles.arrow}>&#9654;</span>
         <span>기본정보</span>
-        <button className='excel' onClick={handleExcelDownload}>
+        <button className={styles.excel} onClick={handleExcelDownload}>
           Excel 다운로드
         </button>
       </div>
-      <div className='employee-table-wrap'>
-        <table className='employee-table'>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
           <thead>
             <tr>
               <th>사번</th>
@@ -292,7 +226,7 @@ const EmployeeTable = () => {
               filteredEmployees.map((emp, idx) => (
                 <tr
                   key={emp.id}
-                  className={selectedRow === idx ? 'selected' : ''}
+                  className={selectedRow === idx ? styles.selected : ''}
                   onClick={() => setSelectedRow(idx)}
                 >
                   <td>{emp.id}</td>
@@ -308,10 +242,7 @@ const EmployeeTable = () => {
               ))
             ) : (
               <tr>
-                <td
-                  colSpan='9'
-                  style={{ textAlign: 'center', padding: '20px' }}
-                >
+                <td colSpan='9' className={styles.noData}>
                   검색 결과가 없습니다.
                 </td>
               </tr>

@@ -1,12 +1,14 @@
-.login-wrapper {
+.loginWrapper {
+  // .login-wrapper
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh; // 전체 화면 높이
-  width: 100vw; // 전체 화면 너비
+  min-height: 100vh;
+  width: 100vw;
   background-color: #fff;
 
-  .login-box {
+  .loginBox {
+    // .login-box
     width: 420px;
     padding: 2.5rem;
     border: 8px solid #66be80;
@@ -15,7 +17,8 @@
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
     position: relative;
 
-    .logo-section {
+    .logoSection {
+      // .logo-section
       text-align: center;
       margin-bottom: 1.5rem;
       position: relative;
@@ -41,7 +44,8 @@
         font-size: 1rem;
       }
 
-      .remember-section {
+      .rememberSection {
+        // .remember-section
         display: flex;
         align-items: center;
         font-size: 0.9rem;
@@ -68,13 +72,15 @@
     }
 
     .links {
+      // .links
       text-align: center;
       margin-top: 1rem;
       font-size: 0.85rem;
       color: #333;
     }
 
-    .top-links {
+    .topLinks {
+      // .top-links
       position: fixed;
       margin-top: 5px;
       margin-right: 10px;
@@ -84,19 +90,22 @@
       color: #333;
 
       .icon {
+        // .icon
         margin-left: 0.3rem;
       }
     }
   }
 }
 
-.email-input {
+.emailInput {
+  // .email-input
   &:focus {
     outline-color: #66be80;
   }
 }
 
-.password-input {
+.passwordInput {
+  // .password-input
   &:focus {
     outline-color: #66be80;
   }

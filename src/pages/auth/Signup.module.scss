@@ -1,14 +1,16 @@
-.outer-bg {
-  position: relative; // nav 기준점이 됨!
+.outerBg {
+  // .outer-bg
+  position: relative;
   min-height: 100vh;
   background: #fff;
   width: 100%;
 }
 
-.register-nav {
-  position: absolute; // ★ outer-bg 기준
-  top: 5px; // 원하는 만큼 조절
-  right: 10px; // 원하는 만큼 조절
+.registerNav {
+  // .register-nav
+  position: absolute;
+  top: 5px;
+  right: 10px;
   font-size: 0.9rem;
   color: #222;
   z-index: 10;
@@ -23,8 +25,9 @@
     margin-left: 0.3rem;
   }
 }
-// Register.scss
-.register-wrap {
+
+.registerWrap {
+  // .register-wrap
   min-height: 100vh;
   background: #fff;
   display: flex;
@@ -32,7 +35,8 @@
   justify-content: center;
 }
 
-.register-container {
+.registerContainer {
+  // .register-container
   margin-top: 130px;
   border: 8px solid #66be80;
   border-radius: 24px;
@@ -43,27 +47,31 @@
   position: relative;
 }
 
-.register-header {
+.registerHeader {
+  // .register-header
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.register-logo {
+.registerLogo {
+  // .register-logo
   height: 70px;
   position: absolute;
   right: 44%;
   top: 40px;
 }
 
-.register-title {
+.registerTitle {
+  // .register-title
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.register-main-title {
+.registerMainTitle {
+  // .register-main-title
   text-align: center;
   font-size: 30px;
   font-weight: 600;
@@ -72,18 +80,21 @@
   letter-spacing: -1px;
 }
 
-.register-form {
+.registerForm {
+  // .register-form
   width: 100%;
 }
 
-.register-grid {
+.registerGrid {
+  // .register-grid
   display: flex;
   gap: 38px;
   margin-bottom: 36px;
 }
 
-.register-left,
-.register-right {
+.registerLeft, // .register-left
+.registerRight {
+  // .register-right
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -108,13 +119,15 @@
   }
 }
 
-.email-row {
+.emailRow {
+  // .email-row
   display: flex;
   gap: 10px;
   input[type='email'] {
     flex: 1;
   }
-  .email-btn {
+  .emailBtn {
+    // .email-btn
     padding: 0 24px;
     background: #66be80;
     color: #fff;
@@ -130,18 +143,23 @@
   }
 }
 
-.row-inline {
+.rowInline {
+  // .row-inline
   display: flex;
   gap: 18px;
-  .birth-col,
-  .gender-col {
-    flex: 1;
+  .birthCol, // .birth-col
+  .genderCol {
+    // .gender-col
+    flex: 1; // flex: 1을 유지하여 각 컬럼이 공간을 균등하게 차지하도록 함
     display: flex;
     flex-direction: column;
+    // 필요에 따라 max-width 등을 추가하여 너비 조절 가능
   }
-  .gender-btns {
+  .genderBtns {
+    // .gender-btns
     display: flex;
     gap: 6px;
+    // flex-wrap: wrap; // 버튼이 한 줄에 다 안 들어갈 경우를 대비
     button {
       flex: 1;
       padding: 13px 0;
@@ -163,10 +181,12 @@
   }
 }
 
-.input-icon {
+.inputIcon {
+  // .input-icon
   position: relative;
+  // input이 블록 레벨 요소임을 명확히 할 필요는 없지만, flex 컨테이너에서 flex-basis 등을 고려할 수 있음.
   input[type='date'] {
-    width: 100%;
+    width: 100%; // 부모(.inputIcon) 너비에 맞춤
   }
 }
 
@@ -179,7 +199,8 @@ select {
   padding-right: 38px !important;
 }
 
-.register-submit {
+.registerSubmit {
+  // .register-submit
   width: 100%;
   margin-top: 28px;
   padding: 15px 0;
@@ -198,12 +219,14 @@ select {
 }
 
 @media (max-width: 900px) {
-  .register-container {
+  .registerContainer {
+    // .register-container
     width: 97vw;
     min-width: 0;
     padding: 24px 8px;
   }
-  .register-grid {
+  .registerGrid {
+    // .register-grid
     flex-direction: column;
     gap: 0;
   }

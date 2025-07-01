@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Login.scss';
+import styles from './Login.module.scss';
 import { Link } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
 
@@ -12,30 +12,31 @@ const Login = () => {
     e.preventDefault();
     // 로그인 로직
     console.log({ email, password, remember });
+    // 실제 로그인 구현 시 여기에 API 호출 로직 등을 추가합니다.
   };
 
   return (
-    <div className='login-wrapper'>
-      <div className='login-box'>
-        <div className='logo-section'>
+    <div className={styles.loginWrapper}>
+      <div className={styles.loginBox}>
+        <div className={styles.logoSection}>
           <img src={Logo} alt='사무보조 로고' />
         </div>
         <form onSubmit={handleSubmit}>
           <input
-            className='email-input'
+            className={styles.emailInput}
             type='email'
             placeholder='Email'
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
-            className='password-input'
+            className={styles.passwordInput}
             type='password'
             placeholder='Password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <div className='remember-section'>
+          <div className={styles.rememberSection}>
             <input
               type='checkbox'
               id='remember'
@@ -46,18 +47,18 @@ const Login = () => {
           </div>
           <button type='submit'>로그인</button>
         </form>
-        <div className='links'>
+        <div className={styles.links}>
           <span>
             <Link to={'/'}>ID 찾기</Link> | <Link to={'/'}>PW 찾기</Link> |{' '}
             <Link to={'/signup'}>회원가입 하기</Link>
           </span>
         </div>
-        <div className='top-links'>
+        <div className={styles.topLinks}>
           <span>
             <Link to={'/signup'}>회원가입</Link> |{' '}
             <Link to={'/'}>비밀번호 찾기</Link>
           </span>
-          <span className='icon'>👤</span>
+          <span className={styles.icon}>👤</span>
         </div>
       </div>
     </div>

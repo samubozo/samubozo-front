@@ -1,32 +1,36 @@
-import React, { useState } from "react";
-import "./VerifyModal.scss";
+import React, { useState } from 'react';
+import styles from './VerifyModal.module.scss';
 
 const VerifyModal = ({ email, onClose, onResend, onComplete, timer }) => {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState('');
 
   return (
-    <div className="modal-dim">
-      <div className="verify-modal">
-        <h2 className="modal-title">인증번호 입력</h2>
-        <div className="modal-email">{email}</div>
-        <div className="modal-row">
-          <span className="modal-timer">{timer}</span>
+    <div className={styles.modalDim}>
+      <div className={styles.verifyModal}>
+        <h2 className={styles.modalTitle}>인증번호 입력</h2>
+        <div className={styles.modalEmail}>{email}</div>
+        <div className={styles.modalRow}>
+          <span className={styles.modalTimer}>{timer}</span>
           <input
-            className="modal-input"
-            type="text"
+            className={styles.modalInput}
+            type='text'
             value={code}
-            onChange={e => setCode(e.target.value)}
+            onChange={(e) => setCode(e.target.value)}
           />
-          <button className="modal-resend" onClick={onResend}>재발송</button>
+          <button className={styles.modalResend} onClick={onResend}>
+            재발송
+          </button>
         </div>
-        <div className="modal-btns">
+        <div className={styles.modalBtns}>
           <button
-            className="modal-complete"
+            className={styles.modalComplete}
             onClick={() => onComplete(code)}
           >
             완료
           </button>
-          <button className="modal-cancel" onClick={onClose}>취소</button>
+          <button className={styles.modalCancel} onClick={onClose}>
+            취소
+          </button>
         </div>
       </div>
     </div>
