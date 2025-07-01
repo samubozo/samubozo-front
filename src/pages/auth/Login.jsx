@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './Login.scss';
 import { Link } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
+import axios from 'axios';
+import { API_BASE_URL, AUTH } from '../../configs/host-config';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +14,10 @@ const Login = () => {
     e.preventDefault();
     // 로그인 로직
     console.log({ email, password, remember });
+    // 실제 로그인 구현 시 여기에 API 호출 로직 등을 추가합니다.
+    axios.post(
+      `${API_BASE_URL}${AUTH}/`
+    )
   };
 
   return (
