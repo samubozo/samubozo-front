@@ -8,6 +8,7 @@ import Header from '../components/Header';
 import Dashboard from '../pages/main/Dashboard';
 import LayoutHeader from '../components/LayoutHeader';
 import Employee from '../pages/employee/EmployeeTable';
+import OrgChart from '../pages/organizationChart/OrgChart';
 
 const AppRouter = () => {
   return (
@@ -22,6 +23,7 @@ const AppRouter = () => {
         <Route path='/salary' element={<Employee />} />
         <Route path='/calendar' element={<Employee />} />
         <Route path='/message' element={<Employee />} />
+        <Route path='/orgchart' element={<OrgChart />} />
       </Route>
     </Routes>
   );
