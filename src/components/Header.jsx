@@ -25,7 +25,7 @@ const Header = () => {
             홈
           </NavLink>
           <span className={styles.headerDivider}>|</span>
-          <NavLink to='/' className={styles.headerLink}>
+          <NavLink to='/orgchart' className={styles.headerLink}>
             조직도
           </NavLink>
           <span className={styles.headerDivider}>|</span>
@@ -82,7 +82,7 @@ const Header = () => {
           </li>
           <li>
             <NavLink
-              to='/calendar'
+              to='/schedule'
               className={({ isActive }) =>
                 isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
