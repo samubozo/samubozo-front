@@ -29,7 +29,7 @@ const Header = () => {
             조직도
           </NavLink>
           <span className={styles.headerDivider}>|</span>
-          <NavLink to='/' className={styles.headerLink}>
+          <NavLink to='/approval' className={styles.headerLink}>
             전자결제
           </NavLink>
           <div className={styles.headerIcons}>
