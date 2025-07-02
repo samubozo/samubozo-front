@@ -250,7 +250,10 @@ const EmployeeTable = () => {
           </tbody>
         </table>
       </div>
-      <EmployeeDetail selectedEmployee={filteredEmployees[selectedRow]} />
+      {/* 직원 상세정보: 행 클릭 시에만 노출 */}
+      {selectedRow !== null && (
+        <EmployeeDetail selectedEmployee={filteredEmployees[selectedRow]} />
+      )}
     </div>
   );
 };
