@@ -46,21 +46,27 @@
 
 .headerMainRow {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   position: relative;
   min-height: 82px;
   padding-top: 25px;
 }
 
+.headerMainLeft {
+  flex: 1;
+}
+
 .headerLogoRow {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 14px;
+  margin: 0 auto;
 }
 
 .headerLogo {
-  height: 58px;
+  height: 110px;
   object-fit: contain;
 }
 
@@ -70,6 +76,13 @@
   color: #66be80;
   margin-top: 2px;
   letter-spacing: 0.5px;
+}
+
+.headerMainRight {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .headerRight {
@@ -143,4 +156,11 @@
 
 .navLink:hover:not(.active) {
   background: #5caf7b;
+}
+
+.headerChatbotWrap {
+  position: relative;
+  display: inline-block;
+  z-index: 100;
+  margin-left: 24px;
 }

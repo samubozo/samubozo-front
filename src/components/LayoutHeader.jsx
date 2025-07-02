@@ -5,8 +5,8 @@ import { Outlet } from 'react-router-dom';
 const LayoutHeader = () => {
   return (
     <div>
-      <Header />
-      <Outlet/>
+      <Header showChatbot />
+      <Outlet />
     </div>
   );
 };
