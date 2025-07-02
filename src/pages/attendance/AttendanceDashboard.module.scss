@@ -412,3 +412,27 @@
   color: #1976d2;
   font-weight: 600;
 }
+
+.absenceBtn {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.absenceBtn:hover {
+  background: #388e3c;
+}
+
+.todayRow,
+.todayRow td {
+  background: #fffde7 !important;
+  border: 2px solid #ffd600 !important;
+  transition:
+    background 0.2s,
+    border 0.2s;
+}
