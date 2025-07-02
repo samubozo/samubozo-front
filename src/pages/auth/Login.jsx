@@ -7,6 +7,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -49,17 +50,89 @@ const Login = () => {
         </form>
         <div className={styles.links}>
           <span>
-            <Link to={'/'}>ID 찾기</Link> | <Link to={'/'}>PW 찾기</Link> |{' '}
+            <a
+              href='#'
+              onClick={(e) => {
+                e.preventDefault();
+                setShowModal(true);
+              }}
+            >
+              ID 찾기
+            </a>{' '}
+            |<Link to={'/passwordFind'}>PW 찾기</Link>|
             <Link to={'/signup'}>회원가입 하기</Link>
           </span>
         </div>
         <div className={styles.topLinks}>
           <span>
             <Link to={'/signup'}>회원가입</Link> |{' '}
-            <Link to={'/'}>비밀번호 찾기</Link>
+            <Link to={'/passwordFind'}>비밀번호 찾기</Link>
           </span>
           <span className={styles.icon}>👤</span>
         </div>
+        {/* 커스텀 안내 모달 */}
+        {showModal && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.18)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 16,
+                boxShadow: '0 6px 32px rgba(40,80,80,0.13)',
+                padding: '38px 38px 28px 38px',
+                minWidth: 320,
+                textAlign: 'center',
+                position: 'relative',
+              }}
+            >
+              <div style={{ fontSize: 44, marginBottom: 12 }}>📞</div>
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: '#25663b',
+                  marginBottom: 10,
+                }}
+              >
+                인사팀에 문의해주세요
+              </div>
+              <div style={{ fontSize: 18, color: '#444', marginBottom: 18 }}>
+                연락처:{' '}
+                <span style={{ fontWeight: 600, color: '#1fa366' }}>
+                  010-1234-5678
+                </span>
+              </div>
+              <button
+                style={{
+                  background: '#1fa366',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 17,
+                  fontWeight: 600,
+                  padding: '10px 32px',
+                  cursor: 'pointer',
+                  marginTop: 8,
+                }}
+                onClick={() => setShowModal(false)}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
