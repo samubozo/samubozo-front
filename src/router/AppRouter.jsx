@@ -27,9 +27,10 @@ const AppRouter = () => {
         <Route path='/dashboard' element={<Dashboard />} />
         {/* 인사 관리 */}
         <Route path='/employee' element={<Employee />} />
+        <Route path='/payroll' element={<PayrollManagement />} />
 
         <Route path='/attendance' element={<AttendanceDashboard />} />
-        <Route path='/salary' element={<PayrollManagement />} />
+
         <Route path='/schedule' element={<Schedule />} />
         {/* 메시지 관리 */}
         <Route path='/message' element={<Message />} />

@@ -34,10 +34,6 @@ const PayrollManagement = () => {
       <div className={styles['payroll-filter-section']}>
         <div className={styles['filter-group']}>
           <label>
-            급여월:
-            <input type='month' />
-          </label>
-          <label>
             부서:
             <select>
               <option>전체</option>
@@ -47,13 +43,12 @@ const PayrollManagement = () => {
             </select>
           </label>
           <label>
-            지급일:
-            <input type='date' />
+            급여월:
+            <input type='month' />
           </label>
         </div>
         <div className={styles['button-group']}>
-          <button>엑셀 다운로드</button>
-          <button>인쇄</button>
+          <button>급여명세서 출력</button>
         </div>
       </div>
 
