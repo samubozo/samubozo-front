@@ -31,11 +31,13 @@ function RobotIcon() {
   );
 }
 
-const Chatbot = () => {
+const Chatbot = ({ inHeader }) => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([{ from: 'bot', text: BOT_GUIDE }]);
+  const [showTooltip, setShowTooltip] = useState(false);
   const chatEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     if (open && chatEndRef.current) {
@@ -48,7 +50,6 @@ const Chatbot = () => {
     const userMsg = { from: 'user', text: input };
     setMessages((msgs) => [...msgs, userMsg]);
     setInput('');
-    // 임시 답변
     setTimeout(() => {
       setMessages((msgs) => [
         ...msgs,
@@ -58,19 +59,15 @@ const Chatbot = () => {
         },
       ]);
     }, 700);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
   };
 
   return (
-    <div className={styles.chatbotWrap}>
+    <div className={inHeader ? styles.headerChatbotWrap : styles.chatbotWrap}>
       {open && (
-        <div className={styles.chatWindow}>
+        <div className={inHeader ? styles.headerChatWindow : styles.chatWindow}>
           <div className={styles.header}>
             사무보조 챗봇{' '}
             <button className={styles.closeBtn} onClick={() => setOpen(false)}>
@@ -90,9 +87,9 @@ const Chatbot = () => {
           </div>
           <div className={styles.inputBox}>
             <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
               placeholder={PLACEHOLDER}
               rows={1}
             />
@@ -102,13 +99,22 @@ const Chatbot = () => {
           </div>
         </div>
       )}
-      <button
-        className={styles.fab}
-        onClick={() => setOpen((o) => !o)}
-        aria-label='사무보조 챗봇 열기'
-      >
-        <RobotIcon />
-      </button>
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <button
+          className={inHeader ? styles.headerFab : styles.fab}
+          onClick={() => setOpen((o) => !o)}
+          aria-label='사무보조 챗봇 열기'
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
+          <RobotIcon />
+        </button>
+        {showTooltip && (
+          <div className={styles.chatbotTooltip}>
+            사이트안내와 인사 업무 정보를 알려주는 챗봇입니다.
+          </div>
+        )}
+      </div>
     </div>
   );
 };
