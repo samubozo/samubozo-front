@@ -11,6 +11,7 @@ import Employee from '../pages/employee/EmployeeTable';
 import OrgChart from '../pages/organizationChart/OrgChart';
 import Schedule from '../pages/schedule/Schedule';
 import Message from '../pages/message/Message';
+import AttendanceDashboard from '../pages/attendance/AttendanceDashboard';
 
 const AppRouter = () => {
   return (
@@ -21,7 +22,7 @@ const AppRouter = () => {
       <Route element={<LayoutHeader />}>
         <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/employee' element={<Employee />} />
-        <Route path='/attendance' element={<Employee />} />
+        <Route path='/attendance' element={<AttendanceDashboard />} />
         <Route path='/salary' element={<Employee />} />
         <Route path='/schedule' element={<Schedule />} />
         <Route path='/message' element={<Message />} />
