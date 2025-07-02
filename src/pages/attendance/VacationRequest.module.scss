@@ -1,0 +1,138 @@
+/* VacationRequest.module.scss */
+
+.vacationRequest {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+
+  h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #2c3e50;
+  }
+
+  form {
+    > div {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 1rem;
+    }
+
+    /* 1. 휴가신청일 + 연차/반차 */
+    > div:nth-of-type(1) {
+      label {
+        min-width: 90px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 1rem;
+      }
+      input[type='date'] {
+        width: 140px;
+        padding: 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+      span {
+        display: inline-block;
+        min-width: 60px;
+        font-size: 1rem;
+        color: #495057;
+      }
+      select {
+        width: 80px;
+        padding: 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        background: #f8f9fa;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+    }
+
+    /* 2. 휴가기간 */
+    > div:nth-of-type(2) {
+      label {
+        min-width: 90px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 1rem;
+      }
+      input[type='date'] {
+        width: 140px;
+        padding: 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+      span:first-of-type {
+        margin: 0 8px;
+        color: #6c757d;
+        font-size: 1.1rem;
+      }
+      span:last-of-type {
+        margin-left: 16px;
+        color: #888888;
+        min-width: 100px;
+        font-size: 0.95rem;
+      }
+    }
+
+    /* 3. 휴가사유 */
+    > div:nth-of-type(3) {
+      label {
+        min-width: 90px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 1rem;
+      }
+      input[type='text'] {
+        flex: 1;
+        padding: 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+    }
+
+    /* 4. 액션 버튼 */
+    > div:nth-of-type(4) {
+      justify-content: flex-end;
+      gap: 16px;
+
+      button {
+        padding: 0.5rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+
+        &:first-child {
+          background: #7ec08e;
+          color: #ffffff;
+
+          &:hover {
+            transform: translateY(-1px);
+            background: darken(#7ec08e, 5%);
+          }
+        }
+        &:last-child {
+          background: #b7d7c2;
+          color: #ffffff;
+
+          &:hover {
+            transform: translateY(-1px);
+            background: darken(#b7d7c2, 5%);
+          }
+        }
+      }
+    }
+  }
+}

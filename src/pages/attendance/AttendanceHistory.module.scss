@@ -1,0 +1,292 @@
+.attendanceHistory {
+  padding: 2rem;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+
+  .historyHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0;
+    }
+
+    .filterControls {
+      display: flex;
+      gap: 1rem;
+
+      select {
+        padding: 0.5rem 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 1rem;
+        background-color: white;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+          outline: none;
+          border-color: #007bff;
+          box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+      }
+    }
+  }
+
+  .monthlyStats {
+    margin-bottom: 2rem;
+
+    .statsCard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+      .statItem {
+        text-align: center;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #e9ecef;
+        }
+
+        .statValue {
+          font-size: 1.8rem;
+          font-weight: 700;
+          color: #007bff;
+          margin-bottom: 0.5rem;
+        }
+
+        .statLabel {
+          font-size: 0.9rem;
+          color: #6c757d;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  .attendanceTableContainer {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+
+    .tableHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #e9ecef;
+      background-color: #f8f9fa;
+
+      h2 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+      }
+
+      .btnExport {
+        padding: 0.5rem 1rem;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #218838;
+        }
+      }
+    }
+
+    .tableWrapper {
+      overflow-x: auto;
+
+      .attendanceTable {
+        width: 100%;
+        border-collapse: collapse;
+
+        th,
+        td {
+          padding: 1rem;
+          text-align: center;
+          border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+          background-color: #f8f9fa;
+          font-weight: 600;
+          color: #495057;
+          font-size: 0.9rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        td {
+          color: #2c3e50;
+          font-size: 0.95rem;
+        }
+
+        tbody tr {
+          transition: background-color 0.2s ease;
+
+          &:hover {
+            background-color: #f8f9fa;
+          }
+
+          &:last-child td {
+            border-bottom: none;
+          }
+        }
+
+        .statusBadge {
+          display: inline-block;
+          padding: 0.25rem 0.75rem;
+          border-radius: 15px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+
+          &.statusNormal {
+            background-color: #d4edda;
+            color: #155724;
+          }
+
+          &.statusLate {
+            background-color: #fff3cd;
+            color: #856404;
+          }
+
+          &.statusAbsent {
+            background-color: #f8d7da;
+            color: #721c24;
+          }
+
+          &.statusVacation {
+            background-color: #d1ecf1;
+            color: #0c5460;
+          }
+        }
+      }
+    }
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+
+    button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      background-color: white;
+      color: #495057;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .pageNumbers {
+      display: flex;
+      gap: 0.5rem;
+
+      .pageNumber {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border: 1px solid #ced4da;
+        background-color: white;
+        color: #495057;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+
+        &:hover {
+          background-color: #e9ecef;
+          border-color: #adb5bd;
+        }
+
+        &.active {
+          background-color: #007bff;
+          color: white;
+          border-color: #007bff;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .attendanceHistory {
+    padding: 1rem;
+
+    .historyHeader {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
+
+      .filterControls {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    .monthlyStats .statsCard {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .attendanceTableContainer {
+      .tableHeader {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .tableWrapper {
+        .attendanceTable {
+          font-size: 0.8rem;
+
+          th,
+          td {
+            padding: 0.5rem;
+          }
+        }
+      }
+    }
+  }
+}

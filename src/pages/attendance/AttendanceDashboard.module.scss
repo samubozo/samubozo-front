@@ -1,0 +1,1085 @@
+.attendanceDashboard {
+  // =========================
+  // 상단 헤더 테이블 (dashboardHeaderTable)
+  // =========================
+  .dashboardHeaderTable {
+    display: flex;
+    align-items: stretch;
+    gap: 1.5rem;
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+
+  // 왼쪽: 원형 그래프 + 연차 정보
+  .leftFlexBox {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    height: 100%;
+    justify-content: center;
+    gap: 1rem;
+    padding: 10px;
+    .circleGraphBox {
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      // 원형 그래프
+      .circleGraph {
+        margin-bottom: -60px;
+        z-index: 1;
+      }
+      .percentText {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #388e3c;
+        margin-top: -50px;
+        margin-bottom: 0.2rem;
+        z-index: 2;
+      }
+      .usageLabel {
+        color: #388e3c;
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+      }
+    }
+    .leaveTable {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 0.3rem;
+      background: none;
+      font-size: 1.05rem;
+      margin-top: 0.5rem;
+      border: 2px solid #b7d7b0;
+      td {
+        border: none;
+        padding: 0.4rem 0.8rem;
+        background: #e6f2e2;
+        color: #388e3c;
+        font-weight: 500;
+        &:last-child {
+          background: #fff;
+          color: #388e3c;
+          font-weight: 700;
+          text-align: right;
+        }
+      }
+    }
+  }
+
+  // 가운데: 내 근무 시간
+  .workTimeBox {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    background: #fff;
+    border: 2px solid #b7d7b0;
+    overflow: hidden;
+    .workTimeTable {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      table-layout: fixed;
+      border-spacing: 0;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      th {
+        background: #e6f2e2;
+        color: #222;
+        font-weight: 700;
+        font-size: 1.15rem;
+        text-align: center;
+        padding: 1rem 0.5rem;
+        border-bottom: 1px solid #b7d7b0;
+      }
+      tr {
+        height: 60px;
+        border-bottom: 1px solid #d9e4d4;
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+      td {
+        padding: 0 1rem;
+        font-size: 1.05rem;
+        color: #222;
+        vertical-align: middle;
+        border-right: 1px solid #d9e4d4;
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        &:first-child {
+          text-align: left;
+          font-weight: 500;
+          width: 60%;
+        }
+        &:last-child {
+          text-align: right;
+          font-weight: 700;
+          color: #388e3c;
+          width: 40%;
+          border-right: none;
+        }
+      }
+    }
+  }
+
+  // 오른쪽: 출근/퇴근/휴가신청
+  .rightCell {
+    flex: 2;
+    text-align: center;
+    .rightFlexBox {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      height: 100%;
+      width: 100%;
+      padding: 0;
+      .rightTableWrap {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        .rightTable {
+          width: 100%;
+          min-width: 400px;
+          margin-right: 0;
+          height: 100%;
+          vertical-align: middle;
+          display: table;
+          table-layout: fixed;
+          border-collapse: separate;
+          border-spacing: 0 0.3rem;
+          background: none;
+          margin: 0 auto;
+          th {
+            background: #e6f2e2;
+            color: #222;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 0.6rem 1.2rem;
+            border: 2px solid #b7d7b0;
+          }
+          td {
+            border: 2px solid #b7d7b0;
+            padding: 0.5rem 0.6rem;
+            background: #fff;
+            font-size: 1.05rem;
+            text-align: center;
+            min-width: 60px;
+            vertical-align: middle;
+            &[rowspan='2'] {
+              vertical-align: middle;
+              background: #f8f9f5;
+              min-width: 90px;
+            }
+          }
+          .btnMain {
+            width: 100%;
+            min-width: 90px;
+            margin: 0 0.2rem 0 0;
+            display: inline-block;
+          }
+          .btnSub {
+            width: 100%;
+            min-width: 90px;
+            margin: 0.2rem 0;
+            display: inline-block;
+          }
+          .chkLabel {
+            margin: 0 0.2rem;
+            font-size: 0.98rem;
+            color: #333;
+            font-weight: 500;
+            display: inline-block;
+            input[type='checkbox'] {
+              margin-right: 0.2rem;
+              accent-color: #4caf50;
+            }
+          }
+        }
+        .todayTitle {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #222;
+          background: #e6f2e2 !important;
+          text-align: center;
+        }
+        .centerTime {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: black;
+          margin-bottom: 0.5rem;
+          text-align: left;
+          width: 60%;
+          min-width: 400px;
+        }
+      }
+    }
+  }
+
+  // =========================
+  // 하단 근태 테이블 (tableSection)
+  // =========================
+  .tableSection {
+    background: #f3fbe9;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    .tableHeader {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      .btnNav {
+        background: #e6f2e2;
+        border: none;
+        border-radius: 6px;
+        padding: 0.3rem 1rem;
+        font-size: 1.1rem;
+        color: #388e3c;
+        cursor: pointer;
+        font-weight: 700;
+        &:hover {
+          background: #c8e6c9;
+        }
+      }
+      .btnToday {
+        background: #fff;
+        border: 1px solid #b2dfdb;
+        border-radius: 6px;
+        padding: 0.3rem 1.2rem;
+        font-size: 1rem;
+        color: #388e3c;
+        cursor: pointer;
+        font-weight: 600;
+        margin-left: auto;
+        &:hover {
+          background: #b2dfdb;
+        }
+      }
+      .monthTitle {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #388e3c;
+        margin: 0 1rem;
+      }
+    }
+    .attendanceTable {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+      th,
+      td {
+        border: 1px solid #e0e0e0;
+        padding: 0.5rem 0.3rem;
+        text-align: center;
+        font-size: 0.98rem;
+      }
+      th {
+        background: #e6f2e2;
+        color: #388e3c;
+        font-weight: 700;
+      }
+      tbody tr:nth-child(even) {
+        background: #f8f9fa;
+      }
+      .dateCell {
+        color: #d32f2f;
+        font-weight: 600;
+      }
+    }
+  }
+
+  // =========================
+  // 모달 스타일
+  // =========================
+  .modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.18);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modalContent {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+    padding: 2.5rem 2rem 2rem 2rem;
+    min-width: 500px;
+    max-width: 95vw;
+    width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modalClose {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #388e3c;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  // =========================
+  // 반응형 스타일
+  // =========================
+  @media (max-width: 900px) {
+    .dashboardHeaderTable,
+    .tableSection {
+      padding: 1rem 0.5rem;
+    }
+    & {
+      padding: 1rem 0.2rem 2rem 0.2rem;
+    }
+    .modalContent {
+      padding: 1rem 0.5rem 1rem 0.5rem;
+    }
+  }
+
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  background: #f8f9f5;
+  padding: 2rem 2rem 3rem 2rem;
+  min-height: 100vh;
+
+  .centerCell {
+    flex: 1;
+    text-align: center;
+  }
+
+  .rightFlexBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    height: 100%;
+    width: 100%;
+    padding: 0;
+  }
+
+  .centerFlexBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    height: 100%;
+    padding: 0;
+  }
+
+  .centerTable {
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+    vertical-align: middle;
+    display: table;
+  }
+
+  .centerTable th,
+  .centerTable td {
+    padding: 0.6rem 1.2rem;
+  }
+
+  .rightTableWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .centerTime {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: black;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    width: 60%;
+    min-width: 400px;
+  }
+
+  .rightTable {
+    width: 100%;
+    min-width: 400px;
+    margin-right: 0;
+    height: 100%;
+    vertical-align: middle;
+    display: table;
+  }
+
+  .rightTable th,
+  .rightTable td {
+    text-align: center;
+    min-width: 80px;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .dashboardContent {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .attendanceCard,
+  .statsCard,
+  .vacationCard {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+  }
+
+  .attendanceCard {
+    .statusIndicator {
+      text-align: center;
+      margin-bottom: 2rem;
+
+      .status {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+
+        &.notChecked {
+          background-color: #f8f9fa;
+          color: #6c757d;
+          border: 2px solid #dee2e6;
+        }
+
+        &.checkedIn {
+          background-color: #d4edda;
+          color: #155724;
+          border: 2px solid #c3e6cb;
+        }
+
+        &.checkedOut {
+          background-color: #d1ecf1;
+          color: #0c5460;
+          border: 2px solid #bee5eb;
+        }
+      }
+    }
+
+    .timeDisplay {
+      margin-bottom: 2rem;
+
+      .timeItem {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e9ecef;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        label {
+          font-weight: 500;
+          color: #495057;
+        }
+
+        span {
+          font-weight: 600;
+          color: #2c3e50;
+          font-family: 'Courier New', monospace;
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    .actionButtons {
+      text-align: center;
+
+      button {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 120px;
+
+        &.btnCheckin {
+          background-color: #28a745;
+          color: white;
+
+          &:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+          }
+        }
+
+        &.btnCheckout {
+          background-color: #007bff;
+          color: white;
+
+          &:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+          }
+        }
+      }
+    }
+  }
+
+  .statsCard {
+    .statsHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+
+      h2 {
+        margin-bottom: 0;
+      }
+
+      .statsLink {
+        font-size: 0.9rem;
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #0056b3;
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .statsGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+
+      .statItem {
+        text-align: center;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #e9ecef;
+        }
+
+        .statValue {
+          font-size: 2rem;
+          font-weight: 700;
+          color: #007bff;
+          margin-bottom: 0.5rem;
+        }
+
+        .statLabel {
+          font-size: 0.9rem;
+          color: #6c757d;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  .vacationCard {
+    .vacationStats {
+      margin-bottom: 2rem;
+
+      .vacationItem {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e9ecef;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .vacationType {
+          font-weight: 500;
+          color: #495057;
+        }
+
+        .vacationCount {
+          font-weight: 600;
+          color: #2c3e50;
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    .btnVacationRequest {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #17a2b8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      text-align: center;
+
+      &:hover {
+        background-color: #138496;
+        transform: translateY(-1px);
+        color: white;
+        text-decoration: none;
+      }
+    }
+  }
+}
+
+.summarySection {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  background: #e6f2e2;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.circleGraphBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+  margin-right: 1.5rem;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+.circleGraph {
+  margin-bottom: -60px;
+  z-index: 1;
+}
+.percentText {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #388e3c;
+  margin-top: -50px;
+  margin-bottom: 0.2rem;
+  z-index: 2;
+}
+.usageLabel {
+  color: #388e3c;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+.leaveTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.3rem;
+  background: none;
+  font-size: 1.05rem;
+  margin-top: 0.5rem;
+  border: 2px solid #b7d7b0;
+}
+.leaveTable td {
+  border: none;
+  padding: 0.4rem 0.8rem;
+  background: #e6f2e2;
+  color: #388e3c;
+  font-weight: 500;
+}
+.leaveTable td:last-child {
+  background: #fff;
+  color: #388e3c;
+  font-weight: 700;
+  text-align: right;
+}
+.centerTable,
+.rightTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.3rem;
+  background: none;
+  margin: 0 auto;
+}
+.centerTable th,
+.rightTable th {
+  background: #e6f2e2;
+  color: #388e3c;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 0.6rem 1.2rem;
+}
+.centerTable td,
+.rightTable td {
+  border: none;
+  padding: 0.6rem 1.2rem;
+  background: #fff;
+  font-size: 1.05rem;
+  text-align: center;
+}
+.todayTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #222;
+  background: #e6f2e2 !important;
+  text-align: center;
+}
+
+.actionSection {
+  display: flex;
+  gap: 2rem;
+  background: #f3fbe9;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  align-items: flex-start;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.timeBox {
+  min-width: 180px;
+  background: #e6f2e2;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 2rem;
+}
+.timeTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #388e3c;
+  margin-bottom: 0.7rem;
+}
+.timeRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: #333;
+  font-size: 1rem;
+}
+.todayBox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.todayDate {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #388e3c;
+  margin-bottom: 0.2rem;
+}
+.timeInputs {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+.timeValue {
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  color: #333;
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 0.2rem 0.7rem;
+  margin: 0 0.2rem;
+}
+.actionBtns {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+.btnMain {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: #388e3c;
+  }
+}
+.btnSub {
+  background: #e0f2f1;
+  color: #388e3c;
+  border: 1px solid #b2dfdb;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: #b2dfdb;
+  }
+}
+
+.tableSection {
+  background: #f3fbe9;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.tableHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.monthTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #388e3c;
+  margin: 0 1rem;
+}
+.btnNav {
+  background: #e6f2e2;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 1rem;
+  font-size: 1.1rem;
+  color: #388e3c;
+  cursor: pointer;
+  font-weight: 700;
+  &:hover {
+    background: #c8e6c9;
+  }
+}
+.btnToday {
+  background: #fff;
+  border: 1px solid #b2dfdb;
+  border-radius: 6px;
+  padding: 0.3rem 1.2rem;
+  font-size: 1rem;
+  color: #388e3c;
+  cursor: pointer;
+  font-weight: 600;
+  margin-left: auto;
+  &:hover {
+    background: #b2dfdb;
+  }
+}
+.attendanceTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  th,
+  td {
+    border: 1px solid #e0e0e0;
+    padding: 0.5rem 0.3rem;
+    text-align: center;
+    font-size: 0.98rem;
+  }
+  th {
+    background: #e6f2e2;
+    color: #388e3c;
+    font-weight: 700;
+  }
+  tbody tr:nth-child(even) {
+    background: #f8f9fa;
+  }
+}
+.dateCell {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .summarySection,
+  .actionSection,
+  .tableSection {
+    padding: 1rem 0.5rem;
+  }
+  .attendanceDashboard {
+    padding: 1rem 0.2rem 2rem 0.2rem;
+  }
+}
+
+.topTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0;
+  margin-bottom: 2rem;
+  table-layout: fixed;
+}
+.leaveCell,
+.workCell,
+.actionCell {
+  vertical-align: top;
+  background: #f3fbe9;
+  border: 1.5px solid #b2dfdb;
+  padding: 0;
+}
+.leaveCell {
+  width: 180px;
+}
+.workCell {
+  width: 260px;
+}
+.actionCell {
+  width: auto;
+  min-width: 420px;
+}
+
+.innerTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: none;
+}
+.innerTable td,
+.innerTable th {
+  border: 1px solid #c8e6c9;
+  padding: 0.6rem 1rem;
+  font-size: 1.05rem;
+  background: #fff;
+  text-align: left;
+}
+.innerTable th {
+  background: #e6f2e2;
+  color: #388e3c;
+  font-weight: 700;
+  text-align: center;
+}
+.leaveCell .innerTable td:first-child {
+  background: #e6f2e2;
+  color: #388e3c;
+  font-weight: 500;
+  width: 60%;
+}
+.leaveCell .innerTable td:last-child {
+  text-align: right;
+  font-weight: 700;
+  color: #388e3c;
+}
+.workTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #388e3c;
+  background: #e6f2e2 !important;
+}
+.todayTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #222;
+  background: #e6f2e2 !important;
+  text-align: center;
+}
+.actionCell .innerTable td {
+  text-align: center;
+  background: #fff;
+}
+.btnMain {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0 0.2rem;
+  transition: background 0.2s;
+  &:hover {
+    background: #388e3c;
+  }
+}
+.btnSub {
+  background: #e0f2f1;
+  color: #388e3c;
+  border: 1px solid #b2dfdb;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0 0.2rem;
+  transition: background 0.2s;
+  &:hover {
+    background: #b2dfdb;
+  }
+}
+.chkLabel {
+  margin: 0 0.3rem;
+  font-size: 0.98rem;
+  color: #333;
+  font-weight: 500;
+  input[type='checkbox'] {
+    margin-right: 0.2rem;
+    accent-color: #4caf50;
+  }
+}
+.vacationFormWrap {
+  margin-top: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 2rem 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .topTable,
+  .innerTable {
+    font-size: 0.95rem;
+  }
+  .vacationFormWrap {
+    padding: 1rem 0.5rem;
+  }
+}

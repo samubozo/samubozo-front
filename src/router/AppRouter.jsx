@@ -11,6 +11,9 @@ import Employee from '../pages/employee/EmployeeTable';
 import OrgChart from '../pages/organizationChart/OrgChart';
 import Schedule from '../pages/schedule/Schedule';
 import Message from '../pages/message/Message';
+import AttendanceDashboard from '../pages/attendance/AttendanceDashboard';
+import AttendanceHistory from '../pages/attendance/AttendanceHistory';
+import VacationRequest from '../pages/attendance/VacationRequest';
 
 const AppRouter = () => {
   return (
@@ -21,11 +24,15 @@ const AppRouter = () => {
       <Route element={<LayoutHeader />}>
         <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/employee' element={<Employee />} />
-        <Route path='/attendance' element={<Employee />} />
         <Route path='/salary' element={<Employee />} />
         <Route path='/schedule' element={<Schedule />} />
         <Route path='/message' element={<Message />} />
         <Route path='/orgchart' element={<OrgChart />} />
+        <Route path='/calendar' element={<Employee />} />
+        <Route path='/message' element={<Employee />} />
+        <Route path='/attendance' element={<AttendanceDashboard />} />
+        <Route path='/attendance/history' element={<AttendanceHistory />} />
+        <Route path='/attendance/vacation' element={<VacationRequest />} />
       </Route>
     </Routes>
   );
