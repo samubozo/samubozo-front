@@ -12,7 +12,9 @@ import PayrollManagement from '../pages/payroll/PayrollManagement';
 import OrgChart from '../pages/organizationChart/OrgChart';
 import Schedule from '../pages/schedule/Schedule';
 import Message from '../pages/message/Message';
+import AttendanceDashboard from '../pages/attendance/AttendanceDashboard';
 import Approval from '../pages/approval/Approval';
+
 
 const AppRouter = () => {
   return (
@@ -25,8 +27,8 @@ const AppRouter = () => {
         <Route path='/dashboard' element={<Dashboard />} />
         {/* 인사 관리 */}
         <Route path='/employee' element={<Employee />} />
-        {/* 근태 관리 */}
-        <Route path='/attendance' element={<Employee />} />
+
+        <Route path='/attendance' element={<AttendanceDashboard />} />
         <Route path='/salary' element={<PayrollManagement />} />
         <Route path='/schedule' element={<Schedule />} />
         {/* 메시지 관리 */}
