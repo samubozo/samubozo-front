@@ -30,7 +30,7 @@ const Signup = () => {
         {' '}
         {/* styles.registerNav 적용 */}
         <Link to={'/'}>로그인</Link> | <Link to={'/'}>ID 찾기</Link> |{' '}
-        <Link to={'/'}>PW 찾기</Link>
+        <Link to={'/passwordFind'}>PW 찾기</Link>
         <span className={styles.icon}>👤</span> {/* styles.icon 적용 */}
       </div>
       <img src={Logo} alt='로고' className={styles.registerLogo} />{' '}
