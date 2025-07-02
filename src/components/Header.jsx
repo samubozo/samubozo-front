@@ -79,7 +79,7 @@ const Header = () => {
           </li>
           <li>
             <NavLink
-              to='/salary'
+              to='/payroll'
               className={({ isActive }) =>
                 isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
               }
