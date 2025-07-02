@@ -10,6 +10,7 @@ import LayoutHeader from '../components/LayoutHeader';
 import Employee from '../pages/employee/EmployeeTable';
 import OrgChart from '../pages/organizationChart/OrgChart';
 import Schedule from '../pages/schedule/Schedule';
+import Message from '../pages/message/Message';
 
 const AppRouter = () => {
   return (
@@ -23,7 +24,7 @@ const AppRouter = () => {
         <Route path='/attendance' element={<Employee />} />
         <Route path='/salary' element={<Employee />} />
         <Route path='/schedule' element={<Schedule />} />
-        <Route path='/message' element={<Employee />} />
+        <Route path='/message' element={<Message />} />
         <Route path='/orgchart' element={<OrgChart />} />
       </Route>
     </Routes>
