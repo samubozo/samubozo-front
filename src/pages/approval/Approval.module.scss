@@ -1,0 +1,291 @@
+.approvalWrap {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  padding: 32px 10px 24px 10px;
+  min-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 18px;
+}
+.tabBtn {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  padding: 12px 32px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    border 0.15s;
+  border: 2.5px solid transparent;
+  border-bottom: none;
+  position: relative;
+}
+.tabBtn:hover,
+.tabs button:hover {
+  background: #eafaf1;
+  color: #388e3c;
+  border-color: #48b96c;
+}
+.activeTab {
+  background: #fff;
+  color: #388e3c;
+  border: 2.5px solid #48b96c;
+  border-bottom: 2.5px solid #fff;
+  font-weight: 800;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(72, 185, 108, 0.1);
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.dropdown {
+  position: relative;
+  min-width: 90px;
+  font-size: 15px;
+}
+.dropdownSelected {
+  background: #fff;
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 7px 14px;
+  cursor: pointer;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border 0.15s;
+}
+.dropdownArrow {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #888;
+}
+.dropdownList {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 20;
+  padding: 4px 0;
+}
+.dropdownItem {
+  padding: 8px 16px;
+  font-size: 15px;
+  cursor: pointer;
+  color: #333;
+  &:hover {
+    background: #eafaf1;
+    color: #388e3c;
+  }
+}
+
+.datePicker {
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 15px;
+  color: #222;
+  background: #fafbfc;
+  outline: none;
+  min-width: 120px;
+  transition:
+    border 0.15s,
+    box-shadow 0.15s;
+  &:focus {
+    border-color: #388e3c;
+    background: #eafaf1;
+    box-shadow: 0 2px 8px rgba(72, 185, 108, 0.07);
+  }
+}
+
+.filterInput {
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 15px;
+  color: #222;
+  background: #fafbfc;
+  outline: none;
+  min-width: 120px;
+  transition:
+    border 0.15s,
+    box-shadow 0.15s;
+  &:focus {
+    border-color: #388e3c;
+    background: #eafaf1;
+    box-shadow: 0 2px 8px rgba(72, 185, 108, 0.07);
+  }
+}
+
+.searchBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+.table th,
+.table td {
+  border: 1px solid #e0e0e0;
+  padding: 0 8px;
+  text-align: center;
+  font-size: 15px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+}
+.table th {
+  background: #f5f5f5;
+  font-weight: 700;
+  color: #333;
+}
+.table tr {
+  transition: background 0.13s;
+}
+.table tr:hover {
+  background: #f7fbe9;
+}
+.table tr:last-child td {
+  padding-bottom: 0;
+  border-bottom-width: 0;
+}
+
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+.deleteBtn {
+  background: #fff;
+  color: #888;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 7px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  &:hover {
+    background: #f5f5f5;
+    color: #d33c3c;
+  }
+}
+.rejectBtn {
+  background: #ffe6e6;
+  color: #d33c3c;
+  border: 1.5px solid #f8bcbc;
+  border-radius: 7px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  &:hover {
+    background: #f8bcbc;
+    color: #fff;
+  }
+}
+.approveBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.filterLabel {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin-right: 8px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.tableArea {
+  width: 100%;
+  /* height: 528px; */
+  /* min-height: 528px; */
+  /* max-height: 528px; */
+  overflow-y: visible;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center !important;
+  gap: 6px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+.paginationBtn {
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 4px 13px;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+  transition:
+    background 0.13s,
+    color 0.13s,
+    border 0.13s;
+}
+.paginationBtnActive {
+  background: #388e3c;
+  color: #fff;
+  border-color: #388e3c;
+  font-weight: 700;
+}

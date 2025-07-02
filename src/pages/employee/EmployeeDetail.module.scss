@@ -450,3 +450,160 @@
     display: none;
   }
 }
+
+.certTabBody {
+  margin-top: 24px;
+}
+.certListTitle,
+.certFormTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #388e3c;
+  margin-bottom: 8px;
+  margin-top: 18px;
+}
+.certListTableWrap {
+  background: #fff;
+  border-radius: 12px;
+  border: 1.5px solid #e0e0e0;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  box-shadow: 0 2px 12px rgba(30, 80, 80, 0.07);
+  max-height: calc(44px * 5 + 48px); /* 5행(44px) + 헤더(48px) */
+  overflow-y: auto;
+}
+.certListTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 16px;
+}
+.certListTable th,
+.certListTable td {
+  border: 1px solid #e0e0e0;
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 15px;
+  height: 44px;
+  background: #fff;
+}
+.certListTable th {
+  background: #f5f5f5;
+  font-weight: 700;
+  color: #222;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  border-bottom: 2px solid #d0d0d0;
+}
+.certListTable tbody tr {
+  transition: background 0.13s;
+}
+.certListTable tbody tr:hover {
+  background: #f5fef8;
+}
+.certListTable td {
+  color: #222;
+}
+.certListTable td:last-child,
+.certListTable th:last-child {
+  border-right: none;
+}
+.certListTable tr:last-child td {
+  border-bottom: none;
+}
+.certListTableWrap::-webkit-scrollbar {
+  height: 8px;
+}
+.certListTableWrap::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 4px;
+}
+.certFormWrap {
+  background: #fff;
+  border-radius: 8px;
+  border: 1.5px solid #e0e0e0;
+  padding: 18px 12px 12px 12px;
+  margin-bottom: 12px;
+  max-width: 100%;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+.certFormTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+.certFormTable td:first-child,
+.certFormTable td:nth-child(3) {
+  width: 100px;
+  min-width: 80px;
+  font-weight: 600;
+  background: #f5f5f5;
+}
+.certFormTable td {
+  border: 1px solid #e0e0e0;
+  padding: 8px 10px;
+  font-size: 15px;
+  background: #fff;
+}
+.certFormTable input,
+.certFormTable select {
+  width: calc(100% - 20px);
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1.5px solid #cfd8dc;
+  border-radius: 6px;
+  font-size: 15px;
+  background: #fafbfc;
+  outline: none;
+  box-sizing: border-box;
+}
+.certFormBtnRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+.printBtn,
+.approvalBtn,
+.deleteBtn,
+.editBtn,
+.saveBtn {
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.printBtn {
+  background: #fff;
+  color: #388e3c;
+  border: 1.5px solid #b2dfdb;
+}
+.approvalBtn {
+  background: #eafaf1;
+  color: #388e3c;
+  border: 1.5px solid #b2dfdb;
+}
+.deleteBtn {
+  background: #fff0f0;
+  color: #d33c3c;
+  border: 1.5px solid #f8bcbc;
+}
+.editBtn {
+  background: #fff;
+  color: #888;
+  border: 1.5px solid #e0e0e0;
+}
+.saveBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+}

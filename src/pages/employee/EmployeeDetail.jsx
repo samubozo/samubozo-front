@@ -22,6 +22,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [employeeAccount, setEmployeeAccount] = useState('');
   const [employeeAccountHolder, setEmployeeAccountHolder] = useState('');
   const [employeeAddress, setEmployeeAddress] = useState('');
+  const [activeTab, setActiveTab] = useState('info');
 
   // 선택된 직원에 따라 이름과 전화번호 업데이트
   useEffect(() => {
@@ -40,6 +41,127 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   // 모달 입력 상태
   const [newOrder, setNewOrder] = useState('');
   const [newName, setNewName] = useState('');
+
+  // 직원별 증명서 신청 내역 더미 데이터 맵
+  const certListMap = {
+    1: [
+      {
+        id: '2025-001',
+        type: '재직증명서',
+        date: '2025.06.20',
+        approver: '-',
+        status: '요청됨',
+        purpose: '은행제출용',
+      },
+      {
+        id: '2025-002',
+        type: '경력증명서',
+        date: '2025.06.21',
+        approver: '2025.06.22',
+        status: '승인됨',
+        purpose: '이직용',
+      },
+      {
+        id: '2025-003',
+        type: '재직증명서',
+        date: '2025.06.22',
+        approver: '-',
+        status: '요청됨',
+        purpose: '비자발급',
+      },
+      {
+        id: '2025-004',
+        type: '경력증명서',
+        date: '2025.06.23',
+        approver: '2025.06.24',
+        status: '반려됨',
+        purpose: '해외연수',
+      },
+      {
+        id: '2025-005',
+        type: '재직증명서',
+        date: '2025.06.24',
+        approver: '-',
+        status: '요청됨',
+        purpose: '기타',
+      },
+    ],
+    2: [
+      {
+        id: '2025-101',
+        type: '재직증명서',
+        date: '2025.06.10',
+        approver: '2025.06.11',
+        status: '승인됨',
+        purpose: '은행제출용',
+      },
+      {
+        id: '2025-102',
+        type: '경력증명서',
+        date: '2025.06.12',
+        approver: '-',
+        status: '요청됨',
+        purpose: '이직용',
+      },
+    ],
+    3: [
+      {
+        id: '2025-201',
+        type: '재직증명서',
+        date: '2025.05.01',
+        approver: '2025.05.02',
+        status: '승인됨',
+        purpose: '비자발급',
+      },
+    ],
+    4: [],
+    5: [
+      {
+        id: '2025-501',
+        type: '경력증명서',
+        date: '2025.04.15',
+        approver: '-',
+        status: '요청됨',
+        purpose: '기타',
+      },
+      {
+        id: '2025-502',
+        type: '재직증명서',
+        date: '2025.04.16',
+        approver: '2025.04.17',
+        status: '승인됨',
+        purpose: '은행제출용',
+      },
+      {
+        id: '2025-503',
+        type: '경력증명서',
+        date: '2025.04.18',
+        approver: '-',
+        status: '요청됨',
+        purpose: '이직용',
+      },
+    ],
+  };
+
+  // 선택된 직원에 따라 certList를 변경
+  const [certList, setCertList] = useState([]);
+  useEffect(() => {
+    if (
+      selectedEmployee &&
+      selectedEmployee.id &&
+      certListMap[selectedEmployee.id]
+    ) {
+      setCertList(certListMap[selectedEmployee.id]);
+    } else {
+      setCertList([]);
+    }
+  }, [selectedEmployee]);
+
+  // 신청 폼 상태
+  const [certType, setCertType] = useState('재직증명서');
+  const [certDate, setCertDate] = useState('2025.06.20');
+  const [certStatus, setCertStatus] = useState('요청됨');
+  const [certPurpose, setCertPurpose] = useState('');
 
   // 모달 열기
   const openAddModal = () => {
@@ -124,109 +246,223 @@ const EmployeeDetail = ({ selectedEmployee }) => {
       </div>
       {/* 탭 메뉴 섹션 */}
       <div className={styles.tabMenu}>
-        <button className={styles.active}>인적사항</button>
-        <button>증명서 발급</button>
+        <button
+          className={activeTab === 'info' ? styles.active : ''}
+          onClick={() => setActiveTab('info')}
+        >
+          인적사항
+        </button>
+        <button
+          className={activeTab === 'cert' ? styles.active : ''}
+          onClick={() => setActiveTab('cert')}
+        >
+          증명서 발급
+        </button>
       </div>
       {/* 상세 정보 본문 섹션 */}
-      <div className={styles.detailBody}>
-        {/* 프로필 이미지 섹션 */}
-        <div className={styles.profileSection}>
-          <div className={styles.profileImg}>
-            <div className={styles.profileImgPlaceholder}>Profile</div>
+      {activeTab === 'info' && (
+        <div className={styles.detailBody}>
+          {/* 프로필 이미지 섹션 */}
+          <div className={styles.profileSection}>
+            <div className={styles.profileImg}>
+              <div className={styles.profileImgPlaceholder}>Profile</div>
+            </div>
+          </div>
+          {/* 인적 사항 테이블 섹션 */}
+          <div className={styles.infoTableSection}>
+            <table className={styles.infoTable}>
+              <tbody>
+                <tr>
+                  <td className={styles.tableLabel}>사원번호</td>
+                  <td>
+                    <input value={selectedEmployee?.id} readOnly />
+                  </td>
+                  <td className={styles.tableLabel}>성명</td>
+                  <td>
+                    <input
+                      value={employeeName}
+                      onChange={(e) => setEmployeeName(e.target.value)}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.tableLabel}>주민등록번호</td>
+                  <td>
+                    <input value='960316-1000000' readOnly />
+                  </td>
+                  <td className={styles.tableLabel}>성별</td>
+                  <td>
+                    <label>
+                      <input type='radio' checked={gender === '남'} readOnly />{' '}
+                      남
+                    </label>
+                    <label style={{ marginLeft: '12px' }}>
+                      <input type='radio' checked={gender === '여'} readOnly />{' '}
+                      여
+                    </label>
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.tableLabel}>생년월일</td>
+                  <td>
+                    <input value='1996.03.16' readOnly />
+                  </td>
+                  <td className={styles.tableLabel}>연락처</td>
+                  <td>
+                    <input
+                      value={employeePhone}
+                      onChange={(e) => setEmployeePhone(e.target.value)}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.tableLabel}>회사이메일</td>
+                  <td>
+                    <input value='aaa@samubozo.com' readOnly />
+                  </td>
+                  <td className={styles.tableLabel}>외부이메일</td>
+                  <td>
+                    <input
+                      value={employeeOutEmail}
+                      onChange={(e) => setEmployeeOutEmail(e.target.value)}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.tableLabel}>지급계좌</td>
+                  <td colSpan={3}>
+                    <div className={styles.accountRow}>
+                      <select disabled>
+                        <option>우리은행</option>
+                      </select>
+                      <input
+                        value={employeeAccount}
+                        onChange={(e) => setEmployeeAccount(e.target.value)}
+                      />
+                      <span className={styles.accName}>예금주</span>
+                      <input
+                        value={employeeAccountHolder}
+                        onChange={(e) =>
+                          setEmployeeAccountHolder(e.target.value)
+                        }
+                      />
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.tableLabel}>주소</td>
+                  <td colSpan={3}>
+                    <input
+                      style={{ width: '90%' }}
+                      value={employeeAddress}
+                      onChange={(e) => setEmployeeAddress(e.target.value)}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-        {/* 인적 사항 테이블 섹션 */}
-        <div className={styles.infoTableSection}>
-          <table className={styles.infoTable}>
-            <tbody>
-              <tr>
-                <td className={styles.tableLabel}>사원번호</td>
-                <td>
-                  <input value={selectedEmployee?.id} readOnly />
-                </td>
-                <td className={styles.tableLabel}>성명</td>
-                <td>
-                  <input
-                    value={employeeName}
-                    onChange={(e) => setEmployeeName(e.target.value)}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className={styles.tableLabel}>주민등록번호</td>
-                <td>
-                  <input value='960316-1000000' readOnly />
-                </td>
-                <td className={styles.tableLabel}>성별</td>
-                <td>
-                  <label>
-                    <input type='radio' checked={gender === '남'} readOnly /> 남
-                  </label>
-                  <label style={{ marginLeft: '12px' }}>
-                    <input type='radio' checked={gender === '여'} readOnly /> 여
-                  </label>
-                </td>
-              </tr>
-              <tr>
-                <td className={styles.tableLabel}>생년월일</td>
-                <td>
-                  <input value='1996.03.16' readOnly />
-                </td>
-                <td className={styles.tableLabel}>연락처</td>
-                <td>
-                  <input
-                    value={employeePhone}
-                    onChange={(e) => setEmployeePhone(e.target.value)}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className={styles.tableLabel}>회사이메일</td>
-                <td>
-                  <input value='aaa@samubozo.com' readOnly />
-                </td>
-                <td className={styles.tableLabel}>외부이메일</td>
-                <td>
-                  <input
-                    value={employeeOutEmail}
-                    onChange={(e) => setEmployeeOutEmail(e.target.value)}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className={styles.tableLabel}>지급계좌</td>
-                <td colSpan={3}>
-                  <div className={styles.accountRow}>
-                    <select disabled>
-                      <option>우리은행</option>
+      )}
+      {activeTab === 'cert' && (
+        <div className={styles.certTabBody}>
+          {/* 증명서 신청 내역 */}
+          <div className={styles.certListTitle}>증명서신청내역</div>
+          <div className={styles.certListTableWrap}>
+            <table className={styles.certListTable}>
+              <thead>
+                <tr>
+                  <th>신청번호</th>
+                  <th>증명서구분</th>
+                  <th>신청일자</th>
+                  <th>승인일자</th>
+                  <th>전자결재상태</th>
+                  <th>용도</th>
+                </tr>
+              </thead>
+              <tbody>
+                {certList.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.id}</td>
+                    <td>{row.type}</td>
+                    <td>{row.date}</td>
+                    <td>{row.approver}</td>
+                    <td>{row.status}</td>
+                    <td>{row.purpose}</td>
+                  </tr>
+                ))}
+                {/* 빈 행 4개 */}
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={'empty' + i}>
+                    <td colSpan={6} style={{ height: 40 }}></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* 증명서 신청 폼 */}
+          <div className={styles.certFormTitle}>증명서신청</div>
+          <div className={styles.certFormWrap}>
+            <table className={styles.certFormTable}>
+              <tbody>
+                <tr>
+                  <td>신청번호</td>
+                  <td>
+                    <input value='2025-001' readOnly />
+                  </td>
+                  <td>증명서구분</td>
+                  <td>
+                    <select
+                      value={certType}
+                      onChange={(e) => setCertType(e.target.value)}
+                    >
+                      <option>재직증명서</option>
+                      <option>경력증명서</option>
                     </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>신청일자</td>
+                  <td>
                     <input
-                      value={employeeAccount}
-                      onChange={(e) => setEmployeeAccount(e.target.value)}
+                      type='date'
+                      value={certDate}
+                      onChange={(e) => setCertDate(e.target.value)}
                     />
-                    <span className={styles.accName}>예금주</span>
+                  </td>
+                  <td>전자결재상태</td>
+                  <td>
+                    <select
+                      value={certStatus}
+                      onChange={(e) => setCertStatus(e.target.value)}
+                    >
+                      <option>요청됨</option>
+                      <option>승인됨</option>
+                      <option>반려됨</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>용도</td>
+                  <td colSpan={3}>
                     <input
-                      value={employeeAccountHolder}
-                      onChange={(e) => setEmployeeAccountHolder(e.target.value)}
+                      value={certPurpose}
+                      onChange={(e) => setCertPurpose(e.target.value)}
                     />
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className={styles.tableLabel}>주소</td>
-                <td colSpan={3}>
-                  <input
-                    style={{ width: '90%' }}
-                    value={employeeAddress}
-                    onChange={(e) => setEmployeeAddress(e.target.value)}
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div className={styles.certFormBtnRow}>
+              <button className={styles.printBtn}>인쇄</button>
+              <button className={styles.approvalBtn}>전자결재</button>
+              <button className={styles.deleteBtn}>삭제</button>
+              <button className={styles.editBtn}>수정</button>
+              <button className={styles.saveBtn}>저장</button>
+            </div>
+          </div>
         </div>
-      </div>
-
+      )}
       {/* 기타 정보 테이블 섹션 */}
       <div className={styles.empTableSectionWrap}>
         <table className={styles.empTable}>

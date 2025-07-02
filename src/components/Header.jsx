@@ -18,7 +18,14 @@ const Header = () => {
 
       <div className={styles.headerMainRow}>
         <div className={styles.headerLogoRow}>
-          <img src={Logo} alt='로고' className={styles.headerLogo} />
+          <NavLink to='/dashboard'>
+            <img
+              src={Logo}
+              alt='로고'
+              className={styles.headerLogo}
+              style={{ cursor: 'pointer' }}
+            />
+          </NavLink>
         </div>
         <div className={styles.headerRight}>
           <NavLink to='/' className={styles.headerLink}>
@@ -29,8 +36,8 @@ const Header = () => {
             조직도
           </NavLink>
           <span className={styles.headerDivider}>|</span>
-          <NavLink to='/' className={styles.headerLink}>
-            전자결제
+          <NavLink to='/approval' className={styles.headerLink}>
+            전자결재
           </NavLink>
           <div className={styles.headerIcons}>
             <button className={styles.icon}>👤</button>
