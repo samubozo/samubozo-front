@@ -20,7 +20,7 @@
     .button-group {
       display: flex;
       gap: 10px;
-      margin-left: auto;
+      margin-right: 0.5rem;
     }
 
     label {
@@ -59,7 +59,7 @@
     display: flex;
     gap: 18px;
     width: 100%;
-    min-height: 600px;
+    min-height: 500px;
     .employee-list {
       flex: 1.2;
       display: flex;
@@ -75,6 +75,7 @@
           border: 1px solid #d8d8d8;
           padding: 9px 10px;
           text-align: center;
+          height: 1.2rem;
         }
         th {
           background: #7ac083;
@@ -108,7 +109,7 @@
         align-items: center;
       }
       .employee-summary-spacer {
-        height: 32px;
+        height: 40px;
         background: #fff;
         width: 100%;
       }
@@ -136,6 +137,7 @@
             border: 1px solid #d8d8d8;
             padding: 9px 10px;
             text-align: center;
+            height: 1.5rem;
           }
           th {
             background: #7ac083;
