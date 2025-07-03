@@ -4,7 +4,9 @@ import styles from './AbsenceRegistrationModal.module.scss';
 const absenceTypes = [
   { value: '출장', label: '출장' },
   { value: '연수', label: '연수' },
-  { value: '개인', label: '개인' },
+  { value: '연차', label: '연차' },
+  { value: '반차', label: '반차' },
+  { value: '외출', label: '외출' },
   { value: '기타', label: '기타' },
 ];
 
