@@ -93,7 +93,7 @@ const Login = () => {
               ID 찾기
             </span>
             {' | '}
-            <Link to={'/'}>PW 찾기</Link> |{' '}
+            <Link to={'/passwordFind'}>PW 찾기</Link> |{' '}
             <Link to={'/signup'}>회원가입 하기</Link>
           </span>
         </div>

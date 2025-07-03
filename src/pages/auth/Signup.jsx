@@ -240,8 +240,18 @@ const Signup = () => {
       )}
 
       <div className={styles.registerNav}>
-        <Link to={'/'}>로그인</Link> | <Link to={'/'}>ID 찾기</Link> |{' '}
-        <Link to={'/passwordFind'}>PW 찾기</Link>
+        <Link to={'/'}>로그인</Link> |{' '}
+        <span
+          style={{ cursor: 'pointer', color: '#1785f2' }}
+          onClick={() =>
+            window.alert(
+              `가입 이메일은 인사팀에게 문의하세요.\n\n(연락처: 02-0000-1111)`,
+            )
+          }
+        >
+          ID 찾기
+        </span>
+        | <Link to={'/passwordFind'}>PW 찾기</Link>
         <span className={styles.icon}>👤</span> {/* styles.icon 적용 */}
       </div>
 
