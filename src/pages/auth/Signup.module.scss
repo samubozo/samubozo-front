@@ -218,6 +218,14 @@ select {
   }
 }
 
+.error {
+  color: #e10000;
+  font-size: 13px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
 @media (max-width: 900px) {
   .registerContainer {
     // .register-container
