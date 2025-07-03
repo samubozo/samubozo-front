@@ -9,6 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
   // 컴포넌트 마운트 시 이메일 localStorage에서 복원
@@ -82,18 +83,16 @@ const Login = () => {
         </form>
         <div className={styles.links}>
           <span>
-            <span
-              style={{ cursor: 'pointer', color: '#1785f2' }}
-              onClick={() =>
-                window.alert(
-                  `가입 이메일은 인사팀에게 문의하세요.\n\n(연락처: 02-0000-1111)`,
-                )
-              }
+            <a
+              href='#'
+              onClick={(e) => {
+                e.preventDefault();
+                setShowModal(true);
+              }}
             >
               ID 찾기
-            </span>
-            {' | '}
-            <Link to={'/passwordFind'}>PW 찾기</Link> |{' '}
+            </a>{' '}
+            |<Link to={'/passwordFind'}>PW 찾기</Link>|
             <Link to={'/signup'}>회원가입 하기</Link>
           </span>
         </div>
