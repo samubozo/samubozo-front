@@ -1,13 +1,157 @@
-# samubozo-front
-# React + Vite
+# 사무보조(SAMUBOZO) 서비스 기획
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+## 1. 업무/인사관리 플랫폼 MVP 프로젝트 기획서  
+**일시:** 2025-06-20  
+**프로젝트명:** 업무와 인사를 보조하는 플랫폼, 사무보조(SAMUBOZO)  
+**수행기간:** 2025년 06월 20일 – 2025년 08월 12일  
+**장소:** 플레이데이터 서초캠퍼스  
+**투입공수:** 5M / M  
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## 2. 프로젝트 니즈 (Needs)  
+수동으로 인사 정보를 관리하거나 여러 시스템에 분산된 경우,  
+- 데이터 입력 오류 발생 위험  
+- 정보 탐색 및 통합에 과도한 시간 소요  
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+→ **사무보조 플랫폼**으로 한곳에 통합 관리하여  
+- 인사 업무 효율성·정확성 제고  
+- 투명한 인력 관리 기반 전략적 의사결정 지원  
+- 조직 생산성 향상 및 직원 만족도 증대  
+
+---
+
+## 3. 프로젝트 목표  
+- 다양한 업종에 적용 가능한 핵심 인사관리 기능 제공  
+- MVP 버전: **1개월 내** 핵심 기능 구현·배포 완료 및 발표  
+
+---
+
+## 4. 개발 방법론  
+1. 착수  
+2. 분석  
+3. 설계  
+4. 개발  
+5. 검수  
+6. 구현  
+7. 완료 (유지보수)  
+
+---
+
+## 5. 개발 공정별 산출물 리스트
+
+| 단계              | 산출물                                                         |
+| ----------------- | -------------------------------------------------------------- |
+| **서비스 기획**   | 프로젝트 기획서·요구사항 정의서·시스템 아키텍처·ERD·WBS·화면 설계서 |
+| **데이터 셋**     | 수집 데이터·API 명세서                                         |
+| **프론트엔드 구현** | SPA 사이트·UI 테스트 케이스·스토리보드·소스 코드              |
+| **백엔드 설계**   | 인터페이스 설계서·테스트 케이스·테스트 결과서·백엔드 개발 소스코드 |
+| **시험/인도**     | 프로젝트 테스트 결과서·CI/CD 계획서                           |
+
+---
+
+## 6. 프로젝트 조직 및 역할
+
+| 구성원   | 역할                                   |
+| -------- | -------------------------------------- |
+| **신현국** | PM, 근태관리·전자결재 서비스 개발      |
+| **이호영** | 쪽지/알림·일정관리 서비스 개발         |
+| **김예은** | 인사관리·인증 서비스 개발             |
+| **주영찬** | 급여관리·설정 서비스 개발             |
+
+---
+
+## 7. 위험 관리  
+- 위험 요소(기술·인적·환경) 식별 및 문서화  
+- 영향도·발생 확률 평가 → 등급(낮음·중간·높음) 분류  
+- 관리 전략 수립 및 지속 모니터링  
+- 대응 계획 실행 및 개선  
+
+---
+
+## 8. 품질 관리  
+- 일관된 코드 스타일·네이밍·주석  
+- TDD 기반 단위 테스트 작성  
+- 코드 리뷰 및 피드백 공유  
+- 자동 빌드·테스트·배포 파이프라인  
+- 성능 모니터링 및 지속 개선  
+
+---
+
+## 9. 배포 계획  
+- **AWS 인프라:** ECR → EKS 백엔드, S3 정적 호스팅 프론트엔드  
+- **CI/CD:** Jenkins 파이프라인 자동화  
+- **도메인:** Route 53 연결  
+- **보안:** IAM 최소 권한 원칙 준수  
+
+---
+
+## 10. 사용자 유형별 기능/권한
+
+| 사용자 유형         | 기능/권한                                                                 |
+| ------------------ | -------------------------------------------------------------------------- |
+| **인사 담당자/책임** | 전체 기능, 계정 생성·권한 수정, 직원 승인, 인사 정보 CRUD, 연차 부여, 급여 관리, 전자결재 승인 등 |
+| **사원/선임**       | 출퇴근 기록, 연차 신청, 조직도 열람, 쪽지 사용, 대시보드 조회             |
+
+---
+
+## 11. 구현 기능
+
+| 도메인       | 서비스명               | 책임 범위                                           |
+| ------------ | --------------------- | --------------------------------------------------- |
+| 인증 서비스   | auth-service          | 로그인·JWT 발급, 인증·인가                         |
+| 게이트웨이    | gateway-service       | 요청 라우팅                                         |
+| 설정 서비스   | config-service        | 공통 설정 관리                                      |
+| 인사관리      | hr-service            | 직원·조직·권한 관리                                 |
+| 근태관리      | attendance-service   | 출퇴근·지각·출장 등 상태 기록                       |
+| 급여관리      | payroll-service       | 급여 항목·이력 관리                                 |
+| 일정관리      | schedule-service      | 연차·출장·교육 일정 뷰                              |
+| 쪽지/알림     | message-service       | 메시지·알림 기능                                    |
+| 전자결재      | approval-service      | 신청·승인·반려, 결재선·이력 관리                    |
+<!-- AI 챗봇 서비스는 후순위 제외 -->
+
+---
+
+## 12. 요구사항 정의서  
+- [Google Sheets: 요구사항 정의서](https://docs.google.com/spreadsheets/d/139WRwR4F4NELLDJVah_fmHWalj2h_2dZ)
+
+---
+
+## 13. 시스템 아키텍처  
+![시스템 아키텍처](https://github.com/user-attachments/assets/887899a7-68fc-4ad6-bbf2-676c0de717d6)
+
+---
+
+## 14. ERD  
+*(ERD 이미지 또는 링크를 여기에 추가하세요.)*
+
+---
+
+## 15. WBS (Work Breakdown Structure)
+
+| WBS 번호 | 작업명                       | 담당자         | 기간         | 산출물                                                         | 비고     |
+| -------- | ---------------------------- | -------------- | ------------ | -------------------------------------------------------------- | -------- |
+| 1        | 기획 및 분석                 | 전체           | 6/20~6/27    | 프로젝트 기획서·요구사항 정의서·시스템 아키텍처·ERD·화면 설계서 | 1주차    |
+| 2        | 기능 개발 및 단위 테스트     | 전체           | 6/30~7/18    | 서비스별 코드·API 명세서·SPA 사이트·단위 테스트 결과서        | 2~5주차 |
+| 2.1      | └ hr-service 개발            | 김예은         | 6/30~7/18    | 직원 서비스 코드·MySQL DDL                                     |          |
+| 2.2      | └ auth-service 개발          | 김예은         | 6/30~7/18    | 인증/JWT 모듈                                                  |          |
+| 2.3      | └ message-service 개발       | 이호영         | 6/30~7/18    | 쪽지/알림 서비스 코드                                          |          |
+| 2.4      | └ schedule-service 개발      | 이호영         | 6/30~7/18    | 일정관리 서비스 코드                                           |          |
+| 2.5      | └ attendance-service 개발    | 신현국         | 6/30~7/18    | 출퇴근 관리 서비스 코드                                        |          |
+| 2.6      | └ approval-service 개발      | 신현국         | 6/30~7/18    | 전자결재 서비스 코드                                            |          |
+| 2.7      | └ payroll-service 개발       | 주영찬         | 6/30~7/18    | 급여관리 서비스 코드                                            |          |
+| 2.8      | └ config-service 개발        | 주영찬         | 6/30~7/18    | 공통 설정 서비스 코드                                          |          |
+| 2.9      | └ 프론트엔드 SPA 구현        | 전체           | 6/30~7/18    | React SPA·UI 테스트케이스·스토리보드·소스코드                  |          |
+| 2.10     | └ 단위 테스트 실행           | QA팀           | 6/30~7/18    | JUnit·React 단위 테스트 결과서                                |          |
+| 3        | 통합 테스트 및 피드백 반영   | 전체           | 7/21~8/1     | 통합 테스트 결과서·이슈 목록·개선 문서                        | 6~7주차  |
+| 4        | 최종 배포 및 시연 준비·발표  | 전체·DevOps팀 | 8/4~8/13     | CI/CD 계획서·배포본(AWS EKS/S3)·운영환경 점검 보고서·발표자료 | 8~9주차  |
+
+---
+
+## 16. 화면 설계서  
+- [Google Slides: 화면 설계서](https://docs.google.com/presentation/d/12ljI3Y9HnpEqJc-bQNK0Zh_hEZbqaf3ECvE7X-3j0RM)
+
+---
+
