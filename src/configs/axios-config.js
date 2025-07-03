@@ -4,7 +4,7 @@
 // axios 인스턴스는 token이 필요한 모든 요청에 활용 될 것입니다.
 
 import axios from 'axios';
-import { API_BASE_URL, USER } from './host-config';
+import { API_BASE_URL, AUTH } from './host-config';
 
 // Axios 인스턴스 생성
 // 이제부터 토큰이 필요한 요청은 그냥 axios가 아니라 지금 만드는 이 인스턴스로 보내겠다.
@@ -59,7 +59,7 @@ axiosInstance.interceptors.response.use(
       try {
         const id = localStorage.getItem('USER_ID');
 
-        const res = await axios.post(`${API_BASE_URL}${USER}/refresh`, {
+        const res = await axios.post(`${API_BASE_URL}${AUTH}/refresh`, {
           id,
         });
         const newToken = res.data.result.token; // axios는 json() 안씁니다.

@@ -14,12 +14,20 @@ import Schedule from '../pages/schedule/Schedule';
 import Message from '../pages/message/Message';
 import AttendanceDashboard from '../pages/attendance/AttendanceDashboard';
 import Approval from '../pages/approval/Approval';
+import PasswordFind from '../pages/auth/PasswordFind';
+import PasswordUpdate from '../pages/auth/PasswordUpdate';
 
 const AppRouter = () => {
   return (
     <Routes>
+      {/* 로그인 */}
       <Route path='/' element={<Login />} />
+      {/* 회원가입 */}
       <Route path='/signup' element={<Signup />} />
+      {/* 비밀번호 찾기 */}
+      <Route path='/passwordFind' element={<PasswordFind />} />
+      {/* 비밀번호 수정 */}
+      <Route path='/passwordUpdate' element={<PasswordUpdate />} />
       {/* <Route path='/dashboard' element={<Dashboard />} /> */}
       <Route element={<LayoutHeader />}>
         {/* 메인 페이지 */}

@@ -2,9 +2,10 @@ import React from 'react';
 import styles from './Header.module.scss';
 import Logo from '../assets/samubozo-logo2.png';
 import { NavLink } from 'react-router-dom';
+import Chatbot from './Chatbot';
 console.log(styles);
 
-const Header = () => {
+const Header = ({ showChatbot }) => {
   return (
     <header className={styles.headerWrap}>
       <div className={styles.headerFixedLeft}>
@@ -17,6 +18,7 @@ const Header = () => {
       </div>
 
       <div className={styles.headerMainRow}>
+        <div className={styles.headerMainLeft}></div>
         <div className={styles.headerLogoRow}>
           <NavLink to='/dashboard'>
             <img
@@ -27,6 +29,11 @@ const Header = () => {
             />
           </NavLink>
         </div>
+        {showChatbot && (
+          <div className={styles.headerMainRight}>
+            <Chatbot inHeader />
+          </div>
+        )}
         <div className={styles.headerRight}>
           <NavLink to='/' className={styles.headerLink}>
             홈
