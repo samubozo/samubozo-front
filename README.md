@@ -125,7 +125,8 @@
 ---
 
 ## 14. ERD  
-*(ERD 이미지 또는 링크를 여기에 추가하세요.)*
+![업무 인사관리 플랫폼](https://github.com/user-attachments/assets/a31a1fa4-a9e7-4ef3-bd07-0789290142d6)
+
 
 ---
 
