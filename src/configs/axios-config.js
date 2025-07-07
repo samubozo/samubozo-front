@@ -25,7 +25,7 @@ Axios Interceptor는 요청 또는 응답이 처리되기 전에 실행되는 �
 axiosInstance.interceptors.request.use(
   (config) => {
     // 요청 보내기 전에 항상 처리해야 할 내용을 콜백으로 전달.
-    const token = localStorage.getItem('ACCESS_TOKEN');
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

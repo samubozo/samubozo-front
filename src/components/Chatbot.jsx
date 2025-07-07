@@ -36,12 +36,14 @@ const Chatbot = ({ inHeader }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([{ from: 'bot', text: BOT_GUIDE }]);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const messagesRef = useRef(null);
 
   useEffect(() => {
-    if (open && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (open && messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
   }, [messages, open]);
 
@@ -50,6 +52,7 @@ const Chatbot = ({ inHeader }) => {
     const userMsg = { from: 'user', text: input };
     setMessages((msgs) => [...msgs, userMsg]);
     setInput('');
+    setIsLoading(true);
     setTimeout(() => {
       setMessages((msgs) => [
         ...msgs,
@@ -58,10 +61,8 @@ const Chatbot = ({ inHeader }) => {
           text: '아직 실제 답변 기능은 구현되지 않았어요! (예시)',
         },
       ]);
+      setIsLoading(false);
     }, 700);
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
   };
 
   return (
@@ -74,7 +75,7 @@ const Chatbot = ({ inHeader }) => {
               ×
             </button>
           </div>
-          <div className={styles.messages}>
+          <div className={styles.messages} ref={messagesRef}>
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -83,6 +84,15 @@ const Chatbot = ({ inHeader }) => {
                 {msg.text}
               </div>
             ))}
+            {isLoading && (
+              <div className={styles.botMsg}>
+                <span className={styles.loadingBubble}>
+                  <span className={styles.dot}></span>
+                  <span className={styles.dot}></span>
+                  <span className={styles.dot}></span>
+                </span>
+              </div>
+            )}
             <div ref={chatEndRef} />
           </div>
           <div className={styles.inputBox}>

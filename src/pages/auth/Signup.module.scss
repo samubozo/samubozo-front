@@ -107,6 +107,8 @@
   }
   input,
   select {
+    width: 100%;
+    box-sizing: border-box;
     border: 2px solid #66be80;
     border-radius: 3px;
     font-size: 17px;
