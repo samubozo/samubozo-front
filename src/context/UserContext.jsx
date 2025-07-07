@@ -20,11 +20,11 @@ export const AuthContextProvider = (props) => {
     console.log(loginData);
 
     // 백엔드가 응답한 JSON 인증 정보를 클라이언트쪽에 보관하자.
-    localStorage.setItem('ACCESS_TOKEN', loginData.token);
-    localStorage.setItem('USER_ID', loginData.id);
-    localStorage.setItem('USER_ROLE', loginData.role);
+    sessionStorage.setItem('ACCESS_TOKEN', loginData.token);
+    sessionStorage.setItem('USER_ID', loginData.id);
+    sessionStorage.setItem('USER_ROLE', loginData.role);
     if (loginData.provider) {
-      localStorage.setItem('PROVIDER', loginData.provider);
+      sessionStorage.setItem('PROVIDER', loginData.provider);
     }
 
     setIsLoggedIn(true);
@@ -33,16 +33,16 @@ export const AuthContextProvider = (props) => {
 
   // 로그아웃 핸들러
   const logoutHandler = () => {
-    localStorage.clear(); // 로컬스토리지 전체 삭제
+    sessionStorage.clear(); // 세션스토리지 전체 삭제
     setIsLoggedIn(false);
     setUserRole('');
   };
 
   // 첫 렌더링 시에 이전 로그인 정보를 확인해서 로그인 상태 유지 시키기.
   useEffect(() => {
-    if (localStorage.getItem('ACCESS_TOKEN')) {
+    if (sessionStorage.getItem('ACCESS_TOKEN')) {
       setIsLoggedIn(true);
-      setUserRole(localStorage.getItem('USER_ROLE'));
+      setUserRole(sessionStorage.getItem('USER_ROLE'));
     }
     setIsInit(true);
   }, []);

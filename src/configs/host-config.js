@@ -22,3 +22,4 @@ if (clientHostName === 'localhost') {
 export const API_BASE_URL = backendHostName;
 export const AUTH = '/auth-service/auth';
 export const HR = '/hr-service/hr';
+export const CHATBOT = '/chatbot-service/chatbot';
