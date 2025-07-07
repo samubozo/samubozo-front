@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE_URL, HR } from '../configs/host-config';
 
 const AuthContext = React.createContext({
   isLoggedIn: false,
@@ -16,15 +17,41 @@ export const AuthContextProvider = (props) => {
   const [isInit, setIsInit] = useState(false); // 초기화 완료 상태 추가
 
   // 로그인 시 실행할 핸들러
-  const loginHandler = (loginData) => {
+  const loginHandler = async (loginData) => {
     console.log(loginData);
 
-    // 백엔드가 응답한 JSON 인증 정보를 클라이언트쪽에 보관하자.
-    sessionStorage.setItem('ACCESS_TOKEN', loginData.token);
+    // accessToken, refreshToken 저장
+    sessionStorage.setItem('ACCESS_TOKEN', loginData.accessToken);
+    localStorage.setItem('REFRESH_TOKEN', loginData.refreshToken);
     sessionStorage.setItem('USER_ID', loginData.id);
     sessionStorage.setItem('USER_ROLE', loginData.role);
     if (loginData.provider) {
       sessionStorage.setItem('PROVIDER', loginData.provider);
+    }
+
+    // 로그인 후 유저 상세정보를 불러와서 sessionStorage에 저장
+    try {
+      const accessToken =
+        loginData.accessToken || sessionStorage.getItem('ACCESS_TOKEN');
+      const res = await fetch(`${API_BASE_URL}${HR}/users/detail`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const userInfo = data.result;
+        sessionStorage.setItem('USER_NAME', userInfo.userName || '');
+        sessionStorage.setItem(
+          'USER_DEPARTMENT',
+          userInfo.departmentName || '',
+        );
+        sessionStorage.setItem('USER_POSITION', userInfo.positionName || '');
+        sessionStorage.setItem('USER_EMPLOYEE_NO', userInfo.employeeNo || '');
+      }
+    } catch (e) {
+      console.error('유저 상세정보 조회 실패:', e);
     }
 
     setIsLoggedIn(true);
