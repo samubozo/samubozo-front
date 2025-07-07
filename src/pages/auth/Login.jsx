@@ -13,9 +13,9 @@ const Login = () => {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
-  // 컴포넌트 마운트 시 이메일 localStorage에서 복원
+  // 컴포넌트 마운트 시 이메일 sessionStorage에서 복원
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    const rememberedEmail = sessionStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
       setEmail(rememberedEmail);
       setRemember(true);
@@ -27,9 +27,9 @@ const Login = () => {
 
     // 이메일 저장 처리
     if (remember) {
-      localStorage.setItem('rememberedEmail', email);
+      sessionStorage.setItem('rememberedEmail', email);
     } else {
-      localStorage.removeItem('rememberedEmail');
+      sessionStorage.removeItem('rememberedEmail');
     }
 
     try {
@@ -42,7 +42,6 @@ const Login = () => {
       if (res.data && res.data.result && res.data.result.token) {
         const token = res.data.result.token;
         sessionStorage.setItem('ACCESS_TOKEN', token);
-        localStorage.setItem('ACCESS_TOKEN', token);
       }
       alert('로그인 성공!');
       window.location.href = '/dashboard';
