@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './Signup.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
@@ -15,8 +15,8 @@ const defaultForm = {
   phone: '',
   address: '',
   hireDate: '',
-  departmentName: '',
-  positionName: '',
+  departmentId: '',
+  positionId: '',
 };
 
 const validateField = (name, value, form) => {
@@ -50,6 +50,8 @@ const validateField = (name, value, form) => {
       break;
     case 'phone':
       if (!value) error = '연락처를 입력해 주세요.';
+      else if (!/^01[016789]-?\d{3,4}-?\d{4}$/.test(value))
+        error = '올바른 휴대폰 번호 형식이 아닙니다.';
       break;
     case 'address':
       if (!value || value.trim().length < 5)
@@ -58,10 +60,10 @@ const validateField = (name, value, form) => {
     case 'hireDate':
       if (!value) error = '입사일을 입력해 주세요.';
       break;
-    case 'departmentName':
+    case 'departmentId':
       if (!value) error = '부서를 선택해 주세요.';
       break;
-    case 'positionName':
+    case 'positionId':
       if (!value) error = '직책을 선택해 주세요.';
       break;
     default:
@@ -74,7 +76,53 @@ const Signup = () => {
   const [form, setForm] = useState(defaultForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [departments, setDepartments] = useState([]);
+  const [positions, setPositions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  // 부서와 직책 데이터 불러오기
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // 부서 목록 가져오기
+        const deptResponse = await axios.get(
+          `${API_BASE_URL}${HR}/departments`,
+        );
+        console.log('부서 API 응답:', deptResponse);
+        const deptData = Array.isArray(deptResponse.data.result)
+          ? deptResponse.data.result
+          : [];
+        setDepartments(deptData);
+
+        // 직책 목록 가져오기
+        const posResponse = await axios.get(`${API_BASE_URL}${HR}/positions`);
+        console.log('직책 API 응답:', posResponse);
+        const posData = Array.isArray(posResponse.data.result)
+          ? posResponse.data.result
+          : [];
+        setPositions(posData);
+      } catch (error) {
+        console.error('부서/직책 데이터 로딩 실패:', error);
+        setDepartments([
+          { departmentId: 1, name: '경영지원', departmentColor: '#FFAB91' },
+          { departmentId: 2, name: '인사팀', departmentColor: '#B39DDB' },
+          { departmentId: 3, name: '회계팀', departmentColor: '#81D4FA' },
+          { departmentId: 4, name: '영업팀', departmentColor: '#A5D6A7' },
+        ]);
+        setPositions([
+          { positionId: 1, positionName: '사장' },
+          { positionId: 2, positionName: '부장' },
+          { positionId: 3, positionName: '과장' },
+          { positionId: 4, positionName: '대리' },
+          { positionId: 5, positionName: '사원' },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // 실시간 입력값 변경 및 즉시 에러 체크
   const handleChange = (e) => {
@@ -156,22 +204,78 @@ const Signup = () => {
       alert('회원가입이 완료되었습니다!');
       navigate('/');
     } catch (error) {
-      // 이메일 중복 등 서버 메시지 처리
-      if (
-        error.response?.data?.message &&
-        error.response.data.message.includes('이메일')
-      ) {
-        setErrors((prev) => ({
-          ...prev,
-          email: error.response.data.message,
-        }));
-      } else {
-        alert(
-          '회원가입 실패: ' + (error.response?.data?.message || error.message),
-        );
-      }
+      alert(
+        '회원가입 실패: ' + (error.response?.data?.message || error.message),
+      );
     }
     setIsSubmitting(false);
+  };
+
+  // 인증 모달 재발송/완료
+  const handleModalResend = async () => {
+    await axios.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+      email: form.email,
+    });
+  };
+
+  const handleModalComplete = async (code) => {
+    try {
+      const res = await axios.post(`${API_BASE_URL}${AUTH}/verify`, {
+        email: form.email,
+        code,
+      });
+      if (res.status === 200 && res.data === '인증 성공!') {
+        setIsEmailVerified(true);
+        setShowModal(false);
+        setErrors((prev) => ({ ...prev, email: undefined }));
+        alert('이메일 인증이 완료되었습니다.');
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          email: res.data.message || '인증에 실패했습니다.',
+        }));
+      }
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        email:
+          err.response?.data?.message ||
+          '인증에 실패했습니다. 인증번호를 확인해 주세요.',
+      }));
+    }
+  };
+
+  // 주소찾기 함수 추가
+  const handleAddressSearch = () => {
+    function openPostcode() {
+      new window.daum.Postcode({
+        oncomplete: function (data) {
+          setForm((prev) => ({
+            ...prev,
+            address: data.address,
+          }));
+        },
+      }).open();
+    }
+
+    if (window.daum && window.daum.Postcode) {
+      openPostcode();
+    } else {
+      // 0.5초 후 한 번 더 시도 (최대 5회)
+      let retry = 0;
+      const interval = setInterval(() => {
+        retry++;
+        if (window.daum && window.daum.Postcode) {
+          clearInterval(interval);
+          openPostcode();
+        } else if (retry > 5) {
+          clearInterval(interval);
+          alert(
+            '주소찾기 API 로딩에 실패했습니다. 새로고침 후 다시 시도해 주세요.',
+          );
+        }
+      }, 500);
+    }
   };
 
   return (
@@ -309,14 +413,32 @@ const Signup = () => {
                 )}
 
                 <label>주소</label>
-                <input
-                  type='text'
-                  name='address'
-                  placeholder='주소를 입력하세요.'
-                  value={form.address}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type='text'
+                    name='address'
+                    placeholder='주소를 입력하세요.'
+                    value={form.address}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    style={{ flex: 1 }}
+                    readOnly // 직접 입력 방지, 주소찾기로만 입력
+                  />
+                  <button
+                    type='button'
+                    onClick={handleAddressSearch}
+                    style={{
+                      padding: '0 16px',
+                      background: '#66be80',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    주소찾기
+                  </button>
+                </div>
                 {errors.address && (
                   <div className={styles.error}>{errors.address}</div>
                 )}
@@ -337,35 +459,41 @@ const Signup = () => {
 
                 <label>부서</label>
                 <select
-                  name='departmentName'
-                  value={form.departmentName}
+                  name='departmentId'
+                  value={form.departmentId}
                   onChange={handleChange}
                   onBlur={handleBlur}
                 >
                   <option value=''>선택하세요</option>
-                  <option value='경영지원'>경영지원</option>
-                  <option value='인사팀'>인사팀</option>
-                  <option value='회계팀'>회계팀</option>
-                  <option value='영업팀'>영업팀</option>
+                  {departments.map((dept) => (
+                    <option
+                      key={dept.departmentId}
+                      value={String(dept.departmentId)}
+                    >
+                      {dept.name}
+                    </option>
+                  ))}
                 </select>
-                {errors.departmentName && (
-                  <div className={styles.error}>{errors.departmentName}</div>
+                {errors.departmentId && (
+                  <div className={styles.error}>{errors.departmentId}</div>
                 )}
 
                 <label>직책</label>
                 <select
-                  name='positionName'
-                  value={form.positionName}
+                  name='positionId'
+                  value={form.positionId}
                   onChange={handleChange}
                   onBlur={handleBlur}
                 >
                   <option value=''>선택하세요</option>
-                  <option value='책임'>책임</option>
-                  <option value='선임'>선임</option>
-                  <option value='사원'>사원</option>
+                  {positions.map((pos) => (
+                    <option key={pos.positionId} value={String(pos.positionId)}>
+                      {pos.positionName}
+                    </option>
+                  ))}
                 </select>
-                {errors.positionName && (
-                  <div className={styles.error}>{errors.positionName}</div>
+                {errors.positionId && (
+                  <div className={styles.error}>{errors.positionId}</div>
                 )}
               </div>
             </div>

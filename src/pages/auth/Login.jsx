@@ -3,7 +3,8 @@ import styles from './Login.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
 import axios from 'axios';
-import { API_BASE_URL, AUTH } from '../../configs/host-config';
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -12,9 +13,9 @@ const Login = () => {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
-  // 컴포넌트 마운트 시 이메일 localStorage에서 복원
+  // 컴포넌트 마운트 시 이메일 sessionStorage에서 복원
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    const rememberedEmail = sessionStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
       setEmail(rememberedEmail);
       setRemember(true);
@@ -26,9 +27,9 @@ const Login = () => {
 
     // 이메일 저장 처리
     if (remember) {
-      localStorage.setItem('rememberedEmail', email);
+      sessionStorage.setItem('rememberedEmail', email);
     } else {
-      localStorage.removeItem('rememberedEmail');
+      sessionStorage.removeItem('rememberedEmail');
     }
 
     try {
@@ -36,9 +37,14 @@ const Login = () => {
         email,
         password,
       });
-      console.log('로그인 응답 결과:', res.data);
+      console.log('로그인 응답:', res.data);
+
+      if (res.data && res.data.result && res.data.result.token) {
+        const token = res.data.result.token;
+        sessionStorage.setItem('ACCESS_TOKEN', token);
+      }
       alert('로그인 성공!');
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
     } catch (e) {
       if (e.response?.status === 403) {
         alert('정지된 계정입니다. 관리자에게 문의하세요.');
