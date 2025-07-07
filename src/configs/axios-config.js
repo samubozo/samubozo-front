@@ -58,23 +58,26 @@ axiosInstance.interceptors.response.use(
 
       try {
         const id = sessionStorage.getItem('USER_EMPLOYEE_NO');
-
-        const res = await axios.post(`${API_BASE_URL}${AUTH}/refresh`, {
-          id,
-        });
-        const newToken = res.data.result.token; // axios는 json() 안씁니다.
-        sessionStorage.setItem('ACCESS_TOKEN', newToken); // 동일한 이름으로 토큰 담기 (덮어씀)
-
+        const refreshToken = localStorage.getItem('REFRESH_TOKEN');
+        if (!id || !refreshToken) {
+          // 리프레시 토큰 없으면 그냥 에러만 리턴
+          return Promise.reject(error);
+        }
+        // refreshToken으로 accessToken 재발급
+        const res = await axios.post(
+          `${API_BASE_URL}${AUTH}/refresh`,
+          { refreshToken },
+          { headers: { 'Content-Type': 'application/json' } },
+        );
+        const newAccessToken = res.data.result.accessToken;
+        sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
         // 실패한 원본 요청 정보에서 Authorization의 값을 새 토큰으로 갈아 끼우자
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         // axiosInstance를 사용하여 다시한번 원본 요청을 보내고, 응답은 원래 호출한 곳으로 리턴
         return axiosInstance(originalRequest);
       } catch (error) {
         console.log(error);
-        // 백엔드에서 401을 보낸거 -> Refresh도 만료된 상황 (로그아웃처럼 처리해줘야 함.)
-        sessionStorage.clear();
-        // 재발급 요청도 거절당하면 인스턴스를 호출한 곳으로 에러 정보 리턴.
+        // refreshToken도 만료/실패 시 아무것도 하지 않고 에러만 리턴
         return Promise.reject(error);
       }
     }

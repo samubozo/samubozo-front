@@ -51,11 +51,16 @@ const Chatbot = ({ inHeader }) => {
     axiosInstance
       .get(`${API_BASE_URL}${CHATBOT}/history`)
       .then((res) => {
-        if (res.data && res.data.length > 0) {
+        console.log('챗봇 히스토리 응답:', res.data);
+        const history = res.data.result || res.data;
+        if (Array.isArray(history) && history.length > 0) {
           setMessages(
-            res.data.map((msg) => ({ from: msg.sender, text: msg.message })),
+            history.map((msg) => ({
+              from: msg.senderType === 'USER' ? 'user' : 'bot',
+              text: msg.messageContent,
+            })),
           );
-          setConversationId(res.data[0].conversationId);
+          setConversationId(history[0].conversationId);
         } else {
           setMessages([{ from: 'bot', text: BOT_GUIDE }]);
           setConversationId(null);
@@ -89,7 +94,7 @@ const Chatbot = ({ inHeader }) => {
         req,
       );
       console.log('챗봇 응답:', res.data);
-      const reply = res.data.result?.reply;
+      const reply = res.data.responseMessage || res.data.result?.reply;
       if (reply) {
         setMessages((msgs) => [...msgs, { from: 'bot', text: reply }]);
       } else {
