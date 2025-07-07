@@ -66,7 +66,7 @@ const Header = ({ showChatbot }) => {
 
   // 로그아웃 핸들러
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     window.location.href = '/';
   };
 

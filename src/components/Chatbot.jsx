@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './Chatbot.module.scss';
+import axiosInstance from '../configs/axios-config';
+import { API_BASE_URL, CHATBOT } from '../configs/host-config';
 
 const BOT_GUIDE = '사이트 안내와 인사관련 업무 지식을 물어봐주세요';
 const PLACEHOLDER = '사이트안내 or 인사업무 지식을 물어보세요.';
@@ -37,9 +39,39 @@ const Chatbot = ({ inHeader }) => {
   const [messages, setMessages] = useState([{ from: 'bot', text: BOT_GUIDE }]);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
   const messagesRef = useRef(null);
+
+  // 챗봇 열릴 때 이력 조회
+  useEffect(() => {
+    if (!open) return;
+    setIsLoading(true);
+    axiosInstance
+      .get(`${API_BASE_URL}${CHATBOT}/history`)
+      .then((res) => {
+        console.log('챗봇 히스토리 응답:', res.data);
+        const history = res.data.result || res.data;
+        if (Array.isArray(history) && history.length > 0) {
+          setMessages(
+            history.map((msg) => ({
+              from: msg.senderType === 'USER' ? 'user' : 'bot',
+              text: msg.messageContent,
+            })),
+          );
+          setConversationId(history[0].conversationId);
+        } else {
+          setMessages([{ from: 'bot', text: BOT_GUIDE }]);
+          setConversationId(null);
+        }
+      })
+      .catch(() => {
+        setMessages([{ from: 'bot', text: BOT_GUIDE }]);
+        setConversationId(null);
+      })
+      .finally(() => setIsLoading(false));
+  }, [open]);
 
   useEffect(() => {
     if (open && messagesRef.current) {
@@ -47,22 +79,40 @@ const Chatbot = ({ inHeader }) => {
     }
   }, [messages, open]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
+    const req = {
+      message: input,
+    };
     const userMsg = { from: 'user', text: input };
     setMessages((msgs) => [...msgs, userMsg]);
     setInput('');
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await axiosInstance.post(
+        `${API_BASE_URL}${CHATBOT}/chat`,
+        req,
+      );
+      console.log('챗봇 응답:', res.data);
+      const reply = res.data.responseMessage || res.data.result?.reply;
+      if (reply) {
+        setMessages((msgs) => [...msgs, { from: 'bot', text: reply }]);
+      } else {
+        setMessages((msgs) => [
+          ...msgs,
+          { from: 'bot', text: '답변을 불러오지 못했습니다.' },
+        ]);
+      }
+      if (res.data.result?.conversationId) {
+        setConversationId(res.data.result.conversationId);
+      }
+    } catch (e) {
       setMessages((msgs) => [
         ...msgs,
-        {
-          from: 'bot',
-          text: '아직 실제 답변 기능은 구현되지 않았어요! (예시)',
-        },
+        { from: 'bot', text: '오류가 발생했습니다.' },
       ]);
-      setIsLoading(false);
-    }, 700);
+    }
+    setIsLoading(false);
   };
 
   return (

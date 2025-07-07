@@ -22,6 +22,7 @@ const AppRouter = () => {
     <Routes>
       {/* 로그인 */}
       <Route path='/' element={<Login />} />
+      <Route path='/login' element={<Login />} />
       {/* 회원가입 */}
       <Route path='/signup' element={<Signup />} />
       {/* 비밀번호 찾기 */}

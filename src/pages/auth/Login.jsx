@@ -5,6 +5,8 @@ import Logo from '../../assets/samubozo-logo.png';
 import axios from 'axios';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
+import AuthContext from '../../context/UserContext';
+import { useContext } from 'react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -12,10 +14,11 @@ const Login = () => {
   const [remember, setRemember] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const { onLogin } = useContext(AuthContext);
 
-  // 컴포넌트 마운트 시 이메일 localStorage에서 복원
+  // 컴포넌트 마운트 시 이메일 sessionStorage에서 복원
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    const rememberedEmail = sessionStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
       setEmail(rememberedEmail);
       setRemember(true);
@@ -27,30 +30,54 @@ const Login = () => {
 
     // 이메일 저장 처리
     if (remember) {
-      localStorage.setItem('rememberedEmail', email);
+      sessionStorage.setItem('rememberedEmail', email);
     } else {
-      localStorage.removeItem('rememberedEmail');
+      sessionStorage.removeItem('rememberedEmail');
     }
 
     try {
+      console.log('로그인 시도', email, password);
       const res = await axios.post(`${API_BASE_URL}${AUTH}/login`, {
         email,
         password,
       });
       console.log('로그인 응답:', res.data);
 
-      if (res.data && res.data.result && res.data.result.token) {
-        const token = res.data.result.token;
-        sessionStorage.setItem('ACCESS_TOKEN', token);
-        localStorage.setItem('ACCESS_TOKEN', token);
+      if (
+        res.data &&
+        res.data.result &&
+        (res.data.result.accessToken || res.data.result.token) &&
+        res.data.result.refreshToken
+      ) {
+        const accessToken =
+          res.data.result.accessToken || res.data.result.token;
+        const refreshToken = res.data.result.refreshToken;
+        const id = res.data.result.id;
+        const role = res.data.result.role;
+        const provider = res.data.result.provider;
+        // UserContext의 loginHandler에 명확히 넘김
+        console.log('onLogin 호출', {
+          accessToken,
+          refreshToken,
+          id,
+          role,
+          provider,
+        });
+        if (typeof onLogin === 'function') {
+          onLogin({ accessToken, refreshToken, id, role, provider });
+        }
+        sessionStorage.setItem('ACCESS_TOKEN', accessToken);
+        localStorage.setItem('REFRESH_TOKEN', refreshToken);
+      } else {
+        console.log('로그인 응답에 토큰 없음:', res.data);
       }
       alert('로그인 성공!');
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
     } catch (e) {
+      console.log('로그인 에러', e);
       if (e.response?.status === 403) {
         alert('정지된 계정입니다. 관리자에게 문의하세요.');
       } else {
-        console.log(e);
         alert('로그인 실패입니다. 아이디 또는 비밀번호를 확인하세요!');
       }
     }

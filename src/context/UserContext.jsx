@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE_URL, HR } from '../configs/host-config';
 
 const AuthContext = React.createContext({
   isLoggedIn: false,
@@ -16,15 +17,41 @@ export const AuthContextProvider = (props) => {
   const [isInit, setIsInit] = useState(false); // 초기화 완료 상태 추가
 
   // 로그인 시 실행할 핸들러
-  const loginHandler = (loginData) => {
+  const loginHandler = async (loginData) => {
     console.log(loginData);
 
-    // 백엔드가 응답한 JSON 인증 정보를 클라이언트쪽에 보관하자.
-    localStorage.setItem('ACCESS_TOKEN', loginData.token);
-    localStorage.setItem('USER_ID', loginData.id);
-    localStorage.setItem('USER_ROLE', loginData.role);
+    // accessToken, refreshToken 저장
+    sessionStorage.setItem('ACCESS_TOKEN', loginData.accessToken);
+    localStorage.setItem('REFRESH_TOKEN', loginData.refreshToken);
+    sessionStorage.setItem('USER_ID', loginData.id);
+    sessionStorage.setItem('USER_ROLE', loginData.role);
     if (loginData.provider) {
-      localStorage.setItem('PROVIDER', loginData.provider);
+      sessionStorage.setItem('PROVIDER', loginData.provider);
+    }
+
+    // 로그인 후 유저 상세정보를 불러와서 sessionStorage에 저장
+    try {
+      const accessToken =
+        loginData.accessToken || sessionStorage.getItem('ACCESS_TOKEN');
+      const res = await fetch(`${API_BASE_URL}${HR}/users/detail`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const userInfo = data.result;
+        sessionStorage.setItem('USER_NAME', userInfo.userName || '');
+        sessionStorage.setItem(
+          'USER_DEPARTMENT',
+          userInfo.departmentName || '',
+        );
+        sessionStorage.setItem('USER_POSITION', userInfo.positionName || '');
+        sessionStorage.setItem('USER_EMPLOYEE_NO', userInfo.employeeNo || '');
+      }
+    } catch (e) {
+      console.error('유저 상세정보 조회 실패:', e);
     }
 
     setIsLoggedIn(true);
@@ -33,16 +60,16 @@ export const AuthContextProvider = (props) => {
 
   // 로그아웃 핸들러
   const logoutHandler = () => {
-    localStorage.clear(); // 로컬스토리지 전체 삭제
+    sessionStorage.clear(); // 세션스토리지 전체 삭제
     setIsLoggedIn(false);
     setUserRole('');
   };
 
   // 첫 렌더링 시에 이전 로그인 정보를 확인해서 로그인 상태 유지 시키기.
   useEffect(() => {
-    if (localStorage.getItem('ACCESS_TOKEN')) {
+    if (sessionStorage.getItem('ACCESS_TOKEN')) {
       setIsLoggedIn(true);
-      setUserRole(localStorage.getItem('USER_ROLE'));
+      setUserRole(sessionStorage.getItem('USER_ROLE'));
     }
     setIsInit(true);
   }, []);
