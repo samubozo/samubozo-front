@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import styles from './Signup.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
-import VerifyModal from './VerifyModal';
 import axios from 'axios';
-import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
+import { API_BASE_URL, HR } from '../../configs/host-config';
 
 const defaultForm = {
   email: '',
@@ -73,9 +72,7 @@ const validateField = (name, value, form) => {
 
 const Signup = () => {
   const [form, setForm] = useState(defaultForm);
-  const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
@@ -132,28 +129,6 @@ const Signup = () => {
     }));
   };
 
-  // 이메일 인증 모달
-  const handleEmailVerify = async () => {
-    if (!form.email) {
-      setErrors((prev) => ({
-        ...prev,
-        email: '이메일을 입력해 주세요.',
-      }));
-      return;
-    }
-    try {
-      await axios.post(`${API_BASE_URL}${AUTH}/email-valid`, {
-        email: form.email,
-      });
-      setShowModal(true);
-    } catch (e) {
-      setErrors((prev) => ({
-        ...prev,
-        email: '이메일 인증 메일 발송에 실패했습니다.',
-      }));
-    }
-  };
-
   // 회원가입 제출 (전체 에러 체크)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,12 +145,6 @@ const Signup = () => {
       }
     });
 
-    // 이메일 인증 여부
-    if (!isEmailVerified) {
-      newErrors.email = '이메일 인증을 완료해 주세요.';
-      isValid = false;
-    }
-
     if (!isValid) {
       setErrors(newErrors);
       return;
@@ -187,58 +156,26 @@ const Signup = () => {
       alert('회원가입이 완료되었습니다!');
       navigate('/');
     } catch (error) {
-      alert(
-        '회원가입 실패: ' + (error.response?.data?.message || error.message),
-      );
+      // 이메일 중복 등 서버 메시지 처리
+      if (
+        error.response?.data?.message &&
+        error.response.data.message.includes('이메일')
+      ) {
+        setErrors((prev) => ({
+          ...prev,
+          email: error.response.data.message,
+        }));
+      } else {
+        alert(
+          '회원가입 실패: ' + (error.response?.data?.message || error.message),
+        );
+      }
     }
     setIsSubmitting(false);
   };
 
-  // 인증 모달 재발송/완료
-  const handleModalResend = async () => {
-    await axios.post(`${API_BASE_URL}${AUTH}/email-valid`, {
-      email: form.email,
-    });
-  };
-
-  const handleModalComplete = async (code) => {
-    try {
-      const res = await axios.post(`${API_BASE_URL}${AUTH}/verify`, {
-        email: form.email,
-        code,
-      });
-      if (res.status === 200 && res.data === '인증 성공!') {
-        setIsEmailVerified(true);
-        setShowModal(false);
-        setErrors((prev) => ({ ...prev, email: undefined }));
-        alert('이메일 인증이 완료되었습니다.');
-      } else {
-        setErrors((prev) => ({
-          ...prev,
-          email: res.data.message || '인증에 실패했습니다.',
-        }));
-      }
-    } catch (err) {
-      setErrors((prev) => ({
-        ...prev,
-        email:
-          err.response?.data?.message ||
-          '인증에 실패했습니다. 인증번호를 확인해 주세요.',
-      }));
-    }
-  };
-
   return (
     <div className={styles.outerBg}>
-      {showModal && (
-        <VerifyModal
-          email={form.email || 'aaa***@samubozo.com'}
-          onResend={handleModalResend}
-          onComplete={handleModalComplete}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-
       <div className={styles.registerNav}>
         <Link to={'/'}>로그인</Link> |{' '}
         <span
@@ -250,9 +187,9 @@ const Signup = () => {
           }
         >
           ID 찾기
-        </span>
+        </span>{' '}
         | <Link to={'/passwordFind'}>PW 찾기</Link>
-        <span className={styles.icon}>👤</span> {/* styles.icon 적용 */}
+        <span className={styles.icon}>👤</span>
       </div>
 
       <img src={Logo} alt='로고' className={styles.registerLogo} />
@@ -265,25 +202,14 @@ const Signup = () => {
             <div className={styles.registerGrid}>
               <div className={styles.registerLeft}>
                 <label>이메일</label>
-                <div className={styles.emailRow}>
-                  <input
-                    type='email'
-                    name='email'
-                    placeholder='이메일을 입력하세요.'
-                    value={form.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    disabled={isEmailVerified}
-                  />
-                  <button
-                    type='button'
-                    className={styles.emailBtn}
-                    onClick={handleEmailVerify}
-                    disabled={isEmailVerified}
-                  >
-                    {isEmailVerified ? '인증완료' : '인증'}
-                  </button>
-                </div>
+                <input
+                  type='email'
+                  name='email'
+                  placeholder='이메일을 입력하세요.'
+                  value={form.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                />
                 {errors.email && (
                   <div className={styles.error}>{errors.email}</div>
                 )}
@@ -323,7 +249,7 @@ const Signup = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                 />
-                {errors.name && (
+                {errors.userName && (
                   <div className={styles.error}>{errors.userName}</div>
                 )}
 
@@ -339,7 +265,7 @@ const Signup = () => {
                         onBlur={handleBlur}
                       />
                     </div>
-                    {errors.birth && (
+                    {errors.birthDate && (
                       <div className={styles.error}>{errors.birthDate}</div>
                     )}
                   </div>
@@ -422,7 +348,7 @@ const Signup = () => {
                   <option value='회계팀'>회계팀</option>
                   <option value='영업팀'>영업팀</option>
                 </select>
-                {errors.department && (
+                {errors.departmentName && (
                   <div className={styles.error}>{errors.departmentName}</div>
                 )}
 
@@ -434,11 +360,11 @@ const Signup = () => {
                   onBlur={handleBlur}
                 >
                   <option value=''>선택하세요</option>
-                  <option value='팀장'>팀장</option>
-                  <option value='대리'>대리</option>
+                  <option value='책임'>책임</option>
+                  <option value='선임'>선임</option>
                   <option value='사원'>사원</option>
                 </select>
-                {errors.position && (
+                {errors.positionName && (
                   <div className={styles.error}>{errors.positionName}</div>
                 )}
               </div>

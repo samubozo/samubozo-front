@@ -165,7 +165,7 @@
   border-collapse: collapse !important;
   font-size: 17px !important;
   background: #fff !important;
-  border-radius: 12px !important;
+  // border-radius: 12px !important;
   overflow: hidden !important;
   box-shadow: none !important;
 
@@ -224,7 +224,6 @@
   font-weight: 500;
   border-radius: 7px;
   height: 38px;
-  margin-left: 10px;
   margin-right: 0;
   padding: 0 16px;
   cursor: pointer;
@@ -238,6 +237,31 @@
     background: #2f874f;
   }
 
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(69, 189, 116, 0.4);
+  }
+}
+
+.createAccount {
+  background: #45bd74;
+  color: #fff;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 7px;
+  height: 38px;
+  margin-right: 10px;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+
+  &:hover {
+    background: #3ba965;
+  }
+  &:active {
+    background: #2f874f;
+  }
   &:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(69, 189, 116, 0.4);
