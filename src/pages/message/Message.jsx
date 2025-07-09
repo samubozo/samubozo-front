@@ -1,54 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './Message.module.scss';
 import { Editor } from '@toast-ui/react-editor';
 import '@toast-ui/editor/dist/toastui-editor.css';
-
-function makeDummyMessages(type = 'received', start = 1, count = 30) {
-  const arr = [];
-  for (let i = start; i < start + count; i++) {
-    let files = [];
-    if (i % 5 === 0) {
-      files = [
-        { name: `첨부파일${i}.pdf`, url: `/dummy/sample${i}.pdf` },
-        ...(i % 10 === 0
-          ? [
-              { name: `추가파일${i}.jpg`, url: `/dummy/sample${i}.jpg` },
-              { name: `문서${i}.docx`, url: `/dummy/sample${i}.docx` },
-            ]
-          : []),
-      ];
-    }
-    arr.push({
-      id: type === 'received' ? i : 100 + i,
-      sender: type === 'received' ? `보낸사람${i}` : undefined,
-      receiver: type === 'sent' ? `받는사람${i}` : undefined,
-      title: `${type === 'received' ? '받은' : '보낸'}쪽지 ${i}`,
-      date: `2025-06-${String((i % 30) + 1).padStart(2, '0')} ${String(9 + (i % 10)).padStart(2, '0')}:00`,
-      read: i % 3 !== 0,
-      content: `${type === 'received' ? '받은' : '보낸'}쪽지 내용입니다. 번호: ${i}\n테스트용 더미데이터입니다.`,
-      ...(files.length > 0 ? { file: files } : {}),
-    });
-  }
-  return arr;
-}
-
-const initialDummyReceived = [
-  {
-    id: 1,
-    sender: '테스터',
-    title: '첨부파일 테스트',
-    date: '2025-06-21 15:32',
-    read: false,
-    content: '첨부파일 여러개 테스트입니다.',
-    file: [
-      { name: '테스트1.pdf', url: '/dummy/test1.pdf' },
-      { name: '테스트2.jpg', url: '/dummy/test2.jpg' },
-      { name: '테스트3.docx', url: '/dummy/test3.docx' },
-    ],
-  },
-  ...makeDummyMessages('received', 2, 29),
-];
-const initialDummySent = makeDummyMessages('sent', 1, 30);
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, MESSAGE, HR } from '../../configs/host-config';
+import { useLocation } from 'react-router-dom';
 
 const periodOptions = [
   { value: 'all', label: '전체기간' },
@@ -67,24 +23,88 @@ const sentSearchOptions = [
 
 const PAGE_SIZE = 10;
 
-const dummyUsers = [
-  { id: 1, name: '이호영', dept: '개발팀' },
-  { id: 2, name: '홍길동', dept: '영업팀' },
-  { id: 3, name: '신현국', dept: '인사팀' },
-  { id: 4, name: '김철수', dept: '개발팀' },
-  { id: 5, name: '박영희', dept: '영업팀' },
-  { id: 6, name: '최민수', dept: '인사팀' },
-  { id: 7, name: '이수정', dept: '개발팀' },
-  { id: 8, name: '정지훈', dept: '영업팀' },
-];
-const deptOptions = Array.from(new Set(dummyUsers.map((u) => u.dept)));
-
 function UserSearchModal({ open, onClose, onSelect }) {
   const [dept, setDept] = useState('');
   const [name, setName] = useState('');
-  const filtered = dummyUsers.filter(
-    (u) => (!dept || u.dept === dept) && (!name || u.name.includes(name)),
-  );
+  const [userList, setUserList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [deptOptions, setDeptOptions] = useState([]);
+  const debounceRef = useRef();
+  const [isComposing, setIsComposing] = useState(false);
+
+  // 검색 API 호출
+  const fetchUsers = () => {
+    setLoading(true);
+    const params = {};
+    if (name) params.userName = name;
+    if (dept) params.departmentName = dept;
+    axiosInstance
+      .get(`${API_BASE_URL}${HR}/users/search`, { params })
+      .then((res) => {
+        let data = [];
+        if (Array.isArray(res.data.result)) {
+          data = res.data.result;
+        } else if (res.data.result?.content) {
+          data = res.data.result.content;
+        }
+
+        // 현재 로그인한 사용자 제외
+        const currentEmployeeNo = sessionStorage.getItem('USER_EMPLOYEE_NO');
+        const filteredData = data.filter(
+          (user) => user.employeeNo != currentEmployeeNo,
+        );
+
+        console.log(
+          '전체 사용자:',
+          data.length,
+          '필터링 후:',
+          filteredData.length,
+        );
+        setUserList(filteredData);
+      })
+      .catch(() => setUserList([]))
+      .finally(() => setLoading(false));
+  };
+
+  // 모달이 열릴 때 전체 유저로 deptOptions 세팅
+  useEffect(() => {
+    if (!open) return;
+    axiosInstance
+      .get(`${API_BASE_URL}${HR}/users/search`, {
+        params: { page: 0, size: 1000 },
+      })
+      .then((res) => {
+        const data = res.data.result?.content || [];
+
+        // 현재 로그인한 사용자 제외
+        const currentEmployeeNo = sessionStorage.getItem('USER_EMPLOYEE_NO');
+        const filteredData = data.filter(
+          (user) => user.employeeNo != currentEmployeeNo,
+        );
+
+        setDeptOptions(
+          Array.from(
+            new Set(
+              filteredData.map((u) => u.department?.name).filter(Boolean),
+            ),
+          ),
+        );
+      });
+  }, [open]);
+
+  // 검색/필터/모달 열릴 때마다 debounce로 API 호출
+  useEffect(() => {
+    if (!open || isComposing) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchUsers();
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line
+  }, [dept, name, open, isComposing]);
+
   return !open ? null : (
     <div className={styles.modalOverlay}>
       <div className={styles.modalBox} style={{ minWidth: 340, maxWidth: 400 }}>
@@ -115,20 +135,27 @@ function UserSearchModal({ open, onClose, onSelect }) {
             type='text'
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={(e) => {
+              setIsComposing(false);
+              setName(e.target.value);
+            }}
             placeholder='이름'
           />
         </div>
         <div
           style={{ margin: '10px 0 0 0', maxHeight: 160, overflowY: 'auto' }}
         >
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div style={{ color: '#bbb', padding: '16px 0' }}>로딩 중...</div>
+          ) : userList.length === 0 ? (
             <div style={{ color: '#bbb', padding: '16px 0' }}>
               검색 결과 없음
             </div>
           ) : (
-            filtered.map((u) => (
+            userList.map((u) => (
               <div
-                key={u.id}
+                key={u.employeeNo}
                 style={{
                   padding: '7px 0',
                   cursor: 'pointer',
@@ -137,21 +164,26 @@ function UserSearchModal({ open, onClose, onSelect }) {
                   gap: 8,
                 }}
                 onClick={() => {
-                  onSelect(u);
+                  onSelect({
+                    id: u.employeeNo,
+                    name: u.userName,
+                    dept: u.department?.name,
+                  });
                   onClose();
                 }}
               >
-                <span style={{ fontWeight: 600 }}>{u.name}</span>
+                <span style={{ fontWeight: 600 }}>{u.userName}</span>
                 <span
                   style={{
                     fontSize: 13,
-                    color: '#388e3c',
-                    background: '#eafaf1',
+                    color: '#222',
+                    background: u.department?.departmentColor || '#eafaf1',
                     borderRadius: 4,
                     padding: '2px 7px',
+                    fontWeight: 500,
                   }}
                 >
-                  {u.dept}
+                  {u.department?.name}
                 </span>
               </div>
             ))
@@ -175,15 +207,24 @@ function MessageModal({ open, onClose, onReply, message }) {
         </div>
         <div className={styles.modalField}>
           <label>보낸사람</label>
-          <input value={message.sender || message.receiver} readOnly />
+          <input value={`사용자 ${message.senderId}`} readOnly />
         </div>
         <div className={styles.modalField}>
           <label>받은일시</label>
-          <input value={message.date} readOnly />
+          <input
+            value={
+              message.sentAt
+                ? new Date(message.sentAt).toLocaleString()
+                : message.createdAt
+                  ? new Date(message.createdAt).toLocaleString()
+                  : ''
+            }
+            readOnly
+          />
         </div>
         <div className={styles.modalField}>
           <label>제목</label>
-          <input value={message.title} readOnly />
+          <input value={message.subject || '제목 없음'} readOnly />
         </div>
         <div className={styles.modalField}>
           <label>내용</label>
@@ -192,29 +233,31 @@ function MessageModal({ open, onClose, onReply, message }) {
             dangerouslySetInnerHTML={{ __html: message.content || '' }}
           />
         </div>
-        {Array.isArray(message.file) && message.file.length > 0 && (
+        {message.attachmentUrl && (
           <div className={styles.modalField}>
             <label>첨부파일</label>
             <div className={styles.fileLinksBox}>
-              {message.file.map((f, idx) => (
-                <a
-                  href={f.url || '#'}
-                  download={f.name}
-                  className={styles.fileLink}
-                  key={idx}
-                >
-                  {f.name}
-                </a>
-              ))}
+              <a
+                href={message.attachmentUrl}
+                target='_blank'
+                rel='noopener noreferrer'
+                className={styles.fileLink}
+              >
+                첨부파일 다운로드
+              </a>
             </div>
           </div>
         )}
         <div className={styles.modalBtnRow}>
+          <button
+            className={styles.modalOkBtn}
+            onClick={() => onReply(message)}
+            style={{ backgroundColor: '#007bff', color: 'white' }}
+          >
+            답장
+          </button>
           <button className={styles.modalCancelBtn} onClick={onClose}>
             닫기
-          </button>
-          <button className={styles.modalOkBtn} onClick={onReply}>
-            답장
           </button>
         </div>
       </div>
@@ -222,173 +265,314 @@ function MessageModal({ open, onClose, onReply, message }) {
   );
 }
 
-function MessageWriteModal({ open, onClose, onSend }) {
-  const [receivers, setReceivers] = useState([]); // [{id, name, dept}]
-  const [showUserSearch, setShowUserSearch] = useState(false);
-  const [title, setTitle] = useState('');
+function MessageWriteModal({
+  open,
+  onClose,
+  onSend,
+  initialReceiver = null,
+  initialSubject = '',
+}) {
+  const [receivers, setReceivers] = useState([]);
+  const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState([]);
+  const [showUserSearch, setShowUserSearch] = useState(false);
   const editorRef = React.useRef();
 
-  // 파일 추가
+  const ALLOWED_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'application/zip',
+    'application/x-zip-compressed',
+  ];
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+  // 초기값 설정
+  useEffect(() => {
+    if (open) {
+      console.log('MessageWriteModal 열림:', {
+        initialReceiver,
+        initialSubject,
+      });
+      if (initialReceiver) {
+        console.log('초기 receiver 설정:', initialReceiver);
+        setReceivers([initialReceiver]);
+      } else {
+        setReceivers([]);
+      }
+      setSubject(initialSubject);
+      setContent('');
+      setFiles([]);
+      if (editorRef.current) {
+        editorRef.current.getInstance().setMarkdown('');
+      }
+    }
+  }, [open, initialReceiver, initialSubject]);
+
   const handleFileAdd = (e) => {
     const newFiles = Array.from(e.target.files);
-    setFiles((prev) => [
-      ...prev,
-      ...newFiles.filter(
-        (f) => !prev.some((pf) => pf.name === f.name && pf.size === f.size),
-      ),
-    ]);
+    const validFiles = [];
+    for (const file of newFiles) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        alert(
+          `허용되지 않은 파일 형식입니다.\n(이미지, PDF, 문서, 엑셀, 텍스트, ZIP만 첨부 가능)`,
+        );
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`파일 "${file.name}"은(는) 50MB를 초과하여 첨부할 수 없습니다.`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+    if (validFiles.length > 0) {
+      setFiles((prev) => [...prev, ...validFiles]);
+    }
+    // 파일 input 값 초기화 (같은 파일 재첨부 가능하게)
     e.target.value = '';
   };
-  // 파일 삭제
+
   const handleFileRemove = (idx) => {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
-  // 받는사람 추가/삭제
+
   const handleAddReceiver = (user) => {
-    setReceivers((prev) =>
-      prev.some((r) => r.id === user.id) ? prev : [...prev, user],
-    );
+    if (!receivers.find((r) => r.id === user.id)) {
+      setReceivers((prev) => [...prev, user]);
+    }
   };
+
   const handleRemoveReceiver = (id) => {
     setReceivers((prev) => prev.filter((r) => r.id !== id));
   };
 
+  const handleSend = async () => {
+    if (receivers.length === 0) {
+      alert('받는사람을 선택해주세요.');
+      return;
+    }
+    if (!subject.trim()) {
+      alert('제목을 입력해주세요.');
+      return;
+    }
+    if (!content.trim()) {
+      alert('내용을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append(
+        'request',
+        new Blob(
+          [
+            JSON.stringify({
+              receiverId: receivers[0].id,
+              subject: subject.trim(),
+              content: content.trim(),
+            }),
+          ],
+          { type: 'application/json' },
+        ),
+      );
+      files.forEach((file) => {
+        formData.append('attachment', file);
+      });
+
+      const response = await axiosInstance.post(
+        `${API_BASE_URL}${MESSAGE}`,
+        formData,
+      );
+
+      // API 응답 확인
+      if (response.status === 200 || response.status === 201) {
+        // 성공 후 폼 초기화
+        setReceivers([]);
+        setSubject('');
+        setContent('');
+        setFiles([]);
+        if (editorRef.current) {
+          editorRef.current.getInstance().setMarkdown('');
+        }
+
+        onSend(response.data); // 응답 데이터 전달
+      } else {
+        throw new Error('API 응답이 성공이 아닙니다.');
+      }
+    } catch (error) {
+      console.error('쪽지 전송 실패:', error);
+      alert('쪽지 전송에 실패했습니다.');
+    }
+  };
+
+  const handleClose = () => {
+    setReceivers([]);
+    setSubject('');
+    setContent('');
+    setFiles([]);
+    if (editorRef.current) {
+      editorRef.current.getInstance().setMarkdown('');
+    }
+    onClose();
+  };
+
   return !open ? null : (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalBox}>
-        <div className={styles.modalHeader}>
-          <span className={styles.modalTitle}>쪽지 보내기</span>
-          <button className={styles.modalCloseBtn} onClick={onClose}>
-            &times;
-          </button>
-        </div>
-        <div className={styles.modalFieldRow}>
-          <label>받는사람</label>
-          <div
-            style={{
-              display: 'flex',
-              flex: 1,
-              flexWrap: 'wrap',
-              gap: 6,
-              alignItems: 'center',
-            }}
-          >
-            {receivers.map((r) => (
-              <span
-                key={r.id}
+    <>
+      <div className={styles.modalOverlay}>
+        <div
+          className={styles.modalBox}
+          style={{ maxWidth: 600, maxHeight: '80vh' }}
+        >
+          <div className={styles.modalHeader}>
+            <span className={styles.modalTitle}>쪽지 쓰기</span>
+            <button className={styles.modalCloseBtn} onClick={handleClose}>
+              &times;
+            </button>
+          </div>
+          <div className={styles.modalField}>
+            <label>받는사람</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div
+                style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 4 }}
+              >
+                {receivers.map((r) => (
+                  <span
+                    key={r.id}
+                    style={{
+                      background: '#e3f2fd',
+                      padding: '4px 8px',
+                      borderRadius: 4,
+                      fontSize: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    {r.name} ({r.dept})
+                    <button
+                      onClick={() => handleRemoveReceiver(r.id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: 14,
+                        color: '#666',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowUserSearch(true)}
                 style={{
-                  background: '#eafaf1',
-                  color: '#388e3c',
-                  borderRadius: 5,
-                  padding: '3px 8px',
-                  fontSize: 15,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
+                  background: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  padding: '6px 12px',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  fontSize: 12,
                 }}
               >
-                {r.name}
-                <button
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#f44336',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontSize: 15,
-                    padding: 0,
-                    marginLeft: 2,
-                  }}
-                  onClick={() => handleRemoveReceiver(r.id)}
-                  title='삭제'
-                >
-                  ×
-                </button>
+                검색
+              </button>
+            </div>
+          </div>
+          <div className={styles.modalField}>
+            <label>제목</label>
+            <input
+              type='text'
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder='제목을 입력하세요'
+            />
+          </div>
+          <div className={styles.modalField}>
+            <label>내용</label>
+            <Editor
+              ref={editorRef}
+              initialValue={content}
+              initialEditType='wysiwyg'
+              onChange={() => {
+                const content = editorRef.current.getInstance().getMarkdown();
+                setContent(content);
+              }}
+              height='300px'
+              previewStyle='vertical'
+            />
+          </div>
+          <div className={styles.modalField}>
+            <label>첨부파일</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <label
+                className={styles.modalOkBtn}
+                style={{ margin: 0, cursor: 'pointer', padding: '7px 18px' }}
+              >
+                파일 선택
+                <input
+                  type='file'
+                  multiple
+                  onChange={handleFileAdd}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              <span style={{ color: '#888', fontSize: 13 }}>
+                (여러 개 선택 가능)
               </span>
-            ))}
-            <button
-              className={styles.addUserBtn}
-              title='받는사람 추가'
-              type='button'
-              onClick={() => setShowUserSearch(true)}
-            >
-              <span style={{ fontSize: 22, color: '#48b96c' }}>+</span>
+            </div>
+            {files.length > 0 && (
+              <ul className={styles.fileList}>
+                {files.map((file, idx) => (
+                  <li className={styles.fileListItem} key={idx}>
+                    <span className={styles.fileName}>{file.name}</span>
+                    <button
+                      onClick={() => handleFileRemove(idx)}
+                      className={styles.modalCancelBtn}
+                      style={{
+                        padding: '2px 10px',
+                        fontSize: 13,
+                        marginLeft: 8,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className={styles.modalBtnRow}>
+            <button className={styles.modalOkBtn} onClick={handleSend}>
+              전송
+            </button>
+            <button className={styles.modalCancelBtn} onClick={handleClose}>
+              취소
             </button>
           </div>
         </div>
-        <UserSearchModal
-          open={showUserSearch}
-          onClose={() => setShowUserSearch(false)}
-          onSelect={handleAddReceiver}
-        />
-        <div className={styles.modalFieldRow}>
-          <label>제목</label>
-          <input
-            type='text'
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-        <div className={styles.modalField}>
-          <label>내용</label>
-          <Editor
-            ref={editorRef}
-            initialValue={content}
-            height='180px'
-            initialEditType='wysiwyg'
-            useCommandShortcut={false}
-            onChange={() =>
-              setContent(editorRef.current.getInstance().getHTML())
-            }
-            hideModeSwitch={true}
-            toolbarItems={[
-              ['bold', 'italic', 'strike'],
-              ['hr', 'quote'],
-              ['ul', 'ol', 'task'],
-              ['table', 'link'],
-              ['code', 'codeblock'],
-            ]}
-          />
-        </div>
-        <div className={styles.modalFieldRow}>
-          <label>첨부파일</label>
-          <input type='file' multiple onChange={handleFileAdd} />
-        </div>
-        {files.length > 0 && (
-          <ul className={styles.fileList}>
-            {files.map((f, idx) => (
-              <li key={idx} className={styles.fileListItem}>
-                <span className={styles.fileName}>{f.name}</span>
-                <button
-                  className={styles.fileRemoveBtn}
-                  onClick={() => handleFileRemove(idx)}
-                  title='삭제'
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className={styles.modalBtnRow}>
-          <button className={styles.modalCancelBtn} onClick={onClose}>
-            닫기
-          </button>
-          <button
-            className={styles.modalOkBtn}
-            onClick={() => onSend({ receivers, title, content, files })}
-          >
-            보내기
-          </button>
-        </div>
       </div>
-    </div>
+      <UserSearchModal
+        open={showUserSearch}
+        onClose={() => setShowUserSearch(false)}
+        onSelect={handleAddReceiver}
+      />
+    </>
   );
 }
 
 const Message = () => {
+  const location = useLocation();
+
   // 탭: 받은/보낸
   const [tab, setTab] = useState('received');
   // 필터/검색 상태
@@ -400,37 +584,209 @@ const Message = () => {
   const [checked, setChecked] = useState([]);
   // 페이징
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [modalMsg, setModalMsg] = useState(null);
   const [showWrite, setShowWrite] = useState(false);
+  const [replyData, setReplyData] = useState(null);
+  const [isTabChanging, setIsTabChanging] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [sentMessages, setSentMessages] = useState([]);
 
-  // 데이터 선택
-  const data = tab === 'received' ? initialDummyReceived : initialDummySent;
+  // 데이터 상태
+  const [receivedMessages, setReceivedMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // 검색/필터 적용
-  const filtered = data.filter((msg) => {
-    // 기간 필터(여기선 생략, 실제 구현시 날짜 비교)
-    // 읽음/안읽음
-    if (tab === 'received' && unreadOnly && msg.read) return false;
-    // 검색
-    if (searchValue) {
-      if (tab === 'received') {
-        if (searchType === 'title' && !msg.title.includes(searchValue))
-          return false;
-        if (searchType === 'sender' && !msg.sender.includes(searchValue))
-          return false;
+  // 초기 데이터 로드
+  useEffect(() => {
+    if (tab === 'received') {
+      fetchReceivedMessages();
+    } else {
+      fetchSentMessages();
+    }
+  }, [tab]);
+
+  // URL 파라미터에서 messageId 확인 (페이지 로드 시에만)
+  useEffect(() => {
+    // 탭 변경 중에는 URL 파라미터 처리하지 않음
+    if (isTabChanging) {
+      console.log('탭 변경 중이므로 URL 파라미터 처리 건너뜀');
+      return;
+    }
+
+    const urlParams = new URLSearchParams(location.search);
+    const messageId = urlParams.get('messageId');
+    console.log('URL 파라미터 확인:', messageId);
+
+    if (
+      messageId &&
+      !modalMsg &&
+      messageId !== sessionStorage.getItem('lastProcessedMessageId')
+    ) {
+      console.log('URL 파라미터로 쪽지 열기:', messageId);
+      sessionStorage.setItem('lastProcessedMessageId', messageId);
+      setTimeout(() => {
+        fetchMessageDetail(messageId);
+      }, 1000); // 데이터 로드 후 열기
+    }
+  }, [location.search]); // isTabChanging 의존성 제거
+
+  // 받은쪽지 목록 조회
+  const fetchReceivedMessages = async () => {
+    setIsLoadingData(true);
+    setLoading(true);
+    try {
+      const params = {
+        page: page - 1,
+        size: PAGE_SIZE,
+        period,
+        searchType,
+        searchValue,
+        unreadOnly,
+      };
+
+      console.log('받은쪽지 조회 파라미터:', params);
+
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${MESSAGE}/received`,
+        { params },
+      );
+
+      if (response && response.data) {
+        console.log('받은쪽지 조회 성공:', response.data);
+        // 응답이 배열인 경우 그대로 사용, 객체인 경우 content 사용
+        const messages = Array.isArray(response.data)
+          ? response.data
+          : response.data.content || [];
+        setReceivedMessages(messages);
+        // 페이징 정보가 있는 경우에만 설정
+        if (response.data.totalElements) {
+          setTotalPages(Math.ceil(response.data.totalElements / PAGE_SIZE));
+        }
+      }
+    } catch (error) {
+      console.error('받은쪽지 조회 실패:', error);
+      alert('받은쪽지 조회에 실패했습니다.');
+    } finally {
+      setLoading(false);
+      setIsLoadingData(false);
+    }
+  };
+
+  // 보낸쪽지 목록 조회
+  const fetchSentMessages = async () => {
+    setIsLoadingData(true);
+    setLoading(true);
+    try {
+      const params = {
+        page: page - 1,
+        size: PAGE_SIZE,
+        period,
+        searchType,
+        searchValue,
+      };
+
+      console.log('보낸쪽지 조회 파라미터:', params);
+
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${MESSAGE}/sent`,
+        { params },
+      );
+
+      if (response && response.data) {
+        console.log('보낸쪽지 조회 성공:', response.data);
+        // 응답이 배열인 경우 그대로 사용, 객체인 경우 content 사용
+        const messages = Array.isArray(response.data)
+          ? response.data
+          : response.data.content || [];
+        setSentMessages(messages);
+        // 페이징 정보가 있는 경우에만 설정
+        if (response.data.totalElements) {
+          setTotalPages(Math.ceil(response.data.totalElements / PAGE_SIZE));
+        }
+      }
+    } catch (error) {
+      console.error('보낸쪽지 조회 실패:', error);
+      alert('보낸쪽지 조회에 실패했습니다.');
+    } finally {
+      setLoading(false);
+      setIsLoadingData(false);
+    }
+  };
+
+  // 쪽지 상세 조회
+  const fetchMessageDetail = async (messageId) => {
+    // 데이터 로딩 중이거나 탭 변경 중에는 모달 열지 않음
+    if (isLoadingData || isTabChanging) {
+      console.log('데이터 로딩 중이거나 탭 변경 중이므로 모달 열지 않음');
+      return;
+    }
+
+    // messageId 유효성 검사
+    if (!messageId) {
+      console.error('messageId가 없습니다:', messageId);
+      alert('메시지 ID가 유효하지 않습니다.');
+      return;
+    }
+
+    console.log('=== 쪽지 상세 조회 시작 ===');
+    console.log('messageId:', messageId);
+    console.log('현재 탭:', tab);
+    console.log('현재 모달 상태:', !!modalMsg);
+    console.log('데이터 로딩 상태:', isLoadingData);
+    console.log('탭 변경 상태:', isTabChanging);
+    console.log('현재 로그인한 사용자:', {
+      employeeNo: sessionStorage.getItem('USER_EMPLOYEE_NO'),
+      userId: sessionStorage.getItem('USER_ID'),
+      userName: sessionStorage.getItem('USER_NAME'),
+      accessToken: sessionStorage.getItem('ACCESS_TOKEN') ? '있음' : '없음',
+    });
+
+    try {
+      // 모든 쪽지 상세조회는 동일한 엔드포인트 사용
+      const endpoint = `${API_BASE_URL}${MESSAGE}/${messageId}`;
+      console.log('요청 엔드포인트:', endpoint);
+
+      const response = await axiosInstance.get(endpoint);
+
+      // 응답 데이터 확인
+      if (response && response.data) {
+        console.log('쪽지 상세 조회 성공:', response.data);
+        console.log('모달 열기 전 상태:', !!modalMsg);
+        setModalMsg(response.data);
+        console.log('모달 열기 후 상태:', true);
+        // 읽음 처리 후 목록 새로고침
+        if (tab === 'received') {
+          fetchReceivedMessages();
+        }
       } else {
-        if (searchType === 'title' && !msg.title.includes(searchValue))
-          return false;
-        if (searchType === 'receiver' && !msg.receiver.includes(searchValue))
-          return false;
+        throw new Error('응답 데이터가 없습니다.');
+      }
+    } catch (error) {
+      console.error('쪽지 상세 조회 실패:', error);
+
+      // 403 에러인 경우 권한 문제로 처리
+      if (error.response && error.response.status === 403) {
+        alert('이 쪽지를 조회할 권한이 없습니다.');
+      } else if (error.message === '응답 데이터가 없습니다.') {
+        // 이미 처리된 에러는 다시 alert하지 않음
+        return;
+      } else {
+        alert('쪽지 상세 조회에 실패했습니다.');
       }
     }
-    return true;
-  });
+  };
 
-  // 페이징 처리
-  const totalPage = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // 데이터 선택
+  const data = tab === 'received' ? receivedMessages : sentMessages;
+
+  // 페이징 처리 (API에서 페이징 처리하므로 단순히 표시만)
+  const paged = data;
+
+  console.log('=== 페이징 정보 ===');
+  console.log('현재 페이지:', page);
+  console.log('전체 페이지:', totalPages);
+  console.log('데이터 개수:', data.length);
+  console.log('페이지당 크기:', PAGE_SIZE);
 
   // 체크박스 핸들러
   const handleCheck = (id) => {
@@ -440,15 +796,224 @@ const Message = () => {
   };
   const handleCheckAll = (e) => {
     if (e.target.checked) {
-      setChecked(paged.map((msg) => msg.id));
+      setChecked(paged.map((msg) => msg.id || msg.messageId));
     } else {
       setChecked([]);
     }
   };
+
   // 삭제
-  const handleDelete = () => {
-    alert('삭제 기능은 더미입니다.');
+  const handleDelete = async () => {
+    if (checked.length === 0) {
+      alert('삭제할 쪽지를 선택해주세요.');
+      return;
+    }
+
+    const confirmMessage =
+      tab === 'received'
+        ? '선택한 쪽지를 삭제하시겠습니까?'
+        : '선택한 쪽지를 발신 취소하시겠습니까?';
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const messageId of checked) {
+        try {
+          let endpoint;
+          if (tab === 'received') {
+            // 받은 쪽지함: 일반 삭제
+            endpoint = `${API_BASE_URL}${MESSAGE}/${messageId}`;
+          } else {
+            // 보낸 쪽지함: 발신 취소
+            endpoint = `${API_BASE_URL}${MESSAGE}/${messageId}/recall`;
+          }
+
+          console.log(
+            `${tab === 'received' ? '삭제' : '발신 취소'} 요청:`,
+            endpoint,
+          );
+
+          await axiosInstance.delete(endpoint);
+          successCount++;
+          console.log(
+            `${tab === 'received' ? '삭제' : '발신 취소'} 성공:`,
+            messageId,
+          );
+        } catch (error) {
+          console.error(
+            `${tab === 'received' ? '삭제' : '발신 취소'} 실패:`,
+            messageId,
+            error,
+          );
+          failCount++;
+        }
+      }
+
+      // 결과 알림
+      if (successCount > 0) {
+        alert(
+          `${successCount}개의 쪽지가 ${tab === 'received' ? '삭제' : '발신 취소'}되었습니다.${failCount > 0 ? `\n${failCount}개 실패했습니다.` : ''}`,
+        );
+      } else {
+        alert(`${tab === 'received' ? '삭제' : '발신 취소'}에 실패했습니다.`);
+      }
+
+      // 성공한 경우 목록 새로고침
+      if (successCount > 0) {
+        setChecked([]);
+        if (tab === 'received') {
+          fetchReceivedMessages();
+        } else {
+          fetchSentMessages();
+        }
+      }
+    } catch (error) {
+      console.error('삭제 처리 중 오류:', error);
+      alert('삭제 처리 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 쪽지 전송 완료
+  const handleSendComplete = (messageData) => {
+    console.log('쪽지 전송 완료:', messageData);
+    // API 응답 데이터 확인
+    if (messageData && messageData.success !== false) {
+      alert('쪽지가 성공적으로 전송되었습니다.');
+      setShowWrite(false);
+      setReplyData(null); // 답장 데이터 초기화
+      console.log('모달 닫기 및 답장 데이터 초기화 완료');
+
+      // 보낸 편지함 탭으로 이동
+      setTab('sent');
+      setPage(1);
+      setChecked([]);
+
+      // 보낸쪽지함 새로고침
+      fetchSentMessages();
+    } else {
+      // API에서 실패 응답을 보낸 경우
+      alert('쪽지 전송에 실패했습니다.');
+    }
+  };
+
+  // 답장 처리
+  const handleReply = (message) => {
+    console.log('답장 처리:', message);
+    console.log('메시지 데이터 구조:', {
+      senderId: message.senderId,
+      senderName: message.senderName,
+      sender: message.sender,
+      subject: message.subject,
+    });
+
+    // 보낸 사람 정보 구성 - 다양한 필드명 시도
+    let deptName = '부서 정보 없음';
+
+    // 부서명 추출 시도
+    if (message.sender?.department?.name) {
+      deptName = message.sender.department.name;
+    } else if (message.sender?.departmentName) {
+      deptName = message.sender.departmentName;
+    } else if (message.senderDepartment) {
+      deptName = message.senderDepartment;
+    } else if (message.sender?.dept) {
+      deptName = message.sender.dept;
+    }
+
+    const receiver = {
+      id: message.senderId || message.sender?.employeeNo,
+      name:
+        message.senderName ||
+        message.sender?.userName ||
+        `사용자 ${message.senderId}`,
+      dept: deptName,
+    };
+
+    console.log('구성된 receiver:', receiver);
+
+    // 답장 제목 설정 (원본 제목에 "Re:" 추가)
+    const replySubject = message.subject
+      ? `Re: ${message.subject}`
+      : 'Re: 답장';
+
+    setReplyData({
+      receiver,
+      subject: replySubject,
+    });
+
+    // 쪽지 읽기 모달 닫기
+    setModalMsg(null);
+
+    // 쪽지 쓰기 모달 열기
+    setShowWrite(true);
+  };
+
+  // 모달 닫기 처리
+  const handleCloseModal = () => {
+    setModalMsg(null);
+    // 처리된 messageId 초기화
+    sessionStorage.removeItem('lastProcessedMessageId');
+  };
+
+  const handleTabChange = (newTab) => {
+    console.log('탭 변경:', tab, '->', newTab);
+    setIsTabChanging(true);
+    setTab(newTab);
+
+    // URL 파라미터 제거
+    const url = new URL(window.location);
+    url.searchParams.delete('messageId');
+    window.history.replaceState({}, '', url);
+
+    // 탭 변경 후 잠시 후 플래그 해제
+    setTimeout(() => {
+      setIsTabChanging(false);
+    }, 100);
+  };
+
+  // 검색 처리
+  const handleSearch = () => {
+    console.log('검색 실행:', {
+      tab,
+      searchType,
+      searchValue,
+      period,
+      unreadOnly,
+    });
+
+    // 페이지를 1로 리셋하고 검색 실행
+    setPage(1);
     setChecked([]);
+
+    if (tab === 'received') {
+      fetchReceivedMessages();
+    } else {
+      fetchSentMessages();
+    }
+  };
+
+  // Enter 키로 검색
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  // 검색어 변경 시 자동 검색 (선택사항)
+  const handleSearchValueChange = (e) => {
+    setSearchValue(e.target.value);
+    // 검색어가 비어있으면 자동으로 검색 실행
+    if (e.target.value === '') {
+      handleSearch();
+    }
   };
 
   return (
@@ -459,9 +1024,14 @@ const Message = () => {
           쪽지 쓰기
         </button>
         <button
-          className={tab === 'received' ? styles.activeTab : ''}
+          className={`${styles.sidebarButton} ${tab === 'received' ? styles.activeTab : ''}`}
+          style={{
+            background: tab === 'received' ? '#eafaf1' : 'none',
+            borderLeft: tab === 'received' ? '4px solid #48b96c' : 'none',
+            fontWeight: tab === 'received' ? '700' : '500',
+          }}
           onClick={() => {
-            setTab('received');
+            handleTabChange('received');
             setPage(1);
             setChecked([]);
           }}
@@ -469,9 +1039,14 @@ const Message = () => {
           받은쪽지함
         </button>
         <button
-          className={tab === 'sent' ? styles.activeTab : ''}
+          className={`${styles.sidebarButton} ${tab === 'sent' ? styles.activeTab : ''}`}
+          style={{
+            background: tab === 'sent' ? '#eafaf1' : 'none',
+            borderLeft: tab === 'sent' ? '4px solid #48b96c' : 'none',
+            fontWeight: tab === 'sent' ? '700' : '500',
+          }}
           onClick={() => {
-            setTab('sent');
+            handleTabChange('sent');
             setPage(1);
             setChecked([]);
           }}
@@ -481,9 +1056,6 @@ const Message = () => {
       </aside>
       <div className={styles.content}>
         <div className={styles.topBar}>
-          {/* <select value={PAGE_SIZE} className={styles.pageSizeSelect} disabled>
-            <option value={10}>10</option>
-          </select> */}
           {tab === 'received' && (
             <label className={styles.unreadOnlyLabel}>
               <input
@@ -521,10 +1093,13 @@ const Message = () => {
           <input
             className={styles.searchInput}
             value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
+            onChange={handleSearchValueChange}
+            onKeyDown={handleSearchKeyPress}
             placeholder='검색어 입력'
           />
-          <button className={styles.searchBtn}>검색</button>
+          <button className={styles.searchBtn} onClick={handleSearch}>
+            검색
+          </button>
         </div>
         <table className={styles.table}>
           <thead>
@@ -534,7 +1109,9 @@ const Message = () => {
                   type='checkbox'
                   checked={
                     paged.length > 0 &&
-                    paged.every((msg) => checked.includes(msg.id))
+                    paged.every((msg) =>
+                      checked.includes(msg.id || msg.messageId),
+                    )
                   }
                   onChange={handleCheckAll}
                 />
@@ -556,7 +1133,16 @@ const Message = () => {
             </tr>
           </thead>
           <tbody>
-            {paged.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={tab === 'received' ? 4 : 5}
+                  className={styles.noData}
+                >
+                  로딩 중...
+                </td>
+              </tr>
+            ) : paged.length === 0 ? (
               <tr>
                 <td
                   colSpan={tab === 'received' ? 4 : 5}
@@ -568,30 +1154,64 @@ const Message = () => {
             ) : (
               paged.map((msg) => (
                 <tr
-                  key={msg.id}
-                  className={msg.read === false ? styles.unreadRow : ''}
-                  onClick={() => setModalMsg(msg)}
+                  key={msg.id || msg.messageId}
+                  className={msg.isRead === false ? styles.unreadRow : ''}
+                  onClick={() => {
+                    const messageId = msg.id || msg.messageId;
+                    if (messageId) {
+                      fetchMessageDetail(messageId);
+                    } else {
+                      console.error('메시지 ID가 없습니다:', msg);
+                      alert('메시지 ID를 찾을 수 없습니다.');
+                    }
+                  }}
                   style={{ cursor: 'pointer' }}
                 >
                   <td>
                     <input
                       type='checkbox'
-                      checked={checked.includes(msg.id)}
-                      onChange={() => handleCheck(msg.id)}
+                      checked={checked.includes(msg.id || msg.messageId)}
+                      onChange={() => handleCheck(msg.id || msg.messageId)}
                     />
                   </td>
                   {tab === 'received' ? (
                     <>
-                      <td>{msg.sender}</td>
-                      <td>{msg.title}</td>
-                      <td>{msg.date}</td>
+                      <td>
+                        {msg.senderName ||
+                          msg.sender?.userName ||
+                          `사용자 ${msg.senderId}` ||
+                          '보낸사람 없음'}
+                      </td>
+                      <td>{msg.subject || '제목 없음'}</td>
+                      <td>
+                        {msg.sentAt
+                          ? new Date(msg.sentAt).toLocaleString()
+                          : msg.createdAt
+                            ? new Date(msg.createdAt).toLocaleString()
+                            : msg.createdDate
+                              ? new Date(msg.createdDate).toLocaleString()
+                              : ''}
+                      </td>
                     </>
                   ) : (
                     <>
-                      <td>{msg.receiver}</td>
-                      <td>{msg.title}</td>
-                      <td>{msg.date}</td>
-                      <td>{msg.read ? '읽음' : '미확인'}</td>
+                      <td>
+                        {msg.receiverName ||
+                          msg.receiver?.userName ||
+                          `사용자 ${msg.receiverId}` ||
+                          '받는사람 없음'}
+                      </td>
+                      <td>{msg.subject || '제목 없음'}</td>
+                      <td>
+                        {msg.sentAt
+                          ? new Date(msg.sentAt).toLocaleString()
+                          : msg.createdAt
+                            ? new Date(msg.createdAt).toLocaleString()
+                            : msg.createdDate
+                              ? new Date(msg.createdDate).toLocaleString()
+                              : ''}
+                      </td>
+                      <td>{msg.isRead ? '읽음' : '미확인'}</td>
                     </>
                   )}
                 </tr>
@@ -608,7 +1228,7 @@ const Message = () => {
             >
               {'<<'}
             </button>
-            {[...Array(totalPage)].map((_, idx) => (
+            {[...Array(totalPages)].map((_, idx) => (
               <button
                 key={idx + 1}
                 onClick={() => setPage(idx + 1)}
@@ -620,8 +1240,8 @@ const Message = () => {
               </button>
             ))}
             <button
-              onClick={() => setPage(totalPage)}
-              disabled={page === totalPage}
+              onClick={() => setPage(totalPages)}
+              disabled={page === totalPages}
               className={styles.pageBtn}
             >
               {'>>'}
@@ -636,16 +1256,20 @@ const Message = () => {
         <MessageModal
           open={!!modalMsg}
           message={modalMsg}
-          onClose={() => setModalMsg(null)}
-          onReply={() => alert('답장 기능은 추후 구현')}
+          onClose={handleCloseModal}
+          onReply={handleReply}
         />
         <MessageWriteModal
           open={showWrite}
-          onClose={() => setShowWrite(false)}
-          onSend={(msg) => {
-            alert('쪽지 전송: ' + JSON.stringify(msg));
+          onClose={() => {
             setShowWrite(false);
+            setReplyData(null); // 답장 데이터 초기화
+            // 처리된 messageId 초기화
+            sessionStorage.removeItem('lastProcessedMessageId');
           }}
+          onSend={handleSendComplete}
+          initialReceiver={replyData?.receiver}
+          initialSubject={replyData?.subject}
         />
       </div>
     </div>

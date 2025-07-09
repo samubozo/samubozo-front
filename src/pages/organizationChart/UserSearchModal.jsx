@@ -1,44 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './OrgChart.module.scss';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
-
-// --- UserSearchModal (reuse from Message.jsx, local dummy for now) ---
-const dummyUsers = [
-  { id: 1, name: '이호영', dept: '개발팀' },
-  { id: 2, name: '홍길동', dept: '영업팀' },
-  { id: 3, name: '신현국', dept: '인사팀' },
-  { id: 4, name: '김철수', dept: '개발팀' },
-  { id: 5, name: '박영희', dept: '영업팀' },
-  { id: 6, name: '최민수', dept: '인사팀' },
-  { id: 7, name: '이수정', dept: '개발팀' },
-  { id: 8, name: '정지훈', dept: '영업팀' },
-];
+import axiosInstance from '../../configs/axios-config';
 
 // --- MUI Autocomplete 기반 UserSearchModal ---
 function UserSearchModal({ open, onClose, onSelect }) {
+  console.log('UserSearchModal 렌더링됨', open);
+
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
-  // 실제 환경에서는 서버 쿼리로 대체 가능
-  const [options, setOptions] = useState(dummyUsers);
+  const [options, setOptions] = useState([]);
+  const debounceRef = useRef();
 
-  useEffect(() => {
-    if (!open) return;
+  // API 호출 함수
+  const fetchUsers = async (keyword) => {
+    console.log('fetchUsers 호출됨', keyword);
     setLoading(true);
-    // 300ms 딜레이 후 필터링 (실제 서버라면 fetch)
-    const timeout = setTimeout(() => {
-      const filtered = dummyUsers.filter(
-        (u) =>
-          !inputValue ||
-          u.name.includes(inputValue) ||
-          u.dept.includes(inputValue),
-      );
-      setOptions(filtered);
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timeout);
+    try {
+      let params = {};
+      if (keyword) {
+        // 이름 또는 부서명 모두에 검색어 적용
+        params.userName = keyword;
+        params.departmentName = keyword;
+      } else {
+        params.page = 0;
+        params.size = 10;
+      }
+      // 이름/부서명 동시 검색: 백엔드가 둘 다 있으면 AND, 둘 중 하나만 있으면 OR로 동작할 수 있음
+      // 실제로는 둘 다 보내면 AND, 하나만 보내면 해당 조건만 적용됨
+      // 여기서는 둘 다 같은 값으로 보내서 이름 또는 부서명에 포함된 사용자 모두 반환
+      const res = await axiosInstance.get('/hr-service/hr/users/search', {
+        params,
+      });
+      console.log('API 응답:', res);
+      setOptions(res.data.result?.content || []);
+      console.log('옵션 배열:', res.data.result?.content || []);
+    } catch (e) {
+      setOptions([]);
+      console.log('API 에러:', e);
+    }
+    setLoading(false);
+  };
+
+  // inputValue 변경 시 debounce로 API 호출
+  useEffect(() => {
+    console.log('useEffect 실행됨', inputValue, open);
+    if (!open) return;
+    setOptions([]);
+    setLoading(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchUsers(inputValue.trim());
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line
   }, [inputValue, open]);
+
+  // 모달이 열릴 때 초기화
+  useEffect(() => {
+    if (open) {
+      setInputValue('');
+      fetchUsers('');
+    }
+    // eslint-disable-next-line
+  }, [open]);
 
   return !open ? null : (
     <div className={styles.modalOverlay}>
@@ -55,7 +84,11 @@ function UserSearchModal({ open, onClose, onSelect }) {
             autoHighlight
             options={options}
             loading={loading}
-            getOptionLabel={(option) => option.name + ' (' + option.dept + ')'}
+            getOptionLabel={(option) =>
+              option.userName && option.departmentName
+                ? `${option.userName} (${option.departmentName})`
+                : ''
+            }
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -78,10 +111,10 @@ function UserSearchModal({ open, onClose, onSelect }) {
             renderOption={(props, option) => (
               <li
                 {...props}
-                key={option.id}
+                key={option.employeeNo}
                 style={{ display: 'flex', alignItems: 'center', gap: 10 }}
               >
-                <span style={{ fontWeight: 600 }}>{option.name}</span>
+                <span style={{ fontWeight: 600 }}>{option.userName}</span>
                 <span
                   style={{
                     fontSize: 13,
@@ -92,12 +125,18 @@ function UserSearchModal({ open, onClose, onSelect }) {
                     fontWeight: 500,
                   }}
                 >
-                  {option.dept}
+                  {option.departmentName}
+                </span>
+                <span style={{ fontSize: 13, color: '#888' }}>
+                  {option.positionName}
                 </span>
               </li>
             )}
             inputValue={inputValue}
-            onInputChange={(_, value) => setInputValue(value)}
+            onInputChange={(_, value) => {
+              console.log('onInputChange 발생', value);
+              setInputValue(value);
+            }}
             onChange={(_, value) => {
               if (value) {
                 onSelect(value);
@@ -108,6 +147,12 @@ function UserSearchModal({ open, onClose, onSelect }) {
             openOnFocus
             blurOnSelect
           />
+          <button
+            onClick={() => fetchUsers(inputValue)}
+            style={{ marginTop: 12 }}
+          >
+            강제 검색 (디버그)
+          </button>
         </div>
       </div>
     </div>
