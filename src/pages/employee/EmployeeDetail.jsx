@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styles from './EmployeeDetail.module.scss'; // styles import
-
-const DEFAULT_POSITIONS = [
-  { id: 1, order: 1, name: '팀장' },
-  { id: 2, order: 2, name: '대리' },
-  { id: 3, order: 3, name: '사원' },
-];
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, HR } from '../../configs/host-config';
 
 const EmployeeDetail = ({ selectedEmployee }) => {
-  const [dept, setDept] = useState('경영지원');
-  const [position, setPosition] = useState('팀장');
+  const [dept, setDept] = useState(''); // departmentId
+  const [deptName, setDeptName] = useState('');
+  const [position, setPosition] = useState(''); // positionId
+  const [positionName, setPositionName] = useState('');
+  const [residentRegNo, setResidentRegNo] = useState('');
   const [status, setStatus] = useState('재직');
-  const [role, setRole] = useState('인사담당자');
-  const [joinDate, setJoinDate] = useState('2025.02.19');
+  const [role, setRole] = useState('N'); // hrRole: 'Y' or 'N'
+  const [joinDate, setJoinDate] = useState('');
   const [leaveDate, setLeaveDate] = useState('');
   const [memo, setMemo] = useState('');
   const [gender, setGender] = useState('남');
@@ -24,16 +24,69 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [employeeAddress, setEmployeeAddress] = useState('');
   const [activeTab, setActiveTab] = useState('info');
   const [profileImage, setProfileImage] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [positions, setPositions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+
+  // 부서/직책 목록 불러오기
+  useEffect(() => {
+    const fetchMeta = async () => {
+      try {
+        const [deptRes, posRes] = await Promise.all([
+          axiosInstance.get(`${API_BASE_URL}${HR}/departments`),
+          axiosInstance.get(`${API_BASE_URL}${HR}/positions`),
+        ]);
+        setDepartments(deptRes.data.result || []);
+        setPositions(posRes.data.result || []);
+      } catch (e) {
+        // 무시
+      }
+    };
+    fetchMeta();
+  }, []);
 
   // 선택된 직원에 따라 이름과 전화번호 업데이트
   useEffect(() => {
-    setEmployeeName(selectedEmployee?.name);
-    setEmployeePhone(selectedEmployee?.phone);
+    if (!selectedEmployee?.id) return;
+    setLoading(true);
+    setError(null);
+    axiosInstance
+      .get(`${API_BASE_URL}${HR}/user/${selectedEmployee.id}`)
+      .then((res) => {
+        const data = res.data.result;
+        setEmployeeName(data.userName || '');
+        setEmployeePhone(data.phone || '');
+        setEmployeeOutEmail(data.externalEmail || '');
+        setDept(data.department?.departmentId || '');
+        setDeptName(data.department?.departmentName || '');
+        setPosition(data.positionId || '');
+        setPositionName(data.positionName || '');
+        setStatus(data.activate === 'N' ? '퇴직' : '재직');
+        setRole(data.hrRole === 'Y' ? 'Y' : 'N');
+        setJoinDate(data.hireDate || '');
+        setLeaveDate(data.retireDate || '');
+        setMemo(data.remarks || '');
+        // 서버 gender가 'M'/'F'일 경우 프론트도 'M'/'F'로 사용
+        if (data.gender === 'M') setGender('M');
+        else if (data.gender === 'F') setGender('F');
+        else setGender('M');
+        setEmployeeAddress(data.address || '');
+        setResidentRegNo(data.residentRegNo || '');
+        setProfileImage(
+          data.profileImage
+            ? `${API_BASE_URL}/files/${data.profileImage}`
+            : null,
+        );
+      })
+      .catch(() => setError('직원 정보를 불러오지 못했습니다.'))
+      .finally(() => setLoading(false));
   }, [selectedEmployee]);
 
   // 직책 관련 상태
-  const [positions, setPositions] = useState([...DEFAULT_POSITIONS]);
   const [selectedPositionId, setSelectedPositionId] = useState(
     positions[0]?.id,
   );
@@ -227,11 +280,92 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const handleProfileImgChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setProfileFile(file);
       const reader = new FileReader();
       reader.onload = (ev) => {
         setProfileImage(ev.target.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // 프로필 이미지 서버 업로드
+  const handleProfileUpload = async () => {
+    if (!profileFile || !selectedEmployee?.id) return;
+    const formData = new FormData();
+    formData.append('employeeNo', selectedEmployee.id);
+    formData.append('profileImage', profileFile);
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${HR}/user/profile`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      alert('프로필 이미지가 업로드되었습니다.');
+    } catch {
+      alert('프로필 이미지 업로드 실패');
+    }
+  };
+
+  // 직원 정보 저장 (수정)
+  const handleSave = async () => {
+    if (!selectedEmployee?.id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        userName: employeeName,
+        externalEmail: employeeOutEmail,
+        address: employeeAddress,
+        remarks: memo,
+        phone: employeePhone,
+        gender,
+        hireDate: joinDate,
+        retireDate: leaveDate,
+        activate: status === '퇴직' ? 'N' : 'Y',
+        hrRole: role,
+        residentRegNo,
+      };
+      if (dept) payload.departmentId = dept;
+      if (position) payload.positionId = position;
+      await axiosInstance.patch(
+        `${API_BASE_URL}${HR}/users/${selectedEmployee.id}`,
+        payload,
+      );
+      alert('저장되었습니다.');
+      // 저장 후 상세정보를 즉시 다시 불러오기
+      try {
+        const res = await axiosInstance.get(
+          `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
+        );
+        const data = res.data.result;
+        setEmployeeName(data.userName || '');
+        setEmployeePhone(data.phone || '');
+        setEmployeeOutEmail(data.externalEmail || '');
+        setDept(data.department?.departmentId || '');
+        setDeptName(data.department?.departmentName || '');
+        setPosition(data.positionId || '');
+        setPositionName(data.positionName || '');
+        setStatus(data.activate === 'N' ? '퇴직' : '재직');
+        setRole(data.hrRole === 'Y' ? 'Y' : 'N');
+        setJoinDate(data.hireDate || '');
+        setLeaveDate(data.retireDate || '');
+        setMemo(data.remarks || '');
+        if (data.gender === 'M') setGender('M');
+        else if (data.gender === 'F') setGender('F');
+        else setGender('M');
+        setEmployeeAddress(data.address || '');
+        setResidentRegNo(data.residentRegNo || '');
+        setProfileImage(
+          data.profileImage
+            ? `${API_BASE_URL}/files/${data.profileImage}`
+            : null,
+        );
+      } catch (err) {
+        alert('저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.');
+      }
+    } catch {
+      setError('저장에 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -331,6 +465,11 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                 onChange={handleProfileImgChange}
               />
             </div>
+            {profileFile && (
+              <button style={{ marginTop: 8 }} onClick={handleProfileUpload}>
+                프로필 업로드
+              </button>
+            )}
           </div>
           {/* 인적 사항 테이블 섹션 - 첨부 이미지와 완전히 동일하게 수정 */}
           <div className={styles.infoTableSection}>
@@ -361,16 +500,27 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                 <tr>
                   <td className={styles.tableLabel}>주민등록번호</td>
                   <td>
-                    <input value='960316-1000000' readOnly />
+                    <input
+                      value={residentRegNo}
+                      onChange={(e) => setResidentRegNo(e.target.value)}
+                    />
                   </td>
                   <td className={styles.tableLabel}>성별</td>
                   <td className={styles.genderCell}>
                     <label>
-                      <input type='radio' checked={gender === '남'} readOnly />{' '}
+                      <input
+                        type='radio'
+                        checked={gender === 'M'}
+                        onChange={() => setGender('M')}
+                      />{' '}
                       남
                     </label>
                     <label>
-                      <input type='radio' checked={gender === '여'} readOnly />{' '}
+                      <input
+                        type='radio'
+                        checked={gender === 'F'}
+                        onChange={() => setGender('F')}
+                      />{' '}
                       여
                     </label>
                   </td>
@@ -576,7 +726,12 @@ const EmployeeDetail = ({ selectedEmployee }) => {
               }}
             >
               <button className={styles.printBtn}>인쇄</button>
-              <button className={styles.approvalBtn}>전자결재</button>
+              <button
+                className={styles.approvalBtn}
+                onClick={() => navigate('/approval?tab=certificate')}
+              >
+                전자결재
+              </button>
               <button className={styles.saveBtn}>제출</button>
             </div>
           </div>
@@ -600,10 +755,12 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                     value={dept}
                     onChange={(e) => setDept(e.target.value)}
                   >
-                    <option>경영지원</option>
-                    <option>인사팀</option>
-                    <option>회계팀</option>
-                    <option>영업팀</option>
+                    <option value=''>부서 선택</option>
+                    {departments.map((d) => (
+                      <option key={d.departmentId} value={d.departmentId}>
+                        {d.name || d.departmentName}
+                      </option>
+                    ))}
                   </select>
                 </td>
                 <td className={styles.tableLabel}>직책</td>
@@ -612,9 +769,12 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                     value={position}
                     onChange={(e) => setPosition(e.target.value)}
                   >
-                    <option>팀장</option>
-                    <option>대리</option>
-                    <option>사원</option>
+                    <option value=''>직책 선택</option>
+                    {positions.map((p) => (
+                      <option key={p.positionId} value={p.positionId}>
+                        {p.positionName}
+                      </option>
+                    ))}
                   </select>
                 </td>
               </tr>
@@ -635,8 +795,8 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                   >
-                    <option>관리자</option>
-                    <option>일반</option>
+                    <option value='Y'>관리자</option>
+                    <option value='N'>일반</option>
                   </select>
                 </td>
               </tr>
@@ -678,7 +838,13 @@ const EmployeeDetail = ({ selectedEmployee }) => {
             <button className={styles.leave}>퇴사자 등록</button>
             <div className={styles.rightBtns}>
               <button className={styles.delete}>삭제</button>
-              <button className={styles.save}>저장</button>
+              <button
+                className={styles.save}
+                onClick={handleSave}
+                disabled={loading}
+              >
+                저장
+              </button>
             </div>
           </div>
         </div>

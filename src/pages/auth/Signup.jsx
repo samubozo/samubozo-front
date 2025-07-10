@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './Signup.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
-import axios from 'axios';
+import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, HR } from '../../configs/host-config';
 
 const defaultForm = {
@@ -79,6 +79,7 @@ const Signup = () => {
   const [departments, setDepartments] = useState([]);
   const [positions, setPositions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEmailChecked, setIsEmailChecked] = useState(false);
   const navigate = useNavigate();
 
   // 부서와 직책 데이터 불러오기
@@ -86,24 +87,23 @@ const Signup = () => {
     const fetchData = async () => {
       try {
         // 부서 목록 가져오기
-        const deptResponse = await axios.get(
+        const deptResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/departments`,
         );
-        console.log('부서 API 응답:', deptResponse);
         const deptData = Array.isArray(deptResponse.data.result)
           ? deptResponse.data.result
           : [];
         setDepartments(deptData);
 
         // 직책 목록 가져오기
-        const posResponse = await axios.get(`${API_BASE_URL}${HR}/positions`);
-        console.log('직책 API 응답:', posResponse);
+        const posResponse = await axiosInstance.get(
+          `${API_BASE_URL}${HR}/positions`,
+        );
         const posData = Array.isArray(posResponse.data.result)
           ? posResponse.data.result
           : [];
         setPositions(posData);
       } catch (error) {
-        console.error('부서/직책 데이터 로딩 실패:', error);
         setDepartments([
           { departmentId: 1, name: '경영지원', departmentColor: '#FFAB91' },
           { departmentId: 2, name: '인사팀', departmentColor: '#B39DDB' },
@@ -200,9 +200,9 @@ const Signup = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post(`${API_BASE_URL}${HR}/users/signup`, form);
+      await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
       alert('회원가입이 완료되었습니다!');
-      navigate('/');
+      navigate('/employee');
     } catch (error) {
       alert(
         '회원가입 실패: ' + (error.response?.data?.message || error.message),
@@ -211,37 +211,34 @@ const Signup = () => {
     setIsSubmitting(false);
   };
 
-  // 인증 모달 재발송/완료
-  const handleModalResend = async () => {
-    await axios.post(`${API_BASE_URL}${AUTH}/email-valid`, {
-      email: form.email,
-    });
-  };
-
-  const handleModalComplete = async (code) => {
+  // 이메일 중복확인 (회원가입 API에서 중복 체크)
+  const handleEmailCheck = async () => {
+    if (!form.email) {
+      alert('이메일을 입력하세요.');
+      return;
+    }
     try {
-      const res = await axios.post(`${API_BASE_URL}${AUTH}/verify`, {
-        email: form.email,
-        code,
-      });
-      if (res.status === 200 && res.data === '인증 성공!') {
-        setIsEmailVerified(true);
-        setShowModal(false);
-        setErrors((prev) => ({ ...prev, email: undefined }));
-        alert('이메일 인증이 완료되었습니다.');
+      // 회원가입 API에 이메일만 보내서 중복 체크
+      const res = await axiosInstance.post(
+        `${API_BASE_URL}${HR}/users/signup`,
+        {
+          email: form.email,
+        },
+      );
+      if (res.data && res.data.duplicate) {
+        alert('이미 사용 중인 이메일입니다.');
+        setIsEmailChecked(false);
       } else {
-        setErrors((prev) => ({
-          ...prev,
-          email: res.data.message || '인증에 실패했습니다.',
-        }));
+        alert('사용 가능한 이메일입니다.');
+        setIsEmailChecked(true);
       }
-    } catch (err) {
-      setErrors((prev) => ({
-        ...prev,
-        email:
-          err.response?.data?.message ||
-          '인증에 실패했습니다. 인증번호를 확인해 주세요.',
-      }));
+    } catch (e) {
+      if (e.response && e.response.data && e.response.data.duplicate) {
+        alert('이미 사용 중인 이메일입니다.');
+      } else {
+        alert('이메일 중복 확인 중 오류가 발생했습니다.');
+      }
+      setIsEmailChecked(false);
     }
   };
 
@@ -306,14 +303,32 @@ const Signup = () => {
             <div className={styles.registerGrid}>
               <div className={styles.registerLeft}>
                 <label>이메일</label>
-                <input
-                  type='email'
-                  name='email'
-                  placeholder='이메일을 입력하세요.'
-                  value={form.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type='email'
+                    name='email'
+                    placeholder='이메일을 입력하세요.'
+                    value={form.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type='button'
+                    onClick={handleEmailCheck}
+                    style={{
+                      padding: '0 16px',
+                      background: isEmailChecked ? '#aaa' : '#66be80',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: isEmailChecked ? 'not-allowed' : 'pointer',
+                    }}
+                    disabled={isEmailChecked}
+                  >
+                    중복확인
+                  </button>
+                </div>
                 {errors.email && (
                   <div className={styles.error}>{errors.email}</div>
                 )}

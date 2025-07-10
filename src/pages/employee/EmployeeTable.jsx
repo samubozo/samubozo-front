@@ -1,66 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './EmployeeTable.module.scss';
 import EmployeeDetail from './EmployeeDetail';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
-
-const employees = [
-  {
-    id: 1,
-    name: '신현국',
-    position: '팀장',
-    department: '경영지원',
-    joinDate: '2025.02.19',
-    phone: '010-0000-1111',
-    email: 'aaa@samubozo.com',
-    address: '서울특별시 서초구 효령로 335',
-    isRetired: 'N',
-  },
-  {
-    id: 2,
-    name: '이호영',
-    position: '부팀장',
-    department: '영업부',
-    joinDate: '2025.02.19',
-    phone: '010-0000-1111',
-    email: 'bbb@samubozo.com',
-    address: '서울특별시 서초구 효령로 335',
-    isRetired: 'N',
-  },
-  {
-    id: 3,
-    name: '김예은',
-    position: '사원',
-    department: '기획부',
-    joinDate: '2025.02.19',
-    phone: '010-0000-1111',
-    email: 'ccc@samubozo.com',
-    address: '서울특별시 서초구 효령로 335',
-    isRetired: 'N',
-  },
-  {
-    id: 4,
-    name: '주영찬',
-    position: '사원',
-    department: '마케팅',
-    joinDate: '2025.02.19',
-    phone: '010-0000-1111',
-    email: 'ddd@samubozo.com',
-    address: '서울특별시 서초구 효령로 335',
-    isRetired: 'N',
-  },
-  {
-    id: 5,
-    name: '구현희',
-    position: '사원',
-    department: '디자인',
-    joinDate: '2025.02.19',
-    phone: '010-0000-1111',
-    email: 'eee@samubozo.com',
-    address: '서울특별시 서초구 효령로 335',
-    isRetired: 'N',
-  },
-];
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, HR } from '../../configs/host-config';
 
 const columnMap = {
   id: '사번',
@@ -92,42 +36,73 @@ const EmployeeTable = () => {
   const [dropdownValue, setDropdownValue] = useState('성명');
   const [searchTerm, setSearchTerm] = useState('');
   const [includeRetired, setIncludeRetired] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // 필터링된 직원 목록을 useMemo로 캐싱하여 성능 최적화
-  const filteredEmployees = useMemo(() => {
-    // 검색 기준 키 설정 (성명 또는 부서)
-    const searchKey = dropdownValue === '성명' ? 'name' : 'department';
+  // 직원 리스트 불러오기
+  const fetchEmployees = async (
+    search = '',
+    searchType = '성명',
+    includeRetiredOpt = false,
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let url = `${API_BASE_URL}${HR}/user/list`;
+      let params = {};
+      if (search) {
+        url = `${API_BASE_URL}${HR}/users/search`;
+        params =
+          searchType === '성명'
+            ? { userName: search }
+            : { departmentName: search };
+      }
+      // 퇴직자 포함 옵션 처리 (isRetired: 'Y' or 'N' or 전체)
+      if (!includeRetiredOpt) {
+        params.activate = 'Y';
+      }
+      const res = await axiosInstance.get(url, { params });
+      // /user/list는 페이징, /users/search는 전체 리스트 반환
+      const list = res.data.result?.content || res.data.result || [];
+      setEmployees(
+        list.map((emp) => ({
+          id: emp.employeeNo,
+          name: emp.userName,
+          position: emp.positionName,
+          department:
+            emp.department?.name || emp.department?.departmentName || '',
+          joinDate: emp.hireDate,
+          phone: emp.phone,
+          email: emp.email,
+          address: emp.address,
+          isRetired: emp.activate === 'N' ? 'Y' : 'N',
+        })),
+      );
+    } catch (err) {
+      setError('직원 정보를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return employees.filter((employee) => {
-      // 퇴직자 포함 옵션이 체크되지 않았고 직원이 퇴직자라면 필터링
-      if (!includeRetired && employee.isRetired === 'Y') {
-        return false;
-      }
-      // 검색어가 없으면 모든 직원 포함
-      if (!searchTerm) {
-        return true;
-      }
-      // 검색어가 있으면 해당 키의 값에 검색어가 포함되는지 확인
-      return String(employee[searchKey])
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-    });
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  // 검색/필터 변경 시 서버에서 다시 불러오기
+  useEffect(() => {
+    fetchEmployees(searchTerm, dropdownValue, includeRetired);
+    setSelectedRow(null);
   }, [searchTerm, dropdownValue, includeRetired]);
 
-  // 필터링된 직원이 변경될 때 선택된 행 초기화
-  useEffect(() => {
-    setSelectedRow(null);
-  }, [filteredEmployees]);
-
-  // 검색 버튼 클릭 핸들러 (실제 검색은 useMemo에서 처리되므로, 여기서는 콘솔 로그만)
   const handleSearch = () => {
-    console.log('검색 버튼 클릭됨!');
-    // 실제 검색 로직은 searchTerm, dropdownValue, includeRetired 상태 변경 시 useMemo에 의해 자동 실행
+    fetchEmployees(searchTerm, dropdownValue, includeRetired);
   };
 
   const handleExcelDownload = () => {
-    const mappedData = filteredEmployees.map((emp) => {
+    const mappedData = employees.map((emp) => {
       const row = {};
       orderedKeys.forEach((key) => {
         row[columnMap[key]] = emp[key];
@@ -249,8 +224,18 @@ const EmployeeTable = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredEmployees.length > 0 ? (
-              filteredEmployees.map((emp, idx) => (
+            {loading ? (
+              <tr>
+                <td colSpan='9'>로딩 중...</td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan='9' className={styles.noData}>
+                  {error}
+                </td>
+              </tr>
+            ) : employees.length > 0 ? (
+              employees.map((emp, idx) => (
                 <tr
                   key={emp.id}
                   className={selectedRow === idx ? styles.selected : ''}
@@ -279,7 +264,7 @@ const EmployeeTable = () => {
       </div>
       {/* 직원 상세정보: 행 클릭 시에만 노출 */}
       {selectedRow !== null && (
-        <EmployeeDetail selectedEmployee={filteredEmployees[selectedRow]} />
+        <EmployeeDetail selectedEmployee={employees[selectedRow]} />
       )}
     </div>
   );
