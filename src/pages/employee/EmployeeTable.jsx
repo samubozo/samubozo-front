@@ -155,7 +155,25 @@ const EmployeeTable = () => {
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             {dropdownValue}
-            <span className={styles.dropdownArrow}>&#9662;</span>
+            {/* Custom SVG Down Arrow */}
+            <span className={styles.dropdownArrow} aria-hidden='true'>
+              <svg
+                width='16'
+                height='16'
+                viewBox='0 0 20 20'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+                style={{ display: 'inline', verticalAlign: 'middle' }}
+              >
+                <path
+                  d='M5 8L10 13L15 8'
+                  stroke='#7b7b7b'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                />
+              </svg>
+            </span>
           </div>
           {dropdownOpen && (
             <div className={styles.dropdownOptions}>

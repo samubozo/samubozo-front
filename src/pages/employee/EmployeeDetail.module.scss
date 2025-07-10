@@ -47,21 +47,45 @@
       // .profile-section
       min-width: 210px;
       padding-right: 24px;
+      margin-top: 0;
+      margin-bottom: 0;
+      align-self: flex-start;
       .profileImg {
         // .profile-img
-        width: 210px;
-        height: 310px;
+        width: 230px;
+        height: 324px;
         border: 1.5px solid #e6e6e6;
         border-radius: 10px;
         background: #fafafa;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-top: 4px;
+        margin-top: 0;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+        &:hover {
+          box-shadow: 0 0 0 2px #4cb072;
+        }
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 10px;
+          display: block;
+        }
         .profileImgPlaceholder {
           // .profile-img-placeholder
           color: #bbb;
           font-size: 22px;
+          text-align: center;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          user-select: none;
         }
       }
     }
@@ -72,82 +96,103 @@
         // .info-table
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
+        colgroup {
+          col {
+            width: unset;
+          }
+        }
         td {
           border: 1px solid #d8d8d8;
           padding: 0 12px;
-          height: 52px;
+          height: 54px;
+          background: #fff;
+          vertical-align: middle;
+          box-sizing: border-box;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .tableLabel {
           // .table-label
           background: #f5f6fa;
           color: #444;
-          font-size: 15px;
+          font-size: 16px;
           font-weight: 500;
           text-align: center;
-          width: 135px;
+          width: 140px;
+          min-width: 140px;
+          box-sizing: border-box;
+          border-right: 1px solid #d8d8d8;
         }
         input,
         select {
-          height: 38px;
+          height: 40px;
           border: 1px solid #bcbcbc;
           border-radius: 5px;
           background: #fff;
-          font-size: 15px;
-          padding: 0 10px;
-          margin: 0 6px 0 0;
-
-          &[type='radio'] {
-            height: fit-content;
-          }
+          font-size: 16px;
+          margin: 0;
+          width: 70%;
+          box-sizing: border-box;
+          outline: none;
+          box-shadow: none;
+          vertical-align: middle;
+          padding-left: 12px;
+          padding-right: 12px;
         }
-
+        .emailInput {
+          width: 100% !important;
+          padding-left: 12px !important;
+          padding-right: 12px !important;
+        }
+        input[readonly] {
+          background: #fff;
+          color: #222;
+        }
+        input[type='radio'] {
+          width: 16px;
+          height: 16px;
+          accent-color: #388e3c;
+        }
+        .genderCell {
+          text-align: left;
+          padding-left: 12px;
+        }
+        .genderCell label {
+          margin-right: 16px;
+        }
+        .genderCell input[type='radio'] {
+          margin-right: 6px;
+        }
         .accountRow {
           // .account-row
           display: flex;
           align-items: center;
+          gap: 12px;
           width: 100%;
-          gap: 0;
-          padding: 0;
-          select {
-            min-width: 100px;
-            width: 120px;
-            flex-shrink: 0;
-            margin: 0 8px 0 0;
-            height: 38px;
-            font-size: 15px;
-            border-radius: 5px;
-            padding: 0 10px;
-            border: 1px solid #bcbcbc;
-            background: #fff;
-            box-sizing: border-box;
-          }
-          input {
-            height: 38px;
-            font-size: 15px;
-            border-radius: 5px;
-            padding: 0 10px;
-            border: 1px solid #bcbcbc;
-            background: #fff;
-            margin: 0;
-            box-sizing: border-box;
-          }
-          input:nth-of-type(1) {
-            flex: 2;
-            margin-right: 8px;
-          }
-          .accName {
-            // .acc-name
-            margin-right: 8px;
-            font-size: 15px;
-            font-weight: normal;
-            color: #222;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-          }
-          input:nth-of-type(2) {
-            flex: 1;
-          }
+        }
+        .accountRow input[type='text'] {
+          min-width: 60px;
+          max-width: 100%;
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+        .accountRow input[type='text']:first-of-type,
+        .accountRow input[type='text']:last-of-type {
+          width: 120px;
+          flex: 0 0 120px;
+          text-align: center;
+        }
+        .accountRow input[type='text']:nth-of-type(2) {
+          flex: 1 1 auto;
+          width: auto;
+          min-width: 120px;
+        }
+        .accountRow .accName {
+          margin: 0 8px;
+          font-size: 15px;
+          color: #222;
+          white-space: nowrap;
         }
       }
     }
@@ -165,37 +210,58 @@
         border: 1px solid #d8d8d8;
         padding: 0 12px;
         height: 54px;
+        vertical-align: middle;
       }
       .tableLabel {
         // .table-label
         background: #f5f6fa;
         color: #444;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 500;
         text-align: center;
-        width: 135px;
+        width: 140px;
+        min-width: 140px;
+        box-sizing: border-box;
+        border-right: 1px solid #d8d8d8;
       }
       select,
       input {
-        height: 38px;
+        height: 40px;
         border: 1px solid #bcbcbc;
         border-radius: 5px;
         background: #fff;
         font-size: 15px;
         padding: 0 10px;
         margin: 0 6px 0 0;
-        width: 200px;
+        width: 70%;
+        box-sizing: border-box;
       }
       textarea {
-        width: 98%;
-        height: 80px;
+        width: 100%;
+        height: 110px;
         border: 1px solid #bcbcbc;
         border-radius: 5px;
         font-size: 15px;
-        padding: 8px 12px;
+        padding: 24px 12px 24px 12px;
         margin: 8px 0;
         resize: none;
         background: #fff;
+        box-sizing: border-box;
+      }
+      select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background: #fff
+          url('data:image/svg+xml;utf8,<svg fill="%23444" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')
+          no-repeat right 12px center/18px 18px;
+        padding-right: 34px;
+        cursor: pointer;
+      }
+      .customSelectWrap {
+        display: flex;
+        align-items: center;
+        height: 40px;
       }
       .calendarIco {
         // .calendar-ico
@@ -486,22 +552,27 @@
 .certTabBody {
   margin-top: 24px;
 }
-.certListTitle,
-.certFormTitle {
+.certListTitle {
   font-size: 18px;
   font-weight: 700;
   color: #388e3c;
   margin-bottom: 8px;
   margin-top: 18px;
 }
+.certFormTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #388e3c;
+  margin-bottom: 8px;
+  margin-top: 55px;
+}
 .certListTableWrap {
   background: #fff;
-  border-radius: 12px;
   border: 1.5px solid #e0e0e0;
   margin-bottom: 24px;
   overflow-x: auto;
   box-shadow: 0 2px 12px rgba(30, 80, 80, 0.07);
-  max-height: calc(44px * 5 + 48px); /* 5행(44px) + 헤더(48px) */
+  max-height: 200px;
   overflow-y: auto;
 }
 .certListTable {
@@ -509,17 +580,15 @@
   border-collapse: separate;
   border-spacing: 0;
   background: #fff;
-  border-radius: 12px;
   overflow: hidden;
   font-size: 16px;
 }
 .certListTable th,
 .certListTable td {
   border: 1px solid #e0e0e0;
-  padding: 12px 10px;
+  padding: 10px 8px;
   text-align: center;
   font-size: 15px;
-  height: 44px;
   background: #fff;
 }
 .certListTable th {
@@ -529,6 +598,10 @@
   font-size: 16px;
   letter-spacing: 0.02em;
   border-bottom: 2px solid #d0d0d0;
+  height: 40px;
+}
+.certListTable td {
+  height: 32px;
 }
 .certListTable tbody tr {
   transition: background 0.13s;
@@ -572,10 +645,12 @@
 }
 .certFormTable td:first-child,
 .certFormTable td:nth-child(3) {
-  width: 100px;
-  min-width: 80px;
-  font-weight: 600;
+  width: 140px;
+  min-width: 140px;
+  font-weight: 400;
   background: #f5f5f5;
+  text-align: center;
+  vertical-align: middle;
 }
 .certFormTable td {
   border: 1px solid #e0e0e0;
@@ -585,15 +660,29 @@
 }
 .certFormTable input,
 .certFormTable select {
-  width: calc(100% - 20px);
+  width: 70%;
   min-width: 0;
   padding: 6px 10px;
   border: 1.5px solid #cfd8dc;
   border-radius: 6px;
   font-size: 15px;
-  background: #fafbfc;
+  background: #fff;
   outline: none;
   box-sizing: border-box;
+  height: 40px;
+}
+.certFormTable select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #fff
+    url('data:image/svg+xml;utf8,<svg fill="%23444" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')
+    no-repeat right 12px center/18px 18px;
+  padding-right: 34px;
+  cursor: pointer;
+}
+.certFormTable td[colspan] input {
+  width: 100%;
 }
 .certFormBtnRow {
   display: flex;
