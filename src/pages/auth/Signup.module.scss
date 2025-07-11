@@ -107,6 +107,8 @@
   }
   input,
   select {
+    width: 100%;
+    box-sizing: border-box;
     border: 2px solid #66be80;
     border-radius: 3px;
     font-size: 17px;
@@ -216,6 +218,14 @@ select {
   &:hover {
     background: #5ab475;
   }
+}
+
+.error {
+  color: #e10000;
+  font-size: 13px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 
 @media (max-width: 900px) {
