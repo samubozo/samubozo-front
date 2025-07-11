@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import styles from './Login.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
-import axios from 'axios';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
 import AuthContext from '../../context/UserContext';
@@ -87,7 +86,7 @@ const Login = () => {
 
     try {
       console.log('로그인 시도', email, password);
-      const res = await axios.post(`${API_BASE_URL}${AUTH}/login`, {
+      const res = await axiosInstance.post(`${API_BASE_URL}${AUTH}/login`, {
         email,
         password,
       });
