@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styles from './Login.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
@@ -12,27 +12,77 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [emailList, setEmailList] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
+  const emailInputRef = useRef(null);
+  const dropdownRef = useRef(null);
 
-  // 컴포넌트 마운트 시 이메일 sessionStorage에서 복원
   useEffect(() => {
-    const rememberedEmail = sessionStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-      setEmail(rememberedEmail);
+    const rememberedEmails = JSON.parse(
+      localStorage.getItem('rememberedEmails') || '[]',
+    );
+    setEmailList(rememberedEmails);
+    if (rememberedEmails.length > 0) {
+      setEmail(rememberedEmails[0]);
       setRemember(true);
     }
   }, []);
 
+  // 바깥 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        emailInputRef.current &&
+        !emailInputRef.current.contains(e.target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target)
+      ) {
+        setShowDropdown(false);
+      }
+    }
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    setShowDropdown(true);
+  };
+
+  const handleSelectEmail = (selectedEmail) => {
+    setEmail(selectedEmail);
+    setShowDropdown(false);
+    setRemember(true);
+  };
+
+  const updateRememberedEmails = (email, checked) => {
+    let rememberedEmails = JSON.parse(
+      localStorage.getItem('rememberedEmails') || '[]',
+    );
+    if (checked) {
+      rememberedEmails = [
+        email,
+        ...rememberedEmails.filter((e) => e !== email),
+      ];
+    } else {
+      rememberedEmails = rememberedEmails.filter((e) => e !== email);
+    }
+    localStorage.setItem('rememberedEmails', JSON.stringify(rememberedEmails));
+    setEmailList(rememberedEmails);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 이메일 저장 처리
-    if (remember) {
-      sessionStorage.setItem('rememberedEmail', email);
-    } else {
-      sessionStorage.removeItem('rememberedEmail');
-    }
+    updateRememberedEmails(email, remember);
 
     try {
       console.log('로그인 시도', email, password);
@@ -54,7 +104,6 @@ const Login = () => {
         const id = res.data.result.id;
         const role = res.data.result.role;
         const provider = res.data.result.provider;
-        // UserContext의 loginHandler에 명확히 넘김
         console.log('onLogin 호출', {
           accessToken,
           refreshToken,
@@ -88,27 +137,76 @@ const Login = () => {
         <div className={styles.logoSection}>
           <img src={Logo} alt='사무보조 로고' />
         </div>
-        <form onSubmit={handleSubmit}>
-          <input
-            className={styles.emailInput}
-            type='email'
-            placeholder='Email'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+        <form onSubmit={handleSubmit} autoComplete='off'>
+          <div style={{ position: 'relative', width: '100%' }}>
+            <input
+              ref={emailInputRef}
+              className={styles.emailInput}
+              type='email'
+              placeholder='Email'
+              value={email}
+              onChange={handleEmailChange}
+              onFocus={() => setShowDropdown(true)}
+              autoComplete='off'
+            />
+            {showDropdown && emailList.length > 0 && (
+              <ul
+                ref={dropdownRef}
+                style={{
+                  position: 'absolute',
+                  top: 'auto',
+                  bottom: '100%',
+                  left: 0,
+                  width: '100%',
+                  background: '#fff',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px 8px 0 0',
+                  boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
+                  zIndex: 10,
+                  margin: 0,
+                  padding: 0,
+                  listStyle: 'none',
+                  maxHeight: 120,
+                  overflowY: 'auto',
+                }}
+              >
+                {emailList
+                  .filter((e) => email === '' || e.includes(email))
+                  .map((e, idx) => (
+                    <li
+                      key={e}
+                      style={{
+                        padding: '8px 14px',
+                        cursor: 'pointer',
+                        background: e === email ? '#eafaf1' : 'transparent',
+                        fontWeight: e === email ? 700 : 400,
+                      }}
+                      onMouseDown={() => handleSelectEmail(e)}
+                    >
+                      {e}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
           <input
             className={styles.passwordInput}
             type='password'
             placeholder='Password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '100%' }}
           />
           <div className={styles.rememberSection}>
             <input
               type='checkbox'
               id='remember'
               checked={remember}
-              onChange={() => setRemember(!remember)}
+              onChange={() => {
+                setRemember(!remember);
+                if (!remember) updateRememberedEmails(email, true);
+                else updateRememberedEmails(email, false);
+              }}
             />
             <label htmlFor='remember'>이메일 저장</label>
           </div>
@@ -136,7 +234,6 @@ const Login = () => {
           </span>
           <span className={styles.icon}>👤</span>
         </div>
-        {/* 커스텀 안내 모달 */}
         {showModal && (
           <div
             style={{
