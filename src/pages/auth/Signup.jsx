@@ -155,15 +155,18 @@ const Signup = () => {
     }
   };
 
-  // 성별 버튼 처리 (실시간 체크)
-  const handleGender = (gender) => {
+  // 성별 버튼 처리 (실시간 체크, 서버에는 'M'/'F'로 전달)
+  const handleGender = (genderCode) => {
     setForm((prev) => ({
       ...prev,
-      gender,
+      gender: genderCode,
     }));
     setErrors((prev) => ({
       ...prev,
-      gender: validateField('gender', gender, { ...form, gender }),
+      gender: validateField('gender', genderCode, {
+        ...form,
+        gender: genderCode,
+      }),
     }));
   };
 
@@ -369,15 +372,15 @@ const Signup = () => {
                     <div className={styles.genderBtns}>
                       <button
                         type='button'
-                        className={form.gender === '남자' ? styles.active : ''}
-                        onClick={() => handleGender('남자')}
+                        className={form.gender === 'M' ? styles.active : ''}
+                        onClick={() => handleGender('M')}
                       >
                         남자
                       </button>
                       <button
                         type='button'
-                        className={form.gender === '여자' ? styles.active : ''}
-                        onClick={() => handleGender('여자')}
+                        className={form.gender === 'F' ? styles.active : ''}
+                        onClick={() => handleGender('F')}
                       >
                         여자
                       </button>

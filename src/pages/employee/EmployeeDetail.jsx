@@ -15,7 +15,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [joinDate, setJoinDate] = useState('');
   const [leaveDate, setLeaveDate] = useState('');
   const [memo, setMemo] = useState('');
-  const [gender, setGender] = useState('남');
+  const [gender, setGender] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [employeePhone, setEmployeePhone] = useState('');
   const [employeeOutEmail, setEmployeeOutEmail] = useState('');
@@ -32,6 +32,10 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const [birthDate, setBirthDate] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountHolder, setAccountHolder] = useState('');
 
   // 부서/직책 목록 불러오기
   useEffect(() => {
@@ -72,17 +76,14 @@ const EmployeeDetail = ({ selectedEmployee }) => {
         setJoinDate(data.hireDate || '');
         setLeaveDate(data.retireDate || '');
         setMemo(data.remarks || '');
-        // 서버 gender가 'M'/'F'일 경우 프론트도 'M'/'F'로 사용
-        if (data.gender === 'M') setGender('M');
-        else if (data.gender === 'F') setGender('F');
-        else setGender('M');
+        setGender(data.gender || '');
         setEmployeeAddress(data.address || '');
         setResidentRegNo(data.residentRegNo || '');
-        setProfileImage(
-          data.profileImage
-            ? `${API_BASE_URL}/files/${data.profileImage}`
-            : null,
-        );
+        setBirthDate(data.birthDate || '');
+        setBankName(data.bankName || '');
+        setAccountNumber(data.accountNumber || '');
+        setAccountHolder(data.accountHolder || '');
+        setProfileImage(data.profileImage);
       })
       .catch(() => setError('직원 정보를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
@@ -313,24 +314,41 @@ const EmployeeDetail = ({ selectedEmployee }) => {
     setLoading(true);
     setError(null);
     try {
-      const payload = {
-        userName: employeeName,
-        externalEmail: employeeOutEmail,
-        address: employeeAddress,
-        remarks: memo,
-        phone: employeePhone,
-        gender,
-        hireDate: joinDate,
-        retireDate: leaveDate,
-        activate: status === '퇴직' ? 'N' : 'Y',
-        hrRole: role,
-        residentRegNo,
-      };
-      if (dept) payload.departmentId = dept;
-      if (position) payload.positionId = position;
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('userName', employeeName);
+      formData.append('email', employeeEmail);
+      formData.append('residentRegNo', residentRegNo);
+      formData.append('externalEmail', employeeOutEmail);
+      if (dept) formData.append('departmentId', dept);
+      formData.append('departmentName', deptName);
+      if (position) formData.append('positionId', position);
+      formData.append('positionName', positionName);
+      formData.append('address', employeeAddress);
+      formData.append('remarks', memo);
+      formData.append('phone', employeePhone);
+      formData.append('gender', gender);
+      if (birthDate) formData.append('birthDate', birthDate);
+      if (joinDate) formData.append('hireDate', joinDate);
+      if (leaveDate) formData.append('retireDate', leaveDate);
+      formData.append('activate', status === '퇴직' ? 'N' : 'Y');
+      // 계좌 정보 등 추가 필요시 여기에
+      formData.append('bankName', bankName);
+      formData.append('accountNumber', accountNumber);
+      formData.append('accountHolder', accountHolder);
+      if (profileFile) {
+        formData.append('profileImage', profileFile);
+      }
+      // 디버깅용
+      // for (let pair of formData.entries()) { console.log(pair[0]+ ': ' + pair[1]); }
       await axiosInstance.patch(
         `${API_BASE_URL}${HR}/users/${selectedEmployee.id}`,
-        payload,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
       );
       alert('저장되었습니다.');
       // 저장 후 상세정보를 즉시 다시 불러오기
@@ -352,16 +370,14 @@ const EmployeeDetail = ({ selectedEmployee }) => {
         setJoinDate(data.hireDate || '');
         setLeaveDate(data.retireDate || '');
         setMemo(data.remarks || '');
-        if (data.gender === 'M') setGender('M');
-        else if (data.gender === 'F') setGender('F');
-        else setGender('M');
+        setGender(data.gender || '');
         setEmployeeAddress(data.address || '');
         setResidentRegNo(data.residentRegNo || '');
-        setProfileImage(
-          data.profileImage
-            ? `${API_BASE_URL}/files/${data.profileImage}`
-            : null,
-        );
+        setBirthDate(data.birthDate || '');
+        setBankName(data.bankName || '');
+        setAccountNumber(data.accountNumber || '');
+        setAccountHolder(data.accountHolder || '');
+        setProfileImage(data.profileImage);
       } catch (err) {
         alert('저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.');
       }
@@ -468,11 +484,6 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                 onChange={handleProfileImgChange}
               />
             </div>
-            {profileFile && (
-              <button style={{ marginTop: 8 }} onClick={handleProfileUpload}>
-                프로필 업로드
-              </button>
-            )}
           </div>
           {/* 인적 사항 테이블 섹션 - 첨부 이미지와 완전히 동일하게 수정 */}
           <div className={styles.infoTableSection}>
@@ -515,6 +526,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                         type='radio'
                         checked={gender === 'M'}
                         onChange={() => setGender('M')}
+                        disabled
                       />{' '}
                       남
                     </label>
@@ -523,6 +535,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                         type='radio'
                         checked={gender === 'F'}
                         onChange={() => setGender('F')}
+                        disabled
                       />{' '}
                       여
                     </label>
@@ -531,7 +544,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                 <tr>
                   <td className={styles.tableLabel}>생년월일</td>
                   <td>
-                    <input value='1996.03.16' readOnly />
+                    <input value={birthDate} readOnly />
                   </td>
                   <td className={styles.tableLabel}>연락처</td>
                   <td>
@@ -563,10 +576,25 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                   <td className={styles.tableLabel}>지급계좌</td>
                   <td colSpan={3}>
                     <div className={styles.accountRow}>
-                      <input type='text' placeholder='은행명' />
-                      <input type='text' placeholder='계좌번호' />
+                      <input
+                        type='text'
+                        placeholder='은행명'
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                      />
+                      <input
+                        type='text'
+                        placeholder='계좌번호'
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                      />
                       <span className={styles.accName}>예금주</span>
-                      <input type='text' placeholder='예금주' />
+                      <input
+                        type='text'
+                        placeholder='예금주'
+                        value={accountHolder}
+                        onChange={(e) => setAccountHolder(e.target.value)}
+                      />
                     </div>
                   </td>
                 </tr>
