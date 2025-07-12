@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import styles from './PayrollManagement.module.scss';
+import AuthContext from '../../context/UserContext';
 
 const employeeData = [
   { id: 1, name: '신한국', position: '팀장' },
@@ -11,7 +13,66 @@ const employeeData = [
 
 const PayrollManagement = () => {
   const [checkedList, setCheckedList] = useState([]);
+  const [payrollData, setPayrollData] = useState({
+    basePayroll: '',
+    positionAllowance: '',
+    mealAllowance: '',
+  });
 
+  const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    console.log('🔥 useEffect 진입됨');
+    if (!user) {
+      console.log('⛔ user 없음');
+      return;
+    }
+    console.log('✅ user 있음:', user);
+
+    const userRole = user.hrRole === 'Y' ? 'Y' : 'N';
+    const userEmail = user.email;
+    const userEmployeeNo = user.employeeNo;
+    const accessToken = sessionStorage.getItem('ACCESS_TOKEN');
+
+    // ✅ 여기 로그 추가
+    console.log('👤 현재 로그인된 사용자:', user);
+    console.log('📦 급여 API 요청 헤더', {
+      'X-User-Email': user.email,
+      'X-User-Role': userRole,
+      'X-User-Employee-No': user.employeeNo,
+      Authorization: `Bearer ${accessToken}`,
+    });
+
+    axios
+      .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // ✅ 필수
+          'X-User-Email': userEmail,
+          'X-User-Role': userRole,
+          'X-User-Employee-No': userEmployeeNo,
+        },
+      })
+      .then((res) => {
+        console.log('✅ 전체 응답:', res);
+        console.log('✅ res.data:', res.data);
+        console.log('✅ res.data.result:', res.data.result);
+
+        const result = res.data.result;
+        setPayrollData({
+          basePayroll: Number(result?.basePayroll ?? 0),
+          positionAllowance: Number(result?.positionAllowance ?? 0),
+          mealAllowance: Number(result?.mealAllowance ?? 0),
+        });
+      })
+      .catch((err) => {
+        console.error('❌ 급여 데이터 호출 실패:', err);
+        setPayrollData({
+          basePayroll: '',
+          positionAllowance: '',
+          mealAllowance: '',
+        });
+      });
+  }, [user]);
   const isAllChecked = checkedList.length === employeeData.length;
 
   const handleAllCheck = (e) => {
@@ -27,6 +88,26 @@ const PayrollManagement = () => {
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
+
+  // 계산 로직
+  const base = payrollData.basePayroll || 0;
+  const allowance = payrollData.positionAllowance || 0;
+  const meal = payrollData.mealAllowance || 0;
+  const nonTaxableMeal = Math.min(meal, 100000);
+  const taxableMeal = Math.max(meal - 100000, 0);
+  const taxable = base + allowance + taxableMeal;
+  const nonTaxable = nonTaxableMeal;
+  const total = taxable + nonTaxable;
+
+  // 공제항목 계산
+  const pension = Math.floor(taxable * 0.045);
+  const health = Math.floor(taxable * 0.07);
+  const employment = Math.floor(taxable * 0.008);
+  const incomeTax = Math.floor(taxable * 0.03);
+  const localTax = Math.floor(incomeTax * 0.1);
+
+  const totalDeduction = pension + health + employment + incomeTax + localTax;
+  const netPay = total - totalDeduction;
 
   return (
     <div className={styles['payroll-management-container']}>
@@ -109,15 +190,15 @@ const PayrollManagement = () => {
               <tbody>
                 <tr>
                   <td>기본급</td>
-                  <td>5,000,000</td>
+                  <td>{base ? base.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>직급수당</td>
-                  <td></td>
+                  <td>{allowance ? allowance.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>식대</td>
-                  <td></td>
+                  <td>{meal ? meal.toLocaleString() : ''}</td>
                 </tr>
               </tbody>
             </table>
@@ -127,15 +208,15 @@ const PayrollManagement = () => {
               <tbody>
                 <tr>
                   <td>과세</td>
-                  <td></td>
+                  <td>{taxable ? taxable.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>비과세</td>
-                  <td></td>
+                  <td>{nonTaxable ? nonTaxable.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>지급액계</td>
-                  <td></td>
+                  <td>{total ? total.toLocaleString() : ''}</td>
                 </tr>
               </tbody>
             </table>
@@ -151,23 +232,23 @@ const PayrollManagement = () => {
               <tbody>
                 <tr>
                   <td>국민연금</td>
-                  <td></td>
+                  <td>{pension ? pension.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>건강보험</td>
-                  <td></td>
+                  <td>{health ? health.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>고용보험</td>
-                  <td></td>
+                  <td>{employment ? employment.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>소득세</td>
-                  <td></td>
+                  <td>{incomeTax ? incomeTax.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>지방소득세</td>
-                  <td></td>
+                  <td>{localTax ? localTax.toLocaleString() : ''}</td>
                 </tr>
               </tbody>
             </table>
@@ -177,11 +258,13 @@ const PayrollManagement = () => {
               <tbody>
                 <tr>
                   <td>공제액계</td>
-                  <td></td>
+                  <td>
+                    {totalDeduction ? totalDeduction.toLocaleString() : ''}
+                  </td>
                 </tr>
                 <tr>
                   <td>차인지급액</td>
-                  <td></td>
+                  <td>{netPay ? netPay.toLocaleString() : ''}</td>
                 </tr>
               </tbody>
             </table>
@@ -197,11 +280,13 @@ const PayrollManagement = () => {
               <tbody>
                 <tr>
                   <td>총 지급액</td>
-                  <td></td>
+                  <td>{total ? total.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>총 공제액</td>
-                  <td></td>
+                  <td>
+                    {totalDeduction ? totalDeduction.toLocaleString() : ''}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -210,7 +295,7 @@ const PayrollManagement = () => {
               <tbody>
                 <tr>
                   <td>실수령액</td>
-                  <td></td>
+                  <td>{netPay ? netPay.toLocaleString() : ''}</td>
                 </tr>
               </tbody>
             </table>

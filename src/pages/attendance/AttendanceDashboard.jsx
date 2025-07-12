@@ -3,14 +3,24 @@ import styles from './AttendanceDashboard.module.scss';
 import VacationRequest from './VacationRequest';
 import AbsenceRegistrationModal from './AbsenceRegistrationModal';
 import AbsenceEditModal from './AbsenceEditModal';
+import { attendanceService } from '../../services/attendanceService';
 
 function pad(num) {
   return num.toString().padStart(2, '0');
 }
 function getTimeStr(date) {
-  // Date 객체 -> "hh:mm" 문자열
+  // Date 객체 또는 시간 문자열 -> "hh:mm" 문자열
   if (!date) return '00:00';
-  return pad(date.getHours()) + ':' + pad(date.getMinutes());
+
+  // 문자열인 경우 Date 객체로 변환
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+  // 유효한 Date 객체인지 확인
+  if (isNaN(dateObj.getTime())) {
+    return '00:00';
+  }
+
+  return pad(dateObj.getHours()) + ':' + pad(dateObj.getMinutes());
 }
 
 function getMonthDays(year, month) {
@@ -47,6 +57,11 @@ export default function AttendanceDashboard() {
   const today = new Date();
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
+  const [goOut, setGoOut] = useState(null);
+  const [returnFromOut, setReturnFromOut] = useState(null);
+  const [currentAction, setCurrentAction] = useState('출근하기'); // 출근하기 -> 외출하기 -> 복귀하기
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showVacation, setShowVacation] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [year, setYear] = useState(today.getFullYear());
@@ -57,8 +72,119 @@ export default function AttendanceDashboard() {
   const [editAbsence, setEditAbsence] = useState(null);
   const [todayRowIdx, setTodayRowIdx] = useState(today.getDate() - 1);
 
-  const handleCheckIn = () => setCheckIn(new Date());
-  const handleCheckOut = () => setCheckOut(new Date());
+  const handleAttendanceAction = async () => {
+    const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
+    if (!userId) {
+      setError('사용자 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (currentAction === '출근하기') {
+        // 출근 처리
+        const response = await attendanceService.checkIn();
+        if (response.data.result) {
+          setCheckIn(response.data.result.checkInTime);
+          sessionStorage.setItem(
+            'TODAY_CHECK_IN',
+            response.data.result.checkInTime,
+          );
+          sessionStorage.setItem('IS_CHECKED_IN', 'true');
+          setCurrentAction('외출하기');
+        }
+      } else if (currentAction === '외출하기') {
+        // 외출 처리
+        const response = await attendanceService.goOut();
+        if (response.data.result) {
+          setGoOut(response.data.result.goOutTime);
+          sessionStorage.setItem(
+            'TODAY_GO_OUT',
+            response.data.result.goOutTime,
+          );
+          sessionStorage.setItem('IS_OUT', 'true');
+          setCurrentAction('복귀하기');
+        }
+      } else if (currentAction === '복귀하기') {
+        // 복귀 처리
+        const response = await attendanceService.returnFromOut();
+        if (response.data.result) {
+          setReturnFromOut(response.data.result.returnTime);
+          sessionStorage.setItem(
+            'TODAY_RETURN',
+            response.data.result.returnTime,
+          );
+          sessionStorage.setItem('IS_OUT', 'false');
+          setCurrentAction('복귀완료');
+        }
+      }
+    } catch (error) {
+      setError(`${currentAction} 처리 중 오류가 발생했습니다.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
+    if (!userId) {
+      setError('사용자 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await attendanceService.checkOut();
+      if (response.data.result) {
+        setCheckOut(response.data.result.checkOutTime);
+        sessionStorage.setItem(
+          'TODAY_CHECK_OUT',
+          response.data.result.checkOutTime,
+        );
+        sessionStorage.setItem('IS_CHECKED_IN', 'false');
+      }
+    } catch (error) {
+      setError('퇴근 처리 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 오늘 출근 상태 확인
+  useEffect(() => {
+    const todayCheckIn = sessionStorage.getItem('TODAY_CHECK_IN');
+    const todayCheckOut = sessionStorage.getItem('TODAY_CHECK_OUT');
+    const todayGoOut = sessionStorage.getItem('TODAY_GO_OUT');
+    const todayReturn = sessionStorage.getItem('TODAY_RETURN');
+
+    if (todayCheckIn) {
+      setCheckIn(todayCheckIn);
+    }
+    if (todayCheckOut) {
+      setCheckOut(todayCheckOut);
+    }
+    if (todayGoOut) {
+      setGoOut(todayGoOut);
+    }
+    if (todayReturn) {
+      setReturnFromOut(todayReturn);
+    }
+
+    // 현재 액션 상태 결정
+    if (!todayCheckIn) {
+      setCurrentAction('출근하기');
+    } else if (todayGoOut && !todayReturn) {
+      setCurrentAction('복귀하기');
+    } else if (todayReturn) {
+      setCurrentAction('복귀완료');
+    } else {
+      setCurrentAction('외출하기');
+    }
+  }, []);
   const handleVacation = () => setShowVacation(true);
   const closeModal = () => setShowVacation(false);
   const handleAbsence = () => setShowAbsence(true);
@@ -127,6 +253,9 @@ export default function AttendanceDashboard() {
 
   return (
     <div className={styles.attendanceDashboard}>
+      {/* 에러 메시지 표시 */}
+      {error && <div className={styles.errorMessage}>{error}</div>}
+
       {/* 상단 헤더: 이미지처럼 3단 테이블로 배치 */}
       <div className={styles.dashboardHeaderTable}>
         {/* 왼쪽: 원형 그래프+연차 정보 (가로 배치) */}
@@ -214,16 +343,33 @@ export default function AttendanceDashboard() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td>출근</td>
-                    <td>{getTimeStr(checkIn)}</td>
+                    <td>
+                      {(() => {
+                        if (!checkIn) return '출근';
+                        if (goOut && !returnFromOut) return '외출';
+                        if (returnFromOut && !checkOut) return '복귀';
+                        if (checkOut) return '출근';
+                        return '출근';
+                      })()}
+                    </td>
+                    <td>
+                      {(() => {
+                        if (!checkIn) return getTimeStr(checkIn);
+                        if (goOut && !returnFromOut) return getTimeStr(goOut);
+                        if (returnFromOut && !checkOut)
+                          return getTimeStr(returnFromOut);
+                        if (checkOut) return getTimeStr(checkIn);
+                        return getTimeStr(checkIn);
+                      })()}
+                    </td>
                     <td>퇴근</td>
                     <td>{getTimeStr(checkOut)}</td>
-                    <td rowSpan={2}>
+                    <td rowSpan={3}>
                       <button className={styles.btnSub} onClick={handleAbsence}>
                         부재 등록
                       </button>
                     </td>
-                    <td rowSpan={2}>
+                    <td rowSpan={3}>
                       <button
                         className={styles.btnSub}
                         onClick={handleVacation}
@@ -236,9 +382,10 @@ export default function AttendanceDashboard() {
                     <td colSpan={1}>
                       <button
                         className={styles.btnMain}
-                        onClick={handleCheckIn}
+                        onClick={handleAttendanceAction}
+                        disabled={loading || checkOut}
                       >
-                        출근하기
+                        {loading ? '처리중...' : currentAction}
                       </button>
                     </td>
                     <td colSpan={1}>
@@ -253,8 +400,13 @@ export default function AttendanceDashboard() {
                       <button
                         className={styles.btnMain}
                         onClick={handleCheckOut}
+                        disabled={loading || !checkIn || checkOut}
                       >
-                        퇴근하기
+                        {loading
+                          ? '처리중...'
+                          : checkOut
+                            ? '퇴근완료'
+                            : '퇴근하기'}
                       </button>
                     </td>
                     <td colSpan={1}>

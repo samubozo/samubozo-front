@@ -28,7 +28,18 @@ axiosInstance.interceptors.request.use(
     const token = sessionStorage.getItem('ACCESS_TOKEN');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('요청 헤더 설정:', {
+        url: config.url,
+        method: config.method,
+        authorization: config.headers.Authorization ? 'Bearer ***' : '없음',
+      });
     }
+
+    // multipart/form-data 요청인 경우 Content-Type을 덮어쓰지 않음
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']; // 브라우저가 자동으로 설정하도록 함
+    }
+
     return config;
   },
   (error) => {
@@ -81,6 +92,9 @@ axiosInstance.interceptors.response.use(
         return Promise.reject(error);
       }
     }
+
+    // 401이 아닌 다른 에러들(403, 404, 500 등)은 그대로 reject
+    return Promise.reject(error);
   },
 );
 

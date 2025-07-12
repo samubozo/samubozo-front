@@ -39,13 +39,30 @@
 }
 
 .activeTab {
-  background: #eafaf1;
-  color: #222;
-  border-left: 4px solid #48b96c;
-  font-weight: 700;
+  background: #eafaf1 !important;
+  color: #222 !important;
+  border-left: 4px solid #48b96c !important;
+  font-weight: 700 !important;
 }
 
 .sidebar button {
+  background: none;
+  border: none;
+  color: #222;
+  font-size: 17px;
+  font-weight: 500;
+  padding: 12px 0 12px 28px;
+  text-align: left;
+  cursor: pointer;
+  margin: 0 0 2px 0;
+  border-radius: 0 8px 8px 0;
+  transition: background 0.15s;
+  &:hover {
+    background: #f2f4f8;
+  }
+}
+
+.sidebarButton {
   background: none;
   border: none;
   color: #222;

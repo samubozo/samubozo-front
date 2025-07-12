@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import styles from './Signup.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
-import axios from 'axios';
-import { API_BASE_URL, HR } from '../../configs/host-config';
+import VerifyModal from './VerifyModal';
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
 
 const defaultForm = {
   email: '',
@@ -86,7 +87,7 @@ const Signup = () => {
     const fetchData = async () => {
       try {
         // 부서 목록 가져오기
-        const deptResponse = await axios.get(
+        const deptResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/departments`,
         );
         console.log('부서 API 응답:', deptResponse);
@@ -96,7 +97,9 @@ const Signup = () => {
         setDepartments(deptData);
 
         // 직책 목록 가져오기
-        const posResponse = await axios.get(`${API_BASE_URL}${HR}/positions`);
+        const posResponse = await axiosInstance.get(
+          `${API_BASE_URL}${HR}/positions`,
+        );
         console.log('직책 API 응답:', posResponse);
         const posData = Array.isArray(posResponse.data.result)
           ? posResponse.data.result
@@ -177,6 +180,28 @@ const Signup = () => {
     }));
   };
 
+  // 이메일 인증 모달
+  const handleEmailVerify = async () => {
+    if (!form.email) {
+      setErrors((prev) => ({
+        ...prev,
+        email: '이메일을 입력해 주세요.',
+      }));
+      return;
+    }
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+        email: form.email,
+      });
+      setShowModal(true);
+    } catch (e) {
+      setErrors((prev) => ({
+        ...prev,
+        email: '이메일 인증 메일 발송에 실패했습니다.',
+      }));
+    }
+  };
+
   // 회원가입 제출 (전체 에러 체크)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -200,7 +225,7 @@ const Signup = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post(`${API_BASE_URL}${HR}/users/signup`, form);
+      await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
       alert('회원가입이 완료되었습니다!');
       navigate('/');
     } catch (error) {
@@ -213,14 +238,14 @@ const Signup = () => {
 
   // 인증 모달 재발송/완료
   const handleModalResend = async () => {
-    await axios.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+    await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
       email: form.email,
     });
   };
 
   const handleModalComplete = async (code) => {
     try {
-      const res = await axios.post(`${API_BASE_URL}${AUTH}/verify`, {
+      const res = await axiosInstance.post(`${API_BASE_URL}${AUTH}/verify`, {
         email: form.email,
         code,
       });
