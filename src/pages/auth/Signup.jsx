@@ -88,6 +88,7 @@ const Signup = () => {
       try {
         // 부서 목록 가져오기
         const deptResponse = await axiosInstance.get(
+        const deptResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/departments`,
         );
         const deptData = Array.isArray(deptResponse.data.result)
@@ -177,6 +178,28 @@ const Signup = () => {
     }));
   };
 
+  // 이메일 인증 모달
+  const handleEmailVerify = async () => {
+    if (!form.email) {
+      setErrors((prev) => ({
+        ...prev,
+        email: '이메일을 입력해 주세요.',
+      }));
+      return;
+    }
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+        email: form.email,
+      });
+      setShowModal(true);
+    } catch (e) {
+      setErrors((prev) => ({
+        ...prev,
+        email: '이메일 인증 메일 발송에 실패했습니다.',
+      }));
+    }
+  };
+
   // 회원가입 제출 (전체 에러 체크)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -200,6 +223,7 @@ const Signup = () => {
 
     setIsSubmitting(true);
     try {
+      await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
       await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
       alert('회원가입이 완료되었습니다!');
       navigate('/employee');
