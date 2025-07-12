@@ -19,6 +19,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [employeeName, setEmployeeName] = useState('');
   const [employeePhone, setEmployeePhone] = useState('');
   const [employeeOutEmail, setEmployeeOutEmail] = useState('');
+  const [employeeEmail, setEmployeeEmail] = useState('');
   const [employeeAccount, setEmployeeAccount] = useState('');
   const [employeeAccountHolder, setEmployeeAccountHolder] = useState('');
   const [employeeAddress, setEmployeeAddress] = useState('');
@@ -61,6 +62,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
         setEmployeeName(data.userName || '');
         setEmployeePhone(data.phone || '');
         setEmployeeOutEmail(data.externalEmail || '');
+        setEmployeeEmail(data.email || '');
         setDept(data.department?.departmentId || '');
         setDeptName(data.department?.departmentName || '');
         setPosition(data.positionId || '');
@@ -340,6 +342,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
         setEmployeeName(data.userName || '');
         setEmployeePhone(data.phone || '');
         setEmployeeOutEmail(data.externalEmail || '');
+        setEmployeeEmail(data.email || '');
         setDept(data.department?.departmentId || '');
         setDeptName(data.department?.departmentName || '');
         setPosition(data.positionId || '');
@@ -542,7 +545,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                   <td className={styles.tableLabel}>회사이메일</td>
                   <td>
                     <input
-                      value='aaa@samubozo.com'
+                      value={employeeEmail}
                       readOnly
                       className={styles.emailInput}
                     />

@@ -48,7 +48,7 @@
       input[type='email'],
       input[type='password'] {
         padding: 0.75rem;
-        border: 1px solid #ccc;
+        border: 3px solid #ccc;
         border-radius: 4px;
         font-size: 1rem;
       }
@@ -121,4 +121,11 @@
 .passwordInput:focus {
   outline: none;
   border-color: #66be80;
+}
+.loginBox input.emailInput:focus,
+.loginBox input.passwordInput:focus {
+  outline: none;
+  border-color: #66be80 !important;
+  border-width: 3px;
+  box-shadow: none;
 }

@@ -79,7 +79,6 @@ const Signup = () => {
   const [departments, setDepartments] = useState([]);
   const [positions, setPositions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEmailChecked, setIsEmailChecked] = useState(false);
   const navigate = useNavigate();
 
   // 부서와 직책 데이터 불러오기
@@ -87,7 +86,6 @@ const Signup = () => {
     const fetchData = async () => {
       try {
         // 부서 목록 가져오기
-        const deptResponse = await axiosInstance.get(
         const deptResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/departments`,
         );
@@ -188,10 +186,10 @@ const Signup = () => {
       return;
     }
     try {
-      await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+      await axiosInstance.post(`${API_BASE_URL}${HR}/email-valid`, {
         email: form.email,
       });
-      setShowModal(true);
+      // setShowModal(true); // 모달 관련 코드 제거
     } catch (e) {
       setErrors((prev) => ({
         ...prev,
@@ -224,7 +222,6 @@ const Signup = () => {
     setIsSubmitting(true);
     try {
       await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
-      await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
       alert('회원가입이 완료되었습니다!');
       navigate('/employee');
     } catch (error) {
@@ -233,37 +230,6 @@ const Signup = () => {
       );
     }
     setIsSubmitting(false);
-  };
-
-  // 이메일 중복확인 (회원가입 API에서 중복 체크)
-  const handleEmailCheck = async () => {
-    if (!form.email) {
-      alert('이메일을 입력하세요.');
-      return;
-    }
-    try {
-      // 회원가입 API에 이메일만 보내서 중복 체크
-      const res = await axiosInstance.post(
-        `${API_BASE_URL}${HR}/users/signup`,
-        {
-          email: form.email,
-        },
-      );
-      if (res.data && res.data.duplicate) {
-        alert('이미 사용 중인 이메일입니다.');
-        setIsEmailChecked(false);
-      } else {
-        alert('사용 가능한 이메일입니다.');
-        setIsEmailChecked(true);
-      }
-    } catch (e) {
-      if (e.response && e.response.data && e.response.data.duplicate) {
-        alert('이미 사용 중인 이메일입니다.');
-      } else {
-        alert('이메일 중복 확인 중 오류가 발생했습니다.');
-      }
-      setIsEmailChecked(false);
-    }
   };
 
   // 주소찾기 함수 추가
@@ -337,21 +303,7 @@ const Signup = () => {
                     onBlur={handleBlur}
                     style={{ flex: 1 }}
                   />
-                  <button
-                    type='button'
-                    onClick={handleEmailCheck}
-                    style={{
-                      padding: '0 16px',
-                      background: isEmailChecked ? '#aaa' : '#66be80',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: isEmailChecked ? 'not-allowed' : 'pointer',
-                    }}
-                    disabled={isEmailChecked}
-                  >
-                    중복확인
-                  </button>
+                  {/* 중복확인 버튼 제거 */}
                 </div>
                 {errors.email && (
                   <div className={styles.error}>{errors.email}</div>
