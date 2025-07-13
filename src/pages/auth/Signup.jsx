@@ -75,9 +75,7 @@ const validateField = (name, value, form) => {
 
 const Signup = () => {
   const [form, setForm] = useState(defaultForm);
-  const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [errors, setErrors] = useState({});
   const [departments, setDepartments] = useState([]);
   const [positions, setPositions] = useState([]);
@@ -220,12 +218,6 @@ const Signup = () => {
       }
     });
 
-    // 이메일 인증 여부
-    if (!isEmailVerified) {
-      newErrors.email = '이메일 인증을 완료해 주세요.';
-      isValid = false;
-    }
-
     if (!isValid) {
       setErrors(newErrors);
       return;
@@ -313,15 +305,6 @@ const Signup = () => {
 
   return (
     <div className={styles.outerBg}>
-      {showModal && (
-        <VerifyModal
-          email={form.email || 'aaa***@samubozo.com'}
-          onResend={handleModalResend}
-          onComplete={handleModalComplete}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-
       <div className={styles.registerNav}>
         <Link to={'/'}>로그인</Link> |{' '}
         <span
@@ -333,9 +316,9 @@ const Signup = () => {
           }
         >
           ID 찾기
-        </span>
+        </span>{' '}
         | <Link to={'/passwordFind'}>PW 찾기</Link>
-        <span className={styles.icon}>👤</span> {/* styles.icon 적용 */}
+        <span className={styles.icon}>👤</span>
       </div>
 
       <img src={Logo} alt='로고' className={styles.registerLogo} />
@@ -348,25 +331,14 @@ const Signup = () => {
             <div className={styles.registerGrid}>
               <div className={styles.registerLeft}>
                 <label>이메일</label>
-                <div className={styles.emailRow}>
-                  <input
-                    type='email'
-                    name='email'
-                    placeholder='이메일을 입력하세요.'
-                    value={form.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    disabled={isEmailVerified}
-                  />
-                  <button
-                    type='button'
-                    className={styles.emailBtn}
-                    onClick={handleEmailVerify}
-                    disabled={isEmailVerified}
-                  >
-                    {isEmailVerified ? '인증완료' : '인증'}
-                  </button>
-                </div>
+                <input
+                  type='email'
+                  name='email'
+                  placeholder='이메일을 입력하세요.'
+                  value={form.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                />
                 {errors.email && (
                   <div className={styles.error}>{errors.email}</div>
                 )}
@@ -406,7 +378,7 @@ const Signup = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                 />
-                {errors.name && (
+                {errors.userName && (
                   <div className={styles.error}>{errors.userName}</div>
                 )}
 
@@ -422,7 +394,7 @@ const Signup = () => {
                         onBlur={handleBlur}
                       />
                     </div>
-                    {errors.birth && (
+                    {errors.birthDate && (
                       <div className={styles.error}>{errors.birthDate}</div>
                     )}
                   </div>

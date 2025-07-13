@@ -176,38 +176,10 @@ const EmployeeDetail = ({ selectedEmployee }) => {
     setShowAddModal(false);
   };
 
-  // 직책 추가
-  const handleAddPosition = () => {
-    // 입력 값 유효성 검사 (공백 여부)
-    if (!newOrder.trim() || !newName.trim()) return;
-    // 새로운 ID 생성 (기존 ID 중 최대값 + 1)
-    const nextId = Math.max(...positions.map((p) => p.id), 0) + 1;
-    // 새로운 직책을 기존 직책 목록에 추가
-    setPositions([
-      ...positions,
-      { id: nextId, order: parseInt(newOrder, 10), name: newName }, // order는 숫자로 변환
-    ]);
-    // 모달 닫기
-    setShowAddModal(false);
-    // 새로 추가된 직책을 선택 상태로 설정
-    setSelectedPositionId(nextId);
-  };
-
   // 직책 선택
   const handleSelectPosition = (id) => {
     setSelectedPositionId(id);
     setShowPositionDropdown(false); // 선택 후 드롭다운 닫기
-  };
-
-  // 직책 삭제
-  const handleRemovePosition = (id) => {
-    // 선택된 ID를 제외한 새로운 배열 생성
-    let arr = positions.filter((p) => p.id !== id);
-    setPositions(arr);
-    // 삭제된 직책이 현재 선택된 직책이었다면, 목록의 첫 번째 직책을 선택하거나 null로 설정
-    if (selectedPositionId === id && arr.length > 0)
-      setSelectedPositionId(arr[0].id);
-    else if (arr.length === 0) setSelectedPositionId(null);
   };
 
   // 드롭다운 외부 클릭 시 닫기
@@ -472,8 +444,9 @@ const EmployeeDetail = ({ selectedEmployee }) => {
               <td>
                 <select value={dept} onChange={(e) => setDept(e.target.value)}>
                   <option>경영지원</option>
+                  <option>인사팀</option>
+                  <option>회계팀</option>
                   <option>영업팀</option>
-                  <option>개발팀</option>
                 </select>
               </td>
               <td className={styles.tableLabel}>직책</td>
@@ -538,7 +511,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
               <td className={styles.tableLabel}>역할</td>
               <td>
                 <select value={role} onChange={(e) => setRole(e.target.value)}>
-                  <option>인사담당자</option>
+                  <option>관리자</option>
                   <option>일반</option>
                 </select>
               </td>
@@ -574,46 +547,10 @@ const EmployeeDetail = ({ selectedEmployee }) => {
           <button className={styles.leave}>퇴사자 등록</button>
           <div className={styles.rightBtns}>
             <button className={styles.delete}>삭제</button>
-            <button className={styles.edit}>수정</button>
             <button className={styles.save}>저장</button>
           </div>
         </div>
       </div>
-      {/* 직책 추가 모달 */}
-      {showAddModal && (
-        <div className={styles.modalBackdrop}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalTitle}>직책 추가</div>
-            <div className={styles.modalField}>
-              <label>우선순위</label>
-              <input
-                type='number'
-                value={newOrder}
-                onChange={(e) => setNewOrder(e.target.value)}
-              />
-            </div>
-            <div className={styles.modalField}>
-              <label>직책명</label>
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
-            </div>
-            <div className={styles.modalBtnRow}>
-              <button
-                className={styles.modalConfirm}
-                onClick={handleAddPosition}
-                disabled={!newOrder.trim() || !newName.trim()}
-              >
-                확인
-              </button>
-              <button className={styles.modalCancel} onClick={closeAddModal}>
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

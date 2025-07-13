@@ -221,15 +221,13 @@ const Login = () => {
                 setShowModal(true);
               }}
             >
-              ID 찾기
+              이메일 찾기
             </a>{' '}
-            |<Link to={'/passwordFind'}>PW 찾기</Link>|
-            <Link to={'/signup'}>회원가입 하기</Link>
+            | <Link to={'/passwordFind'}>비밀번호 찾기</Link>
           </span>
         </div>
         <div className={styles.topLinks}>
           <span>
-            <Link to={'/signup'}>회원가입</Link> |{' '}
             <Link to={'/passwordFind'}>비밀번호 찾기</Link>
           </span>
           <span className={styles.icon}>👤</span>

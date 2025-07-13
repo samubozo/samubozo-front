@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import styles from './EmployeeTable.module.scss';
 import EmployeeDetail from './EmployeeDetail';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 
 const employees = [
   {
@@ -91,6 +92,7 @@ const EmployeeTable = () => {
   const [dropdownValue, setDropdownValue] = useState('성명');
   const [searchTerm, setSearchTerm] = useState('');
   const [includeRetired, setIncludeRetired] = useState(false);
+  const navigate = useNavigate();
 
   // 필터링된 직원 목록을 useMemo로 캐싱하여 성능 최적화
   const filteredEmployees = useMemo(() => {
@@ -202,6 +204,13 @@ const EmployeeTable = () => {
       <div className={styles.basicInfoTitle}>
         <span className={styles.arrow}>&#9654;</span>
         <span>기본정보</span>
+        <button
+          className={styles.createAccount}
+          style={{ marginRight: '10px' }}
+          onClick={() => navigate('/signup')}
+        >
+          계정생성
+        </button>
         <button className={styles.excel} onClick={handleExcelDownload}>
           Excel 다운로드
         </button>
