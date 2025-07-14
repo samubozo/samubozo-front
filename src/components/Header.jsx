@@ -31,37 +31,6 @@ const Header = ({ showChatbot }) => {
   // 토스트 알림 관련 상태
   const [toastNotifications, setToastNotifications] = useState([]);
 
-  // 테스트용 더미 알림 데이터 (3가지 유형 고정)
-  const testNotifications = [
-    {
-      notificationId: 1,
-      type: 'message',
-      message: '새로운 쪽지가 도착했습니다',
-      senderName: '홍길동',
-      senderDepartment: '개발팀',
-      senderProfileImage:
-        'https://via.placeholder.com/40x40/2196f3/ffffff?text=홍',
-      content:
-        '안녕하세요! 프로젝트 진행 상황에 대해 문의드립니다. 오늘 오후에 미팅이 있을 예정인데 참석 가능하신가요?',
-      createdAt: new Date().toISOString(),
-      isRead: false,
-    },
-    {
-      notificationId: 2,
-      type: 'attendance',
-      message: '퇴근 체크가 완료되었습니다',
-      createdAt: new Date().toISOString(),
-      isRead: false,
-    },
-    {
-      notificationId: 3,
-      type: 'approval',
-      message: '연차 신청서가 승인되었습니다',
-      createdAt: new Date().toISOString(),
-      isRead: true,
-    },
-  ];
-
   // 테스트용 토스트 알림 추가
   const addTestToast = (notification) => {
     const id = Date.now() + Math.random();
@@ -115,10 +84,9 @@ const Header = ({ showChatbot }) => {
       setUnreadCount(unreadCount);
     } catch (error) {
       console.error('알림 목록 조회 실패:', error);
-      // API 실패 시 테스트 데이터 사용
-      console.log('테스트 알림 데이터 사용');
-      setNotifications(testNotifications);
-      setUnreadCount(testNotifications.filter((n) => !n.isRead).length);
+      // API 실패 시 알림 목록을 빈 배열로 처리
+      setNotifications([]);
+      setUnreadCount(0);
     }
   };
 

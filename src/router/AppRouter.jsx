@@ -16,6 +16,7 @@ import AttendanceDashboard from '../pages/attendance/AttendanceDashboard';
 import Approval from '../pages/approval/Approval';
 import PasswordFind from '../pages/auth/PasswordFind';
 import PasswordUpdate from '../pages/auth/PasswordUpdate';
+import PrivateRouter from './PrivateRouter';
 
 const AppRouter = () => {
   return (
@@ -29,23 +30,44 @@ const AppRouter = () => {
       <Route path='/passwordFind' element={<PasswordFind />} />
       {/* 비밀번호 수정 */}
       <Route path='/passwordUpdate' element={<PasswordUpdate />} />
-      {/* <Route path='/dashboard' element={<Dashboard />} /> */}
       <Route element={<LayoutHeader />}>
         {/* 메인 페이지 */}
-        <Route path='/dashboard' element={<Dashboard />} />
+        <Route
+          path='/dashboard'
+          element={<PrivateRouter element={<Dashboard />} />}
+        />
         {/* 인사 관리 */}
-        <Route path='/employee' element={<Employee />} />
-        <Route path='/payroll' element={<PayrollManagement />} />
-
-        <Route path='/attendance' element={<AttendanceDashboard />} />
-
-        <Route path='/schedule' element={<Schedule />} />
+        <Route
+          path='/employee'
+          element={<PrivateRouter element={<Employee />} />}
+        />
+        <Route
+          path='/payroll'
+          element={<PrivateRouter element={<PayrollManagement />} />}
+        />
+        <Route
+          path='/attendance'
+          element={<PrivateRouter element={<AttendanceDashboard />} />}
+        />
+        <Route
+          path='/schedule'
+          element={<PrivateRouter element={<Schedule />} />}
+        />
         {/* 메시지 관리 */}
-        <Route path='/message' element={<Message />} />
+        <Route
+          path='/message'
+          element={<PrivateRouter element={<Message />} />}
+        />
         {/* 조직도 */}
-        <Route path='/orgchart' element={<OrgChart />} />
+        <Route
+          path='/orgchart'
+          element={<PrivateRouter element={<OrgChart />} />}
+        />
         {/* 전자 결재 */}
-        <Route path='/approval' element={<Approval />} />
+        <Route
+          path='/approval'
+          element={<PrivateRouter element={<Approval />} />}
+        />
       </Route>
     </Routes>
   );

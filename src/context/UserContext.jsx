@@ -45,7 +45,11 @@ export const AuthContextProvider = (props) => {
         sessionStorage.setItem('USER_NAME', userInfo.userName || '');
         sessionStorage.setItem(
           'USER_DEPARTMENT',
-          userInfo.departmentName || '',
+          userInfo.department?.name || '',
+        );
+        sessionStorage.setItem(
+          'USER_DEPARTMENT_ID',
+          userInfo.department?.departmentId || '',
         );
         sessionStorage.setItem('USER_POSITION', userInfo.positionName || '');
         sessionStorage.setItem('USER_EMPLOYEE_NO', userInfo.employeeNo || '');
@@ -72,6 +76,20 @@ export const AuthContextProvider = (props) => {
       setUserRole(sessionStorage.getItem('USER_ROLE'));
     }
     setIsInit(true);
+  }, []);
+
+  // ACCESS_TOKEN이 삭제되면 자동 로그아웃 처리
+  useEffect(() => {
+    const checkToken = () => {
+      if (!sessionStorage.getItem('ACCESS_TOKEN')) {
+        setIsLoggedIn(false);
+        setUserRole('');
+      }
+    };
+    const interval = setInterval(checkToken, 1000);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   return (

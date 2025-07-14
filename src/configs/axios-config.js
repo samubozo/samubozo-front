@@ -64,7 +64,8 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // 토큰 재발급 로직 작성
-    if (error.response.status === 401) {
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // 무한 루프 방지
       console.log('응답상태 401 발생! 토큰 재발급 필요!');
 
       try {
@@ -80,10 +81,18 @@ axiosInstance.interceptors.response.use(
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } },
         );
-        const newAccessToken = res.data.result.accessToken;
+        // 응답 구조 안전 체크 (서버는 { accessToken: ... } 형태)
+        const newAccessToken = res?.data?.accessToken;
+        if (!newAccessToken) {
+          console.error('리프레시 응답에 accessToken 없음:', res.data);
+          return Promise.reject(new Error('리프레시 응답에 accessToken 없음'));
+        }
         sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
-        // 실패한 원본 요청 정보에서 Authorization의 값을 새 토큰으로 갈아 끼우자
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        // 실패한 원본 요청 정보에서 Authorization의 값을 새 토큰으로 갈아 끼우자 (headers가 undefined일 수 있으니 복사)
+        originalRequest.headers = {
+          ...originalRequest.headers,
+          Authorization: `Bearer ${newAccessToken}`,
+        };
         // axiosInstance를 사용하여 다시한번 원본 요청을 보내고, 응답은 원래 호출한 곳으로 리턴
         return axiosInstance(originalRequest);
       } catch (error) {

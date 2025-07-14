@@ -25,3 +25,4 @@ export const HR = '/hr-service/hr';
 export const CHATBOT = '/chatbot-service/chatbot';
 export const MESSAGE = '/message-service/messages';
 export const NOTIFICATION = '/message-service/notifications';
+export const SCHEDULE = '/schedule-service/schedule';
