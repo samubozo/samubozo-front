@@ -21,8 +21,6 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [employeePhone, setEmployeePhone] = useState('');
   const [employeeOutEmail, setEmployeeOutEmail] = useState('');
   const [employeeEmail, setEmployeeEmail] = useState('');
-  const [employeeAccount, setEmployeeAccount] = useState('');
-  const [employeeAccountHolder, setEmployeeAccountHolder] = useState('');
   const [employeeAddress, setEmployeeAddress] = useState('');
   const [activeTab, setActiveTab] = useState('info');
   const [profileImage, setProfileImage] = useState(null);
@@ -122,6 +120,7 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [certPurpose, setCertPurpose] = useState('');
   const [editingCertRowId, setEditingCertRowId] = useState(null);
   const [editForm, setEditForm] = useState({ type: '', purpose: '' });
+  const [certId, setCertId] = useState(''); // 추가: 폼에 표시할 발급번호 상태
 
   // 증명서 내역 불러오기 (GET /list)
   useEffect(() => {
@@ -162,6 +161,11 @@ const EmployeeDetail = ({ selectedEmployee }) => {
 
   // 증명서 수정 (PUT /certificate/{id})
   const handleEditCertRow = (row) => {
+    if (row.status !== 'REQUESTED') return; // 요청됨만 수정 가능
+    setCertId(row.certificateId || ''); // 추가: 발급번호 연동
+    setCertType(row.type);
+    setCertDate(row.requestDate);
+    setCertPurpose(row.purpose);
     setEditForm({ type: row.type, purpose: row.purpose });
     setEditingCertRowId(row.certificateId);
   };
@@ -392,6 +396,34 @@ const EmployeeDetail = ({ selectedEmployee }) => {
     </svg>
   );
 
+  // === [수정] 테이블 행 클릭 시 폼에만 데이터 연동, 행은 항상 읽기 전용 ===
+  const handleRowToForm = (row) => {
+    setCertId(row.certificateId || ''); // 추가: 발급번호 연동
+    setCertType(row.type);
+    setCertDate(row.requestDate);
+    setCertPurpose(row.purpose);
+    setEditForm({ type: row.type, purpose: row.purpose });
+  };
+
+  // === [수정] 폼 제출 ===
+  const handleFormSubmit = async () => {
+    if (!selectedEmployee?.id) return;
+    if (editingCertRowId) {
+      // 수정
+      await handleEditSave(editingCertRowId);
+      setEditingCertRowId(null);
+      setEditForm({ type: '', purpose: '' });
+      setCertType('EMPLOYMENT');
+      setCertDate('');
+      setCertPurpose('');
+      setCertId(''); // 추가: 폼 초기화 시 발급번호도 초기화
+    } else {
+      // 신규
+      await handleSubmitCertificate();
+      setCertId(''); // 추가: 신규 신청 후 발급번호 초기화
+    }
+  };
+
   return (
     <div className={styles.employeeDetailWrap}>
       {/* 기본 정보 제목 섹션 */}
@@ -587,121 +619,122 @@ const EmployeeDetail = ({ selectedEmployee }) => {
         <div className={styles.certTabBody}>
           {/* 증명서 신청 내역 */}
           <div className={styles.certListTitle}>증명서발급내역</div>
-          <div className={styles.certListTableWrap}>
-            <table className={styles.certListTable}>
-              <colgroup>
-                <col style={{ width: '120px' }} /> {/* 발급번호 */}
-                <col style={{ width: '160px' }} /> {/* 증명서구분 */}
-                <col style={{ width: '140px' }} /> {/* 발급일자 */}
-                <col style={{ width: '140px' }} /> {/* 승인일자 */}
-                <col style={{ width: '160px' }} /> {/* 전자결재상태 */}
-                <col style={{ width: '180px' }} /> {/* 용도 */}
-                <col style={{ width: '80px' }} /> {/* 수정/삭제 */}
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>발급번호</th>
-                  <th>증명서구분</th>
-                  <th>발급일자</th>
-                  <th>승인일자</th>
-                  <th>전자결재상태</th>
-                  <th>용도</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {certList.map((row) => (
-                  <tr
-                    key={row.certificateId}
-                    style={
-                      editingCertRowId === row.certificateId
-                        ? { background: '#eafaf1' }
-                        : {}
-                    }
-                  >
-                    <td>{row.certificateId}</td>
-                    <td>
-                      {editingCertRowId === row.certificateId ? (
-                        <select
-                          value={editForm.type}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, type: e.target.value }))
-                          }
-                        >
-                          <option value='EMPLOYMENT'>재직증명서</option>
-                          <option value='CAREER'>경력증명서</option>
-                        </select>
-                      ) : (
-                        typeToKor(row.type)
-                      )}
-                    </td>
-                    <td>{row.requestDate}</td>
-                    <td>{row.approveDate || '-'}</td>
-                    <td>{statusToKor(row.status)}</td>
-                    <td>
-                      {editingCertRowId === row.certificateId ? (
-                        <input
-                          value={editForm.purpose}
-                          onChange={(e) =>
-                            setEditForm((f) => ({
-                              ...f,
-                              purpose: e.target.value,
-                            }))
-                          }
-                        />
-                      ) : (
-                        row.purpose
-                      )}
-                    </td>
-                    <td>
-                      {editingCertRowId === row.certificateId ? (
-                        <button
-                          onClick={() => handleEditSave(row.certificateId)}
-                        >
-                          저장
-                        </button>
-                      ) : row.status === 'REQUESTED' ? (
-                        <>
-                          <button
-                            className={styles.iconBtn}
-                            aria-label='수정'
-                            style={{
-                              marginRight: '6px',
-                              background: 'none',
-                              border: 'none',
-                              padding: '4px',
-                              cursor: 'pointer',
-                            }}
-                            onClick={() => handleEditCertRow(row)}
-                          >
-                            <EditIcon />
-                          </button>
-                          <button
-                            className={styles.iconBtn}
-                            aria-label='삭제'
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              padding: '4px',
-                              cursor: 'pointer',
-                            }}
-                            onClick={() => handleDeleteCert(row.certificateId)}
-                          >
-                            <DeleteIcon />
-                          </button>
-                        </>
-                      ) : null}
-                    </td>
+          <div
+            style={{
+              maxHeight: '350px',
+              overflowY: 'auto',
+              position: 'relative',
+              border: '1.5px solid #e0e0e0',
+              marginBottom: '24px',
+              background: '#fff',
+            }}
+          >
+            <div className={styles.certListTableWrap}>
+              <table className={styles.certListTable}>
+                <colgroup>
+                  <col style={{ width: '90px' }} />{' '}
+                  {/* 발급번호: 기존 120px → 90px */}
+                  <col style={{ width: '160px' }} /> {/* 증명서구분 */}
+                  <col style={{ width: '140px' }} /> {/* 발급일자 */}
+                  <col style={{ width: '140px' }} /> {/* 승인일자 */}
+                  <col style={{ width: '160px' }} /> {/* 전자결재상태 */}
+                  <col style={{ width: '210px' }} />{' '}
+                  {/* 용도: 기존 180px → 210px */}
+                  <col style={{ width: '80px' }} /> {/* 수정/삭제 */}
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>발급번호</th>
+                    <th>증명서구분</th>
+                    <th>발급일자</th>
+                    <th>승인일자</th>
+                    <th>전자결재상태</th>
+                    <th>용도</th>
+                    <th>수정/삭제</th>
                   </tr>
-                ))}
-                {/* 빈 행 4개 */}
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={'empty' + i}>
-                    <td colSpan={7} style={{ height: 40 }}></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {certList.length > 0 ? (
+                    certList.map((row) => (
+                      <tr
+                        key={row.certificateId}
+                        onClick={() => {
+                          if (
+                            !editingCertRowId ||
+                            editingCertRowId === row.certificateId
+                          )
+                            handleRowToForm(row);
+                        }}
+                        style={
+                          editingCertRowId === row.certificateId
+                            ? { background: '#eafaf1' }
+                            : {}
+                        }
+                      >
+                        <td>{row.certificateId}</td>
+                        <td>{typeToKor(row.type)}</td>
+                        <td>{row.requestDate}</td>
+                        <td>{row.approvalDate}</td>
+                        <td>{statusToKor(row.status)}</td>
+                        <td>{row.purpose}</td>
+                        <td>
+                          {row.status === 'REQUESTED' && (
+                            <>
+                              <button
+                                className={styles.iconBtn}
+                                aria-label='수정'
+                                style={{
+                                  marginRight: '6px',
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: '4px',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditCertRow(row);
+                                }}
+                              >
+                                <EditIcon />
+                              </button>
+                              <button
+                                className={styles.iconBtn}
+                                aria-label='삭제'
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: '4px',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCert(row.certificateId);
+                                }}
+                              >
+                                <DeleteIcon />
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        style={{
+                          height: 60,
+                          textAlign: 'center',
+                          color: '#aaa',
+                        }}
+                      >
+                        내역이 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
           {/* 증명서 신청 폼 */}
           <div className={styles.certFormTitle}>증명서 발급</div>
@@ -720,7 +753,16 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                 <tr>
                   <td>발급번호</td>
                   <td>
-                    <input value='2025-001' readOnly />
+                    <input
+                      value={
+                        certId ||
+                        (certList.length > 0
+                          ? Math.max(...certList.map((c) => c.certificateId)) +
+                            1
+                          : 1)
+                      }
+                      readOnly
+                    />
                   </td>
                   <td>증명서구분</td>
                   <td>
@@ -761,19 +803,39 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                 marginTop: '10px',
               }}
             >
-              <button className={styles.printBtn}>인쇄</button>
-              <button
-                className={styles.approvalBtn}
-                onClick={() => navigate('/approval?tab=certificate')}
-              >
-                전자결재
-              </button>
-              <button
-                className={styles.saveBtn}
-                onClick={handleSubmitCertificate}
-              >
-                제출
-              </button>
+              {editingCertRowId ? (
+                <>
+                  <button
+                    className={styles.approvalBtn}
+                    onClick={() => {
+                      setEditingCertRowId(null);
+                      setEditForm({ type: '', purpose: '' });
+                      setCertType('EMPLOYMENT');
+                      setCertDate('');
+                      setCertPurpose('');
+                      setCertId(''); // 추가: 취소 시 발급번호 초기화
+                    }}
+                  >
+                    취소
+                  </button>
+                  <button className={styles.saveBtn} onClick={handleFormSubmit}>
+                    수정 반영
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className={styles.printBtn}>인쇄</button>
+                  <button
+                    className={styles.approvalBtn}
+                    onClick={() => navigate('/approval?tab=certificate')}
+                  >
+                    전자결재
+                  </button>
+                  <button className={styles.saveBtn} onClick={handleFormSubmit}>
+                    제출
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
