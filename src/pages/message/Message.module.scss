@@ -94,9 +94,52 @@
   margin-bottom: 16px;
 }
 
-.pageSizeSelect,
 .periodSelect,
 .searchTypeSelect {
+  width: 120px;
+  min-width: 100px;
+  max-width: 160px;
+  flex: 0 0 auto;
+  border: 1.5px solid #48b96c;
+  border-radius: 6px;
+  background: #fff;
+  color: #222;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 7px 32px 7px 14px;
+  appearance: none;
+  outline: none;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%2348b96c" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px 20px;
+  transition:
+    border 0.15s,
+    background 0.15s;
+}
+
+.periodSelect:focus,
+.searchTypeSelect:focus,
+.periodSelect:hover,
+.searchTypeSelect:hover {
+  border-color: #388e3c;
+  background: #d0f5e2;
+}
+
+.searchInput {
+  flex: 1 1 0;
+  min-width: 180px;
+  max-width: 400px;
+}
+
+.searchBtn {
+  width: 70px;
+  min-width: 60px;
+  flex: 0 0 auto;
+  padding: 7px 0;
+}
+
+.pageSizeSelect {
   border: 1.5px solid #c8e6c9;
   border-radius: 6px;
   font-size: 15px;
