@@ -18,61 +18,80 @@ const PayrollManagement = () => {
     positionAllowance: '',
     mealAllowance: '',
   });
+  const [selectedMonth, setSelectedMonth] = useState('');
 
   const { user } = useContext(AuthContext);
 
-  useEffect(() => {
-    console.log('🔥 useEffect 진입됨');
-    if (!user) {
-      console.log('⛔ user 없음');
-      return;
-    }
-    console.log('✅ user 있음:', user);
-
+  const fetchPayroll = (year, month) => {
+    if (!user) return;
     const userRole = user.hrRole === 'Y' ? 'Y' : 'N';
     const userEmail = user.email;
     const userEmployeeNo = user.employeeNo;
     const accessToken = sessionStorage.getItem('ACCESS_TOKEN');
 
-    // ✅ 여기 로그 추가
-    console.log('👤 현재 로그인된 사용자:', user);
-    console.log('📦 급여 API 요청 헤더', {
-      'X-User-Email': user.email,
-      'X-User-Role': userRole,
-      'X-User-Employee-No': user.employeeNo,
+    const headers = {
       Authorization: `Bearer ${accessToken}`,
-    });
+      'X-User-Email': userEmail,
+      'X-User-Role': userRole,
+      'X-User-Employee-No': userEmployeeNo,
+    };
 
-    axios
-      .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`, // ✅ 필수
-          'X-User-Email': userEmail,
-          'X-User-Role': userRole,
-          'X-User-Employee-No': userEmployeeNo,
-        },
-      })
-      .then((res) => {
-        console.log('✅ 전체 응답:', res);
-        console.log('✅ res.data:', res.data);
-        console.log('✅ res.data.result:', res.data.result);
+    if (year && month) {
+      axios
+        .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me/monthly`, {
+          headers,
+          params: { year, month },
+        })
+        .then((res) => {
+          const result = res.data.result;
+          setPayrollData({
+            basePayroll: Number(result?.basePayroll ?? 0),
+            positionAllowance: Number(result?.positionAllowance ?? 0),
+            mealAllowance: Number(result?.mealAllowance ?? 0),
+          });
+        })
+        .catch((err) => {
+          setPayrollData({
+            basePayroll: '',
+            positionAllowance: '',
+            mealAllowance: '',
+          });
+        });
+    } else {
+      axios
+        .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me`, { headers })
+        .then((res) => {
+          const result = res.data.result;
+          setPayrollData({
+            basePayroll: Number(result?.basePayroll ?? 0),
+            positionAllowance: Number(result?.positionAllowance ?? 0),
+            mealAllowance: Number(result?.mealAllowance ?? 0),
+          });
+        })
+        .catch((err) => {
+          setPayrollData({
+            basePayroll: '',
+            positionAllowance: '',
+            mealAllowance: '',
+          });
+        });
+    }
+  };
 
-        const result = res.data.result;
-        setPayrollData({
-          basePayroll: Number(result?.basePayroll ?? 0),
-          positionAllowance: Number(result?.positionAllowance ?? 0),
-          mealAllowance: Number(result?.mealAllowance ?? 0),
-        });
-      })
-      .catch((err) => {
-        console.error('❌ 급여 데이터 호출 실패:', err);
-        setPayrollData({
-          basePayroll: '',
-          positionAllowance: '',
-          mealAllowance: '',
-        });
-      });
+  useEffect(() => {
+    if (!user) return;
+    fetchPayroll();
   }, [user]);
+
+  const handleMonthChange = (e) => {
+    setSelectedMonth(e.target.value);
+    if (e.target.value) {
+      const [year, month] = e.target.value.split('-');
+      fetchPayroll(year, month);
+    } else {
+      fetchPayroll();
+    }
+  };
   const isAllChecked = checkedList.length === employeeData.length;
 
   const handleAllCheck = (e) => {
@@ -114,8 +133,8 @@ const PayrollManagement = () => {
       {/* 상단 필터/검색 영역 */}
       <div className={styles['payroll-filter-section']}>
         <div className={styles['filter-group']}>
+          부서:
           <label>
-            부서:
             <select>
               <option>전체</option>
               <option>경영지원</option>
@@ -123,9 +142,13 @@ const PayrollManagement = () => {
               {/* 기타 부서 */}
             </select>
           </label>
+          급여월:
           <label>
-            급여월:
-            <input type='month' />
+            <input
+              type='month'
+              value={selectedMonth}
+              onChange={handleMonthChange}
+            />
           </label>
         </div>
         <div className={styles['button-group']}>

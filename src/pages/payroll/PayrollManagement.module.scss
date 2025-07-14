@@ -14,7 +14,6 @@
     .filter-group {
       display: flex;
       align-items: center;
-      gap: 18px;
     }
 
     .button-group {
@@ -27,9 +26,12 @@
       font-size: 15px;
       color: #30512e;
       font-weight: 500;
+      margin-right: 30px;
+      display: flex;
+      align-items: center;
       select,
       input {
-        margin-left: 6px;
+        margin-left: 8px;
         height: 32px;
         border: 1px solid #bcbcbc;
         border-radius: 5px;
