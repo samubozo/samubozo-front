@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import styles from './EmployeeDetail.module.scss'; // styles import
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
-import { API_BASE_URL, HR } from '../../configs/host-config';
+import { API_BASE_URL, HR, CERTIFICATE } from '../../configs/host-config';
+// certificateEnums.js import 제거
 
 const EmployeeDetail = ({ selectedEmployee }) => {
   const [dept, setDept] = useState(''); // departmentId
@@ -100,134 +101,103 @@ const EmployeeDetail = ({ selectedEmployee }) => {
   const [newOrder, setNewOrder] = useState('');
   const [newName, setNewName] = useState('');
 
-  // 직원별 증명서 신청 내역 더미 데이터 맵
-  const certListMap = {
-    1: [
-      {
-        id: '2025-001',
-        type: '재직증명서',
-        date: '2025.06.20',
-        approver: '-',
-        status: '요청됨',
-        purpose: '은행제출용',
-      },
-      {
-        id: '2025-002',
-        type: '경력증명서',
-        date: '2025.06.21',
-        approver: '2025.06.22',
-        status: '승인됨',
-        purpose: '이직용',
-      },
-      {
-        id: '2025-003',
-        type: '재직증명서',
-        date: '2025.06.22',
-        approver: '-',
-        status: '요청됨',
-        purpose: '비자발급',
-      },
-      {
-        id: '2025-004',
-        type: '경력증명서',
-        date: '2025.06.23',
-        approver: '2025.06.24',
-        status: '반려됨',
-        purpose: '해외연수',
-      },
-      {
-        id: '2025-005',
-        type: '재직증명서',
-        date: '2025.06.24',
-        approver: '-',
-        status: '요청됨',
-        purpose: '기타',
-      },
-    ],
-    2: [
-      {
-        id: '2025-101',
-        type: '재직증명서',
-        date: '2025.06.10',
-        approver: '2025.06.11',
-        status: '승인됨',
-        purpose: '은행제출용',
-      },
-      {
-        id: '2025-102',
-        type: '경력증명서',
-        date: '2025.06.12',
-        approver: '-',
-        status: '요청됨',
-        purpose: '이직용',
-      },
-    ],
-    3: [
-      {
-        id: '2025-201',
-        type: '재직증명서',
-        date: '2025.05.01',
-        approver: '2025.05.02',
-        status: '승인됨',
-        purpose: '비자발급',
-      },
-    ],
-    4: [],
-    5: [
-      {
-        id: '2025-501',
-        type: '경력증명서',
-        date: '2025.04.15',
-        approver: '-',
-        status: '요청됨',
-        purpose: '기타',
-      },
-      {
-        id: '2025-502',
-        type: '재직증명서',
-        date: '2025.04.16',
-        approver: '2025.04.17',
-        status: '승인됨',
-        purpose: '은행제출용',
-      },
-      {
-        id: '2025-503',
-        type: '경력증명서',
-        date: '2025.04.18',
-        approver: '-',
-        status: '요청됨',
-        purpose: '이직용',
-      },
-    ],
+  // === 한글 변환 함수 ===
+  const typeToKor = (type) => {
+    if (type === 'EMPLOYMENT') return '재직증명서';
+    if (type === 'CAREER') return '경력증명서';
+    return type;
+  };
+  const statusToKor = (status) => {
+    if (status === 'REQUESTED') return '요청됨';
+    if (status === 'APPROVED') return '승인됨';
+    if (status === 'REJECTED') return '반려됨';
+    return status;
   };
 
-  // 선택된 직원에 따라 certList를 변경
+  // === 증명서 내역 상태 ===
   const [certList, setCertList] = useState([]);
-  useEffect(() => {
-    if (
-      selectedEmployee &&
-      selectedEmployee.id &&
-      certListMap[selectedEmployee.id]
-    ) {
-      setCertList(certListMap[selectedEmployee.id]);
-    } else {
-      setCertList([]);
-    }
-  }, [selectedEmployee]);
-
-  // 신청 폼 상태
-  const [certType, setCertType] = useState('재직증명서');
-  const [certDate, setCertDate] = useState('2025.06.20');
-  const [certStatus, setCertStatus] = useState('요청됨');
+  const [certType, setCertType] = useState('EMPLOYMENT');
+  const [certDate, setCertDate] = useState('');
+  const [certStatus, setCertStatus] = useState('REQUESTED');
   const [certPurpose, setCertPurpose] = useState('');
   const [editingCertRowId, setEditingCertRowId] = useState(null);
+  const [editForm, setEditForm] = useState({ type: '', purpose: '' });
 
+  // 증명서 내역 불러오기 (GET /list)
+  useEffect(() => {
+    if (!selectedEmployee?.id) {
+      setCertList([]);
+      return;
+    }
+    axiosInstance
+      .get(
+        `${API_BASE_URL}${CERTIFICATE}/list?employeeNo=${selectedEmployee.id}`,
+      )
+      .then((res) => {
+        setCertList(res.data.result?.content || []);
+      })
+      .catch(() => setCertList([]));
+  }, [selectedEmployee]);
+
+  // 증명서 신청 (POST /application)
+  const handleSubmitCertificate = async () => {
+    if (!selectedEmployee?.id) return;
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${CERTIFICATE}/application`, {
+        employeeNo: selectedEmployee.id,
+        type: certType,
+        purpose: certPurpose,
+      });
+      // 신청 후 목록 갱신
+      const res = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/list?employeeNo=${selectedEmployee.id}`,
+      );
+      setCertList(res.data.result?.content || []);
+      setCertType('EMPLOYMENT');
+      setCertPurpose('');
+    } catch (e) {
+      alert('증명서 신청 실패');
+    }
+  };
+
+  // 증명서 수정 (PUT /certificate/{id})
   const handleEditCertRow = (row) => {
-    setCertType(row.type);
-    setCertDate(row.date);
-    setCertPurpose(row.purpose);
-    if (row.status) setCertStatus(row.status);
-    setEditingCertRowId(row.id);
+    setEditForm({ type: row.type, purpose: row.purpose });
+    setEditingCertRowId(row.certificateId);
+  };
+  const handleEditSave = async (id) => {
+    try {
+      await axiosInstance.put(
+        `${API_BASE_URL}${CERTIFICATE}/certificate/${id}`,
+        {
+          type: editForm.type,
+          purpose: editForm.purpose,
+        },
+      );
+      setEditingCertRowId(null);
+      // 목록 갱신
+      const res = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/list?employeeNo=${selectedEmployee.id}`,
+      );
+      setCertList(res.data.result?.content || []);
+    } catch (e) {
+      alert('수정 실패');
+    }
+  };
+
+  // 증명서 삭제 (DELETE /delete/{id})
+  const handleDeleteCert = async (id) => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      await axiosInstance.delete(`${API_BASE_URL}${CERTIFICATE}/delete/${id}`);
+      // 목록 갱신
+      const res = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/list?employeeNo=${selectedEmployee.id}`,
+      );
+      setCertList(res.data.result?.content || []);
+    } catch (e) {
+      alert('삭제 실패');
+    }
   };
 
   // 모달 열기
@@ -642,21 +612,55 @@ const EmployeeDetail = ({ selectedEmployee }) => {
               <tbody>
                 {certList.map((row) => (
                   <tr
-                    key={row.id}
+                    key={row.certificateId}
                     style={
-                      editingCertRowId === row.id
+                      editingCertRowId === row.certificateId
                         ? { background: '#eafaf1' }
                         : {}
                     }
                   >
-                    <td>{row.id}</td>
-                    <td>{row.type}</td>
-                    <td>{row.date}</td>
-                    <td>{row.approver}</td>
-                    <td>{row.status}</td>
-                    <td>{row.purpose}</td>
+                    <td>{row.certificateId}</td>
                     <td>
-                      {row.status === '요청됨' && (
+                      {editingCertRowId === row.certificateId ? (
+                        <select
+                          value={editForm.type}
+                          onChange={(e) =>
+                            setEditForm((f) => ({ ...f, type: e.target.value }))
+                          }
+                        >
+                          <option value='EMPLOYMENT'>재직증명서</option>
+                          <option value='CAREER'>경력증명서</option>
+                        </select>
+                      ) : (
+                        typeToKor(row.type)
+                      )}
+                    </td>
+                    <td>{row.requestDate}</td>
+                    <td>{row.approveDate || '-'}</td>
+                    <td>{statusToKor(row.status)}</td>
+                    <td>
+                      {editingCertRowId === row.certificateId ? (
+                        <input
+                          value={editForm.purpose}
+                          onChange={(e) =>
+                            setEditForm((f) => ({
+                              ...f,
+                              purpose: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        row.purpose
+                      )}
+                    </td>
+                    <td>
+                      {editingCertRowId === row.certificateId ? (
+                        <button
+                          onClick={() => handleEditSave(row.certificateId)}
+                        >
+                          저장
+                        </button>
+                      ) : row.status === 'REQUESTED' ? (
                         <>
                           <button
                             className={styles.iconBtn}
@@ -681,11 +685,12 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                               padding: '4px',
                               cursor: 'pointer',
                             }}
+                            onClick={() => handleDeleteCert(row.certificateId)}
                           >
                             <DeleteIcon />
                           </button>
                         </>
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -723,8 +728,8 @@ const EmployeeDetail = ({ selectedEmployee }) => {
                       value={certType}
                       onChange={(e) => setCertType(e.target.value)}
                     >
-                      <option>재직증명서</option>
-                      <option>경력증명서</option>
+                      <option value='EMPLOYMENT'>재직증명서</option>
+                      <option value='CAREER'>경력증명서</option>
                     </select>
                   </td>
                 </tr>
@@ -763,7 +768,12 @@ const EmployeeDetail = ({ selectedEmployee }) => {
               >
                 전자결재
               </button>
-              <button className={styles.saveBtn}>제출</button>
+              <button
+                className={styles.saveBtn}
+                onClick={handleSubmitCertificate}
+              >
+                제출
+              </button>
             </div>
           </div>
         </div>
