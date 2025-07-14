@@ -10,10 +10,9 @@ const PrivateRouter = ({ element, requiredRole }) => {
   // 초기화가 완료되면 PrivateRouter가 다시 렌더링 시도를 할 겁니다.
   if (!isInit) return <div>Loading...</div>;
 
-  if (!isLoggedIn) {
+  const token = sessionStorage.getItem('ACCESS_TOKEN');
+  if (!isLoggedIn || !token) {
     alert('로그인 안함!');
-    // to=보내고 싶은 페이지 렌더링 주소
-    // replace = 사용자가 뒤로가기 버튼을 눌러도 이전 페이지로 돌아가지 않게 됨.
     return <Navigate to='/login' replace />;
   }
 
