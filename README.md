@@ -156,6 +156,8 @@
 
 ---
 
+
+
 ## 17. API 명세서
 # Samubozo HR System API 명세서
 
@@ -2103,3 +2105,413 @@ Authorization: Bearer {JWT_TOKEN}
 ### SR1.6 반응형
 
 PC 환경에 최적화된 반응형 웹 애플리케이션으로 개발되어야 한다.
+
+
+---
+
+# 18.Samubozo HR System 데이터 구조 명세서
+## 📋 목차
+
+1. [개요](#개요)
+2. [공통 데이터 구조](#공통-데이터-구조)
+3. [서비스별 API 엔드포인트](#서비스별-api-엔드포인트)
+4. [도메인별 데이터 모델](#도메인별-데이터-모델)
+5. [상태 관리 구조](#상태-관리-구조)
+6. [설정 파일 구조](#설정-파일-구조)
+7. [페이지별 데이터 구조](#페이지별-데이터-구조)
+8. [에러 처리 및 보안](#에러-처리-및-보안)
+9. [챗봇 필터링 기능](#챗봇-필터링-기능)
+
+---
+
+## 📖 개요
+
+이 문서는 **Samubozo HR System**에서 사용하는 데이터 구조와 모델을 정의합니다.
+
+## 🔧 공통 데이터 구조
+
+### 2.1 API 응답 형식
+
+| 구분 | 형식 | 설명 |
+|:----:|:----:|:----|
+| **성공 응답** | ```json<br>{<br>  "status": 200,<br>  "message": "성공 메시지",<br>  "result": {<br>    // 실제 데이터<br>  }<br>}``` | 정상 처리된 응답 |
+| **오류 응답** | ```json<br>{<br>  "status": 400,<br>  "message": "오류 메시지",<br>  "result": null<br>}``` | 에러 발생 시 응답 |
+
+### 2.2 인증 토큰 관리
+
+| 저장소 | 데이터 키 | 설명 |
+|:------:|:--------:|:----|
+| **SessionStorage** | `ACCESS_TOKEN` | JWT 액세스 토큰 |
+| | `USER_ID` | 사용자 ID |
+| | `USER_ROLE` | 사용자 권한 |
+| | `USER_EMAIL` | 사용자 이메일 |
+| | `USER_NAME` | 사용자 이름 |
+| | `USER_DEPARTMENT` | 부서명 |
+| | `USER_POSITION` | 직책명 |
+| | `USER_EMPLOYEE_NO` | 사원번호 |
+| | `PROVIDER` | 로그인 제공자 |
+| **LocalStorage** | `REFRESH_TOKEN` | JWT 리프레시 토큰 |
+
+---
+
+## 🌐 서비스별 API 엔드포인트
+
+### 3.1 인증 서비스 (auth-service)
+
+| 기능 | HTTP 메서드 | 엔드포인트 | 설명 |
+|:----:|:-----------:|:----------:|:----|
+| 로그인 | `POST` | `/auth-service/auth/login` | 사용자 로그인 |
+| 회원가입 | `POST` | `/auth-service/auth/signup` | 신규 사용자 회원가입 |
+| 이메일 중복확인 | `POST` | `/auth-service/auth/check-email` | 이메일 중복 확인 |
+| 인증번호 발송 | `POST` | `/auth-service/auth/email-valid` | 이메일 인증번호 발송 |
+| 인증번호 확인 | `POST` | `/auth-service/auth/verify` | 이메일 인증번호 확인 |
+| 비밀번호 재설정 | `POST` | `/auth-service/auth/find-password` | 비밀번호 찾기/재설정 |
+| 토큰 갱신 | `POST` | `/auth-service/auth/refresh` | JWT 토큰 갱신 |
+
+### 3.2 인사 서비스 (hr-service)
+
+| 기능 | HTTP 메서드 | 엔드포인트 | 설명 |
+|:----:|:-----------:|:----------:|:----|
+| 사용자 상세정보 조회 | `GET` | `/hr-service/hr/users/detail` | 사용자 상세정보 조회 |
+| 사용자 검색 | `GET` | `/hr-service/hr/users/search` | 사용자 검색 |
+| 회원가입 | `POST` | `/hr-service/hr/users/signup` | 사용자 회원가입 |
+| 부서 목록 조회 | `GET` | `/hr-service/hr/departments` | 부서 목록 조회 |
+| 직급 목록 조회 | `GET` | `/hr-service/hr/positions` | 직급 목록 조회 |
+
+### 3.3 근태 서비스 (attendance-service)
+
+| 기능 | HTTP 메서드 | 엔드포인트 | 설명 |
+|:----:|:-----------:|:----------:|:----|
+| 출근 기록 | `POST` | `/attendance-service/attendance/check-in` | 출근 처리 |
+| 퇴근 기록 | `POST` | `/attendance-service/attendance/check-out` | 퇴근 처리 |
+| 외출 기록 | `PUT` | `/attendance-service/attendance/go-out` | 외출 처리 |
+| 복귀 기록 | `PUT` | `/attendance-service/attendance/return` | 복귀 처리 |
+| 남은 근무시간 조회 | `GET` | `/attendance-service/attendance/remaining-work-time` | 남은 근무시간 조회 |
+| 월별 근태 조회 | `GET` | `/attendance-service/attendance/monthly/{year}/{month}` | 월별 근태 조회 |
+
+### 3.4 챗봇 서비스 (chatbot-service)
+
+| 기능 | HTTP 메서드 | 엔드포인트 | 설명 |
+|:----:|:-----------:|:----------:|:----|
+| 챗봇 대화 | `POST` | `/chatbot-service/chatbot/chat` | 챗봇과 대화 |
+| 대화 이력 조회 | `GET` | `/chatbot-service/chatbot/history` | 챗봇 대화 이력 조회 |
+| 챗봇 헬로 | `GET` | `/chatbot-service/chatbot/hello` | 챗봇 서비스 상태 확인 |
+
+### 3.5 메시지 서비스 (message-service)
+
+| 기능 | HTTP 메서드 | 엔드포인트 | 설명 |
+|:----:|:-----------:|:----------:|:----|
+| 쪽지 전송 | `POST` | `/message-service/messages` | 쪽지 전송 |
+| 받은쪽지 목록 조회 | `GET` | `/message-service/messages/received` | 받은쪽지 목록 조회 |
+| 보낸쪽지 목록 조회 | `GET` | `/message-service/messages/sent` | 보낸쪽지 목록 조회 |
+| 쪽지 상세 조회 | `GET` | `/message-service/messages/{messageId}` | 쪽지 상세 조회 |
+| 쪽지 회수 | `PUT` | `/message-service/messages/{messageId}/recall` | 쪽지 회수 |
+
+### 3.6 알림 서비스 (message-service)
+
+| 기능 | HTTP 메서드 | 엔드포인트 | 설명 |
+|:----:|:-----------:|:----------:|:----|
+| 알림 목록 조회 | `GET` | `/message-service/notifications` | 알림 목록 조회 |
+| 알림 읽음 처리 | `PATCH` | `/message-service/notifications/{notificationId}/read` | 알림 읽음 처리 |
+| 알림 구독 | `GET` | `/message-service/notifications/subscribe` | SSE 알림 구독 |
+
+### 3.7 급여 서비스 (payroll-service)
+
+| 기능 | HTTP 메서드 | 엔드포인트 | 설명 |
+|:----:|:-----------:|:----------:|:----|
+| 내 급여 조회 | `GET` | `/payroll/me` | 사용자 본인 급여 조회 |
+
+---
+
+## 📊 도메인별 데이터 모델
+
+### 4.1 인증 (Authentication)
+
+| 데이터 유형 | 구조 | 설명 |
+|:----------:|:----:|:----|
+| **로그인 요청** | ```json<br>{<br>  "email": "user@sample.com",<br>  "password": "pw123"<br>}``` | 로그인 시 전송하는 데이터 |
+| **로그인 응답** | ```json<br>{<br>  "token": "jwt_access_token",<br>  "refreshToken": "jwt_refresh_token",<br>  "id": 1,<br>  "role": "USER",<br>  "provider": "LOCAL"<br>}``` | 로그인 성공 시 받는 데이터 |
+| **사용자 상세정보** | ```json<br>{<br>  "email": "user@sample.com",<br>  "userName": "홍길동",<br>  "departmentName": "개발팀",<br>  "positionName": "사원",<br>  "employeeNo": "EMP001",<br>  "hrRole": "USER"<br>}``` | 사용자 상세 정보 |
+
+### 4.2 근태 관리 (Attendance)
+
+| 데이터 유형 | 구조 | 설명 |
+|:----------:|:----:|:----|
+| **출근 기록** | ```json<br>{<br>  "checkInTime": "2024-01-01T09:00:00"<br>}``` | 출근 시간 기록 |
+| **퇴근 기록** | ```json<br>{<br>  "checkOutTime": "2024-01-01T18:00:00"<br>}``` | 퇴근 시간 기록 |
+| **외출 기록** | ```json<br>{<br>  "goOutTime": "2024-01-01T12:00:00"<br>}``` | 외출 시간 기록 |
+| **복귀 기록** | ```json<br>{<br>  "returnTime": "2024-01-01T13:00:00"<br>}``` | 복귀 시간 기록 |
+| **월별 근태 조회** | ```json<br>[{<br>  "attendanceDate": "2024-01-01",<br>  "checkInTime": "09:00:00",<br>  "checkOutTime": "18:00:00",<br>  "goOutTime": "12:00:00",<br>  "returnTime": "13:00:00"<br>}]``` | 월별 근태 데이터 |
+| **남은 근무시간** | ```json<br>{<br>  "remainingWorkTime": "08:30:00"<br>}``` | 남은 근무 시간 |
+| **근무시간 데이터** | ```json<br>{<br>  "remainingHours": "08:30",<br>  "workedHours": "01:30"<br>}``` | 근무 시간 상세 정보 |
+
+### 4.3 챗봇 (Chatbot)
+
+| 데이터 유형 | 구조 | 설명 |
+|:----------:|:----:|:----|
+| **챗봇 메시지 요청** | ```json<br>{<br>  "message": "사용자 입력 메시지"<br>}``` | 챗봇에게 보내는 메시지 |
+| **챗봇 메시지 응답** | ```json<br>{<br>  "responseMessage": "봇 응답 메시지",<br>  "result": {<br>    "reply": "봇 응답",<br>    "conversationId": "uuid"<br>  }<br>}``` | 챗봇 응답 데이터 |
+| **챗봇 대화 이력** | ```json<br>[{<br>  "senderType": "USER/BOT",<br>  "messageContent": "메시지 내용",<br>  "conversationId": "uuid"<br>}]``` | 대화 이력 데이터 |
+| **챗봇 메시지 상태** | ```json<br>{<br>  "from": "user/bot",<br>  "text": "메시지 내용"<br>}``` | UI에서 사용하는 메시지 상태 |
+
+### 4.4 메시지 (Message)
+
+| 데이터 유형 | 구조 | 설명 |
+|:----------:|:----:|:----|
+| **쪽지 전송 요청** | ```json<br>{<br>  "receivers": ["user1@email.com", "user2@email.com"],<br>  "subject": "쪽지 제목",<br>  "content": "쪽지 내용",<br>  "files": [File1, File2]<br>}``` | 쪽지 전송 시 데이터 |
+| **쪽지 목록 조회** | ```json<br>[{<br>  "messageId": 1,<br>  "senderName": "홍길동",<br>  "subject": "쪽지 제목",<br>  "createdAt": "2024-01-01T10:00:00",<br>  "isRead": false<br>}]``` | 쪽지 목록 데이터 |
+| **쪽지 상세 조회** | ```json<br>{<br>  "messageId": 1,<br>  "senderName": "홍길동",<br>  "subject": "쪽지 제목",<br>  "content": "쪽지 내용",<br>  "files": [File1, File2],<br>  "createdAt": "2024-01-01T10:00:00"<br>}``` | 쪽지 상세 정보 |
+
+### 4.5 알림 (Notification)
+
+| 데이터 유형 | 구조 | 설명 |
+|:----------:|:----:|:----|
+| **알림 목록** | ```json<br>[{<br>  "notificationId": 1,<br>  "type": "message",<br>  "message": "새로운 쪽지가 도착했습니다",<br>  "createdAt": "2024-01-01T10:00:00",<br>  "isRead": false<br>}]``` | 알림 목록 데이터 |
+| **SSE 알림** | ```json<br>{<br>  "type": "MESSAGE",<br>  "message": "새로운 쪽지가 도착했습니다",<br>  "senderName": "홍길동",<br>  "senderDepartment": "개발팀"<br>}``` | Server-Sent Events 알림 |
+
+### 4.6 사용자 관리 (User)
+
+| 데이터 유형 | 구조 | 설명 |
+|:----------:|:----:|:----|
+| **사용자 정보** | ```json<br>{<br>  "email": "user@sample.com",<br>  "employeeNo": "EMP001",<br>  "hrRole": "USER"<br>}``` | 기본 사용자 정보 |
+| **사용자 검색 결과** | ```json<br>[{<br>  "employeeNo": "EMP001",<br>  "userName": "홍길동",<br>  "departmentName": "개발팀",<br>  "positionName": "사원"<br>}]``` | 사용자 검색 결과 |
+| **인증 상태** | ```json<br>{<br>  "isLoggedIn": true,<br>  "userRole": "USER",<br>  "isInit": true<br>}``` | 인증 상태 정보 |
+
+### 4.7 근태 상태 관리 (Attendance Context)
+
+| 데이터 유형 | 구조 | 설명 |
+|:----------:|:----:|:----|
+| **근태 상태** | ```json<br>{<br>  "isCheckedIn": true,<br>  "checkInTime": "09:00:00",<br>  "checkOutTime": null,<br>  "todayAttendance": {...},<br>  "monthlyAttendance": [...]<br>}``` | 현재 근태 상태 |
+| **로딩 상태** | ```json<br>{<br>  "loading": false,<br>  "error": "오류 메시지"<br>}``` | 로딩 및 에러 상태 |
+
+---
+
+## 🔄 상태 관리 구조
+
+### 5.1 UserContext
+
+```javascript
+{
+  // 인증 상태
+  isLoggedIn: boolean,
+  userRole: string,
+  isInit: boolean,
+  
+  // 인증 함수
+  onLogin: function(loginData),
+  onLogout: function(),
+  
+  // 사용자 정보
+  user: {
+    email: string,
+    employeeNo: string,
+    hrRole: string
+  }
+}
+```
+
+### 5.2 AttendanceContext
+
+```javascript
+{
+  // 근태 상태
+  attendanceStatus: {
+    isCheckedIn: boolean,
+    checkInTime: string,
+    checkOutTime: string,
+    todayAttendance: object,
+    monthlyAttendance: array
+  },
+  
+  // 로딩 상태
+  loading: boolean,
+  error: string,
+  
+  // 근태 함수
+  handleCheckIn: function(),
+  handleCheckOut: function(),
+  getMonthlyAttendance: function(year, month),
+  checkTodayAttendance: function()
+}
+```
+
+---
+
+## ⚙️ 설정 파일 구조
+
+### 6.1 host-config.js
+
+```javascript
+// API 기본 URL 설정
+export const API_BASE_URL = "http://localhost:8000";
+
+// 서비스별 엔드포인트
+export const AUTH = "/auth-service/auth";
+export const HR = "/hr-service/hr";
+export const ATTENDANCE = "/attendance-service/attendance";
+export const CHATBOT = "/chatbot-service/chatbot";
+export const MESSAGE = "/message-service/messages";
+export const NOTIFICATION = "/message-service/notifications";
+```
+
+### 6.2 axios-config.js
+
+```javascript
+// Axios 인스턴스 설정
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+// 요청 인터셉터
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  }
+);
+
+// 응답 인터셉터 (토큰 갱신)
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response.status === 401) {
+      // 토큰 갱신 로직
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+---
+
+## 📱 페이지별 데이터 구조
+
+### 7.1 대시보드 (Dashboard)
+- **사용자 정보 표시**: 로그인한 사용자의 기본 정보
+- **근태 상태 표시**: 현재 출근/퇴근 상태
+- **알림 목록 표시**: 최근 알림 메시지
+
+### 7.2 근태 관리 (Attendance)
+- **출근/퇴근 상태 관리**: 실시간 근태 상태 업데이트
+- **월별 근태 조회**: 달력 형태의 근태 기록
+- **휴가/부재 신청**: 휴가 및 부재 등록 기능
+
+### 7.3 메시지 (Message)
+- **쪽지 전송/수신**: 사용자 간 쪽지 교환
+- **쪽지 목록 조회**: 받은쪽지/보낸쪽지 목록
+- **쪽지 상세 조회**: 쪽지 내용 및 첨부파일 확인
+
+### 7.4 조직도 (Organization Chart)
+- **사용자 검색**: 이름/부서별 사용자 검색
+- **부서별 조직도 표시**: 계층 구조의 조직도
+
+### 7.5 급여 관리 (Payroll)
+- **급여 정보 조회**: 개인 급여 정보 확인
+- **급여 명세서**: 상세 급여 내역
+
+### 7.6 인사 관리 (Employee)
+- **직원 목록 조회**: 전체 직원 목록
+- **직원 상세 정보**: 개별 직원 상세 정보
+
+### 7.7 결재 관리 (Approval)
+- **결재 요청 목록**: 승인 대기 중인 결재
+- **결재 처리**: 결재 승인/반려 처리
+
+### 7.8 일정 관리 (Schedule)
+- **일정 등록/조회**: 개인/팀 일정 관리
+- **일정 관리**: 일정 수정/삭제
+
+---
+
+## 🛡️ 에러 처리 및 보안
+
+### 8.1 HTTP 상태 코드
+
+| 상태 코드 | 의미 | 처리 방법 |
+|:---------:|:----:|:---------:|
+| `200` | 성공 | 정상 처리 |
+| `400` | 잘못된 요청 | 입력값 검증 |
+| `401` | 인증 실패 | 토큰 갱신 또는 재로그인 |
+| `403` | 권한 없음 | 권한 확인 |
+| `404` | 리소스 없음 | 경로 확인 |
+| `500` | 서버 오류 | 서버 상태 확인 |
+
+### 8.2 토큰 갱신 로직
+
+```javascript
+// axios interceptor를 통한 자동 토큰 갱신
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response.status === 401) {
+      const refreshToken = localStorage.getItem('REFRESH_TOKEN');
+      const newAccessToken = await refreshAccessToken(refreshToken);
+      sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
+      return axiosInstance(originalRequest);
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+### 8.3 보안 고려사항
+
+#### 🔐 토큰 관리
+- **Access Token**: SessionStorage에 저장 (브라우저 종료 시 삭제)
+- **Refresh Token**: LocalStorage에 저장 (장기 보관)
+- **토큰 만료 시**: 자동 갱신 로직 구현
+
+#### 🌐 API 요청 보안
+- **Authorization 헤더**: 모든 API 요청에 포함
+- **HTTPS 사용**: 프로덕션 환경에서 필수
+- **CORS 설정**: 적절한 도메인 설정
+
+#### 🔒 사용자 데이터 보안
+- **민감한 정보**: 암호화하여 전송
+- **개인정보**: 최소한으로 수집
+- **데이터 삭제**: 완전 삭제 보장
+
+---
+
+## 🤖 챗봇 필터링 기능
+
+### 9.1 필터링 대상
+
+- **욕설 필터링**: 부적절한 언어 사용 방지
+- **업무 관련 키워드 필터링**: 업무 관련 질문으로 제한
+
+### 9.2 업무 관련 키워드 카테고리
+
+| 카테고리 | 키워드 예시 |
+|:--------:|:-----------:|
+| **일반 업무 및 경영** | 가이드, 결재, 계약, 고객, 관리, 기획, 보고서, 업무, 영업, 예산, 조직, 프로젝트, 회의록 |
+| **근태 및 휴가** | 근무, 근태, 연차, 휴가, 병가, 출산휴가, 육아휴직 |
+| **인사 및 채용** | 인사, 채용, 이력서, 입사, 직급, 직무, 직원, 면접, 승진 |
+| **급여 및 보상** | 수당, 성과급, 연봉, 월급, 상여금, 퇴직금 |
+| **교육 및 개발** | 교육, 직무교육, OJT, 멘토링, 코칭 |
+| **노무 및 관계** | 노사, 단체협약, 징계, 취업규칙 |
+| **IT 및 시스템** | 메신저, 메일, 채팅, 인트라넷, 그룹웨어 |
+| **법률 및 규제** | 근로기준법, 산업안전보건법, 개인정보보호법 |
+
+---
+
+## 📝 프론트엔드 임시 구현 기능
+
+### 10.1 근태 서비스 임시 기능
+
+| 기능 | 구현 방식 | 데이터 구조 |
+|:----:|:--------:|:-----------:|
+| **오늘의 출근 상태 조회** | SessionStorage 기반 | ```json<br>{<br>  "checkInTime": "09:00:00",<br>  "checkOutTime": "18:00:00",<br>  "goOutTime": "12:00:00",<br>  "returnTime": "13:00:00"<br>}``` |
+| **휴가 신청** | 프론트엔드 임시 처리 | ```json<br>{<br>  "vacationId": 1704067200000,<br>  "startDate": "2024-01-01",<br>  "endDate": "2024-01-03",<br>  "reason": "연차 사용"<br>}``` |
+| **부재 등록** | 프론트엔드 임시 처리 | ```json<br>{<br>  "absenceId": 1704067200000,<br>  "absenceType": "외출",<br>  "startTime": "12:00:00",<br>  "endTime": "13:00:00",<br>  "reason": "점심 외출"<br>}``` |
+| **근태 통계 조회** | 프론트엔드 임시 처리 | ```json<br>{<br>  "totalWorkDays": 22,<br>  "presentDays": 20,<br>  "absentDays": 2,<br>  "lateDays": 1,<br>  "earlyLeaveDays": 0,<br>  "overtimeHours": 8.5,<br>  "vacationDays": 3,<br>  "remainingVacationDays": 9<br>}``` |
+
+---
