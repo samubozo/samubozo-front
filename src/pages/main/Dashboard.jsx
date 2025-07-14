@@ -119,6 +119,7 @@ function DashboardStats() {
 
 // 대시보드 오른쪽 영역: 사용자 프로필 및 출근표를 보여주는 컴포넌트
 function DashboardProfile() {
+  // 1. 안전한 초기값
   const [attendanceData, setAttendanceData] = useState({
     checkInTime: null,
     checkOutTime: null,
@@ -151,78 +152,80 @@ function DashboardProfile() {
     return () => clearInterval(timer);
   }, []);
 
-  // 오늘의 출근 데이터 가져오기
+  // 2. useEffect에서 오늘 근태 기록만으로 상태 갱신
   useEffect(() => {
     const fetchTodayAttendance = async () => {
-      setIsLoading(true);
-      try {
-        // 백엔드에서 오늘의 출근 데이터 가져오기
-        const response = await attendanceService.getTodayAttendance();
-
-        if (response.success && response.result) {
-          setAttendanceData({
-            checkInTime: response.result.checkInTime,
-            checkOutTime: response.result.checkOutTime,
-            goOutTime: response.result.goOutTime,
-            returnTime: response.result.returnTime,
-          });
-        }
-      } catch (error) {
-        console.error('오늘의 출근 데이터 조회 실패:', error);
-        // 에러 시 sessionStorage에서 가져오기 (fallback)
-        const todayCheckIn = sessionStorage.getItem('TODAY_CHECK_IN');
-        const todayCheckOut = sessionStorage.getItem('TODAY_CHECK_OUT');
-        const todayGoOut = sessionStorage.getItem('TODAY_GO_OUT');
-        const todayReturn = sessionStorage.getItem('TODAY_RETURN');
-
-        setAttendanceData({
-          checkInTime: todayCheckIn,
-          checkOutTime: todayCheckOut,
-          goOutTime: todayGoOut,
-          returnTime: todayReturn,
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      const response = await attendanceService.getTodayAttendance();
+      setAttendanceData({
+        checkInTime: response.checkInTime,
+        checkOutTime: response.checkOutTime,
+        goOutTime: response.goOutTime,
+        returnTime: response.returnTime,
+      });
     };
-
     fetchTodayAttendance();
   }, []);
+
+  // 3. 근태 관련 버튼 클릭 시 핸들러 예시 (실제 버튼에 연결 필요)
+  const handleCheckIn = async () => {
+    await attendanceService.checkIn();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+  };
+  const handleGoOut = async () => {
+    await attendanceService.goOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+  };
+  const handleReturn = async () => {
+    await attendanceService.returnFromOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+  };
+  const handleCheckOut = async () => {
+    await attendanceService.checkOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+  };
 
   // 시간 포맷팅 함수
   const formatTime = (time) => {
     if (!time) return '00:00';
-
-    // Date 객체인 경우
-    if (time instanceof Date) {
-      return time.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-    }
-
-    // 문자열인 경우 (ISO 형식 등)
-    if (typeof time === 'string') {
-      try {
-        const date = new Date(time);
-        if (!isNaN(date.getTime())) {
-          return date.toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          });
-        }
-        // 이미 HH:mm 형식인 경우
-        if (time.match(/^\d{2}:\d{2}$/)) {
-          return time;
-        }
-      } catch (e) {
-        // 파싱 실패 시 원본 반환
-        return time;
+    // ISO 문자열(2025-07-15T00:25:53.616548 등) → 'HH:mm'으로 변환
+    if (typeof time === 'string' && time.includes('T')) {
+      const date = new Date(time);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
       }
     }
-
+    // 이미 HH:mm 형식이면 그대로 반환
+    if (typeof time === 'string' && time.match(/^\d{2}:\d{2}$/)) {
+      return time;
+    }
     return '00:00';
   };
 
@@ -242,6 +245,9 @@ function DashboardProfile() {
   };
 
   const statusInfo = getAttendanceStatus();
+
+  // 렌더링 직전 attendanceData 값 로그
+  console.log('attendanceData:', attendanceData);
 
   return (
     <div className={styles.dashboardProfile}>

@@ -55,10 +55,13 @@ function Modal({ open, onClose, children }) {
 
 export default function AttendanceDashboard() {
   const today = new Date();
-  const [checkIn, setCheckIn] = useState(null);
-  const [checkOut, setCheckOut] = useState(null);
-  const [goOut, setGoOut] = useState(null);
-  const [returnFromOut, setReturnFromOut] = useState(null);
+  // 근태 관련 state는 attendanceData만 사용
+  const [attendanceData, setAttendanceData] = useState({
+    checkInTime: null,
+    checkOutTime: null,
+    goOutTime: null,
+    returnTime: null,
+  });
   const [step, setStep] = useState('출근'); // 출근, 외출, 복귀, 복귀완료
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -74,59 +77,39 @@ export default function AttendanceDashboard() {
   const [memo, setMemo] = useState(localStorage.getItem('todayMemo') || '');
   const [remainingWorkTime, setRemainingWorkTime] = useState('00:00');
   const [workedHours, setWorkedHours] = useState('00:00');
+
+  // 근태 상태를 attendanceData로부터 계산
+  useEffect(() => {
+    if (!attendanceData.checkInTime) {
+      setStep('출근');
+    } else if (attendanceData.checkInTime && !attendanceData.goOutTime) {
+      setStep('외출');
+    } else if (attendanceData.goOutTime && !attendanceData.returnTime) {
+      setStep('복귀');
+    } else if (attendanceData.returnTime) {
+      setStep('복귀완료');
+    }
+  }, [attendanceData]);
+
   const handleMemoChange = (e) => {
     setMemo(e.target.value);
     localStorage.setItem('todayMemo', e.target.value);
   };
 
+  // 출근/외출/복귀 버튼
   const handleAttendanceAction = async () => {
-    const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
-    if (!userId) {
-      setError('사용자 정보를 찾을 수 없습니다.');
-      return;
-    }
-
     setLoading(true);
     setError(null);
-
     try {
       if (step === '출근') {
-        // 출근 처리
-        const response = await attendanceService.checkIn();
-        if (response.data.result) {
-          setCheckIn(response.data.result.checkInTime);
-          sessionStorage.setItem(
-            'TODAY_CHECK_IN',
-            response.data.result.checkInTime,
-          );
-          sessionStorage.setItem('IS_CHECKED_IN', 'true');
-          setStep('외출');
-        }
+        await attendanceService.checkIn();
       } else if (step === '외출') {
-        // 외출 처리
-        const response = await attendanceService.goOut();
-        if (response.data.result) {
-          setGoOut(response.data.result.goOutTime);
-          sessionStorage.setItem(
-            'TODAY_GO_OUT',
-            response.data.result.goOutTime,
-          );
-          sessionStorage.setItem('IS_OUT', 'true');
-          setStep('복귀');
-        }
+        await attendanceService.goOut();
       } else if (step === '복귀') {
-        // 복귀 처리
-        const response = await attendanceService.returnFromOut();
-        if (response.data.result) {
-          setReturnFromOut(response.data.result.returnTime);
-          sessionStorage.setItem(
-            'TODAY_RETURN',
-            response.data.result.returnTime,
-          );
-          sessionStorage.setItem('IS_OUT', 'false');
-          setStep('복귀완료');
-        }
+        await attendanceService.returnFromOut();
       }
+      // 성공 시 최신 데이터 다시 불러오기
+      await fetchTodayAttendance();
     } catch (error) {
       setError(`${step} 처리 중 오류가 발생했습니다.`);
     } finally {
@@ -134,26 +117,14 @@ export default function AttendanceDashboard() {
     }
   };
 
+  // 퇴근 버튼
   const handleCheckOut = async () => {
-    const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
-    if (!userId) {
-      setError('사용자 정보를 찾을 수 없습니다.');
-      return;
-    }
-
     setLoading(true);
     setError(null);
-
     try {
-      const response = await attendanceService.checkOut();
-      if (response.data.result) {
-        setCheckOut(response.data.result.checkOutTime);
-        sessionStorage.setItem(
-          'TODAY_CHECK_OUT',
-          response.data.result.checkOutTime,
-        );
-        sessionStorage.setItem('IS_CHECKED_IN', 'false');
-      }
+      await attendanceService.checkOut();
+      // 성공 시 최신 데이터 다시 불러오기
+      await fetchTodayAttendance();
     } catch (error) {
       setError('퇴근 처리 중 오류가 발생했습니다.');
     } finally {
@@ -161,38 +132,32 @@ export default function AttendanceDashboard() {
     }
   };
 
-  // 컴포넌트 마운트 시 오늘 출근 상태 확인
-  useEffect(() => {
-    const todayCheckIn = sessionStorage.getItem('TODAY_CHECK_IN');
-    const todayGoOut = sessionStorage.getItem('TODAY_GO_OUT');
-    const todayReturn = sessionStorage.getItem('TODAY_RETURN');
-
-    if (!todayCheckIn) {
-      // 출근 전
-      setStep('출근');
-      setCheckIn(null);
-      setGoOut(null);
-      setReturnFromOut(null);
-    } else if (todayCheckIn && !todayGoOut) {
-      // 출근만 한 상태
-      setStep('외출');
-      setCheckIn(todayCheckIn);
-      setGoOut(null);
-      setReturnFromOut(null);
-    } else if (todayGoOut && !todayReturn) {
-      // 외출 중
-      setStep('복귀');
-      setCheckIn(todayCheckIn);
-      setGoOut(todayGoOut);
-      setReturnFromOut(null);
-    } else if (todayReturn) {
-      // 복귀 완료
-      setStep('복귀완료');
-      setCheckIn(todayCheckIn);
-      setGoOut(todayGoOut);
-      setReturnFromOut(todayReturn);
+  // 오늘 근태 정보 불러오기 함수
+  const fetchTodayAttendance = async () => {
+    try {
+      const result = await attendanceService.getTodayAttendance();
+      setAttendanceData({
+        checkInTime: result.checkInTime,
+        checkOutTime: result.checkOutTime,
+        goOutTime: result.goOutTime,
+        returnTime: result.returnTime,
+      });
+    } catch (e) {
+      setAttendanceData({
+        checkInTime: null,
+        checkOutTime: null,
+        goOutTime: null,
+        returnTime: null,
+      });
     }
+  };
+
+  // 컴포넌트 마운트 시 오늘 근태 정보 불러오기
+  useEffect(() => {
+    fetchTodayAttendance();
+    // eslint-disable-next-line
   }, []);
+
   const handleVacation = () => setShowVacation(true);
   const closeModal = () => setShowVacation(false);
   const handleAbsence = () => setShowAbsence(true);
@@ -334,7 +299,12 @@ export default function AttendanceDashboard() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [checkIn, goOut, returnFromOut, checkOut]);
+  }, [
+    attendanceData.checkInTime,
+    attendanceData.goOutTime,
+    attendanceData.returnTime,
+    attendanceData.checkOutTime,
+  ]);
 
   // 연차 현황 상태 추가
   const [vacationBalance, setVacationBalance] = useState({
@@ -353,8 +323,10 @@ export default function AttendanceDashboard() {
       setVacationError(null);
       try {
         const response = await attendanceService.getVacationBalance();
-        if (isMounted && response.data && response.data.data) {
-          setVacationBalance(response.data.data);
+        console.log('vacation balance API response:', response.data.result);
+        if (isMounted && response.data && response.data.result) {
+          setVacationBalance(response.data.result);
+          console.log('setVacationBalance:', response.data.result);
         }
       } catch (e) {
         if (isMounted) setVacationError('연차 현황을 불러오지 못했습니다.');
@@ -439,7 +411,7 @@ export default function AttendanceDashboard() {
                 </div>
                 <div className={styles.leaveTip}>
                   {vacationBalance.remainingDays > 0
-                    ? '이번 달 1회 더 사용 가능!\n연차는 1일 단위로 사용 가능합니다.'
+                    ? '연차는 1일 또는 반차(0.5일) 단위로 자유롭게 사용할 수 있습니다.'
                     : '연차가 모두 소진되었습니다.'}
                 </div>
               </>
@@ -503,14 +475,16 @@ export default function AttendanceDashboard() {
               </div>
               <div className={styles.cardValue}>
                 {step === '출근' && '00:00'}
-                {step === '외출' && getTimeStr(checkIn)}
-                {step === '복귀' && getTimeStr(goOut)}
-                {step === '복귀완료' && getTimeStr(returnFromOut)}
+                {step === '외출' && getTimeStr(attendanceData.checkInTime)}
+                {step === '복귀' && getTimeStr(attendanceData.goOutTime)}
+                {step === '복귀완료' && getTimeStr(attendanceData.returnTime)}
               </div>
               <button
                 className={styles.cardButton}
                 onClick={handleAttendanceAction}
-                disabled={loading || checkOut || step === '복귀완료'}
+                disabled={
+                  loading || attendanceData.checkOutTime || step === '복귀완료'
+                }
               >
                 {loading
                   ? '처리중...'
@@ -525,13 +499,23 @@ export default function AttendanceDashboard() {
             </div>
             <div className={styles.card}>
               <div className={styles.cardLabel}>퇴근</div>
-              <div className={styles.cardValue}>{getTimeStr(checkOut)}</div>
+              <div className={styles.cardValue}>
+                {getTimeStr(attendanceData.checkOutTime)}
+              </div>
               <button
                 className={styles.cardButton}
                 onClick={handleCheckOut}
-                disabled={loading || !checkIn || checkOut}
+                disabled={
+                  loading ||
+                  !attendanceData.checkInTime ||
+                  attendanceData.checkOutTime
+                }
               >
-                {loading ? '처리중...' : checkOut ? '퇴근완료' : '퇴근하기'}
+                {loading
+                  ? '처리중...'
+                  : attendanceData.checkOutTime
+                    ? '퇴근완료'
+                    : '퇴근하기'}
               </button>
             </div>
             <div className={styles.card}>
