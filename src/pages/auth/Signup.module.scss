@@ -92,9 +92,8 @@
   margin-bottom: 36px;
 }
 
-.registerLeft, // .register-left
+.registerLeft,
 .registerRight {
-  // .register-right
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -115,6 +114,9 @@
     padding: 11px 14px;
     outline: none;
     margin-bottom: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
     &:focus {
       border-color: #269d51;
     }
@@ -146,22 +148,19 @@
 }
 
 .rowInline {
-  // .row-inline
   display: flex;
-  gap: 50px;
-  .birthCol, // .birth-col
+  gap: 18px;
+  width: 100%;
+  .birthCol,
   .genderCol {
-    // .gender-col
-    flex: 1; // flex: 1을 유지하여 각 컬럼이 공간을 균등하게 차지하도록 함
+    flex: 1;
     display: flex;
     flex-direction: column;
-    // 필요에 따라 max-width 등을 추가하여 너비 조절 가능
+    min-width: 0;
   }
   .genderBtns {
-    // .gender-btns
     display: flex;
     gap: 10px;
-    // flex-wrap: wrap; // 버튼이 한 줄에 다 안 들어갈 경우를 대비
     button {
       flex: 1;
       padding: 13px 0;
@@ -188,7 +187,9 @@
   position: relative;
   // input이 블록 레벨 요소임을 명확히 할 필요는 없지만, flex 컨테이너에서 flex-basis 등을 고려할 수 있음.
   input[type='date'] {
-    width: 100%; // 부모(.inputIcon) 너비에 맞춤
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 }
 
@@ -199,6 +200,9 @@ select {
   background-repeat: no-repeat;
   background-position: right 18px center;
   padding-right: 38px !important;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .registerSubmit {
@@ -230,13 +234,20 @@ select {
 
 @media (max-width: 900px) {
   .registerContainer {
-    // .register-container
     width: 97vw;
     min-width: 0;
     padding: 24px 8px;
   }
   .registerGrid {
-    // .register-grid
+    flex-direction: column;
+    gap: 0;
+  }
+  .registerLeft,
+  .registerRight {
+    width: 100%;
+    min-width: 0;
+  }
+  .rowInline {
     flex-direction: column;
     gap: 0;
   }

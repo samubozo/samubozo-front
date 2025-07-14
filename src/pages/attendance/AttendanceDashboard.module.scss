@@ -9,73 +9,214 @@
   padding: 2rem 2rem 3rem 2rem;
   min-height: 100vh;
 
+  // 에러 메시지 스타일
+  .errorMessage {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px 16px;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
   // =========================
   // 상단 헤더 테이블 (dashboardHeaderTable)
   // =========================
   .dashboardHeaderTable {
     display: flex;
-    align-items: stretch;
-    gap: 1.5rem;
     width: 100%;
-    margin-bottom: 1.5rem;
-  }
-
-  // 왼쪽: 원형 그래프 + 연차 정보
-  .leftFlexBox {
-    flex: 1;
-    display: flex;
-    flex-direction: row;
+    height: 400px;
+    gap: 2rem;
     align-items: stretch;
-    height: 100%;
-    justify-content: center;
-    gap: 1rem;
-    padding: 10px;
-    .circleGraphBox {
-      min-width: 200px;
+
+    .leftFlexBox,
+    .workTimeBox,
+    .rightCell {
+      flex: 1 1 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100%;
-      // 원형 그래프
-      .circleGraph {
-        margin-bottom: -60px;
-        z-index: 1;
+      background: #fff;
+      border: 2px solid #b7d7b0;
+      border-radius: 10px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .leftFlexBox {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: center;
+      gap: 2.5rem;
+      background: #f3fbe9;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(80, 120, 80, 0.07);
+      padding: 2.5rem 2.5rem;
+      min-width: 900px;
+      min-height: 340px;
+
+      .card {
+        background: #f6faf3;
+        border-radius: 16px;
+        box-shadow: 0 1px 8px rgba(80, 120, 80, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-width: 280px;
+        min-height: 260px;
+        padding: 1.5rem 1.5rem;
+        box-sizing: border-box;
+        flex: 1 1 0;
+        text-align: center;
+        gap: 1.2rem;
       }
-      .percentText {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #388e3c;
-        margin-top: -50px;
-        margin-bottom: 0.2rem;
-        z-index: 2;
+
+      .circleGraphBox {
+        @extend .card;
+        padding: 1.5rem 1.5rem;
+        position: relative;
+        .circleGraph {
+          width: 240px;
+          height: 240px;
+          display: block;
+          margin: 0 auto;
+        }
+        .graphCenter {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          pointer-events: none;
+        }
+        .percentText {
+          font-size: 3.2rem;
+          font-weight: 700;
+          color: #388e3c;
+          margin-bottom: 0.2rem;
+          line-height: 1.1;
+        }
+        .usageLabel {
+          font-size: 1.25rem;
+          color: #388e3c;
+          margin-bottom: 0.5rem;
+        }
+        .workStatus {
+          font-size: 1.05rem;
+          color: #25663b;
+          background: #e6f2e2;
+          border-radius: 8px;
+          padding: 0.3rem 1rem;
+          margin-top: 0.5rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+        }
       }
-      .usageLabel {
-        color: #388e3c;
-        font-size: 1rem;
-        font-weight: 500;
-        margin-bottom: 1rem;
+
+      .circleGraphBox .workStatus {
+        display: none;
+      }
+
+      .leaveTableCard {
+        @extend .card;
+        align-items: flex-start;
+        gap: 0.7rem;
+        .leaveRow {
+          display: flex;
+          justify-content: space-between;
+          width: 100%;
+          font-size: 1.13rem;
+          .leaveLabel {
+            color: #888;
+          }
+          .leaveValue {
+            font-weight: 700;
+            color: #388e3c;
+          }
+        }
+        .leaveTip {
+          margin-top: 0.7rem;
+          font-size: 0.98rem;
+          color: #388e3c;
+          background: #f3fbe9;
+          border-radius: 6px;
+          padding: 0.5rem 0.8rem;
+          text-align: center;
+          font-weight: 500;
+          width: 100%;
+        }
+      }
+
+      .memoCard {
+        @extend .card;
+        padding: 0;
+        textarea.todayMemoInput {
+          width: 100%;
+          height: 100%;
+          min-height: 180px;
+          border: none;
+          border-radius: 16px;
+          background: #f8f9f5;
+          color: #25663b;
+          font-size: 1.13rem;
+          padding: 2rem 2.5rem;
+          box-sizing: border-box;
+          resize: none;
+          font-family: inherit;
+          outline: none;
+          transition: box-shadow 0.2s;
+          box-shadow: none;
+          &:focus {
+            background: #f3fbe9;
+            box-shadow: 0 0 0 2px #b7d7b0;
+          }
+        }
       }
     }
-    .leaveTable {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 0.3rem;
-      background: none;
-      font-size: 1.05rem;
-      margin-top: 0.5rem;
-      border: 2px solid #b7d7b0;
-      td {
-        border: none;
-        padding: 0.4rem 0.8rem;
-        background: #e6f2e2;
-        color: #388e3c;
-        font-weight: 500;
-        &:last-child {
-          background: #fff;
-          color: #388e3c;
-          font-weight: 700;
-          text-align: right;
+
+    .workTimeBox {
+      justify-content: center;
+      .workTimeTable {
+        width: 100%;
+        td,
+        th {
+          text-align: center;
+          padding: 1.2rem 2rem;
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .rightCell {
+      justify-content: center;
+      .rightTableWrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .rightTable {
+        width: 100%;
+        height: 100%;
+        td,
+        th {
+          text-align: center;
+          padding: 1.2rem 2rem;
+          font-size: 1.2rem;
         }
       }
     }
@@ -84,7 +225,7 @@
   // 가운데: 내 근무 시간
   .workTimeBox {
     width: 100%;
-    max-width: 360px;
+    max-width: 400px; // 크기 증가
     margin: 0 auto;
     background: #fff;
     border: 2px solid #b7d7b0;
@@ -102,21 +243,21 @@
         background: #e6f2e2;
         color: #222;
         font-weight: 700;
-        font-size: 1.15rem;
+        font-size: 1.2rem; // 크기 증가
         text-align: center;
-        padding: 1rem 0.5rem;
+        padding: 1.2rem 0.8rem; // 패딩 증가
         border-bottom: 1px solid #b7d7b0;
       }
       tr {
-        height: 60px;
+        height: 70px; // 높이 증가
         border-bottom: 1px solid #d9e4d4;
         &:last-child {
           border-bottom: none;
         }
       }
       td {
-        padding: 0 1rem;
-        font-size: 1.05rem;
+        padding: 0 1.2rem; // 패딩 증가
+        font-size: 1.1rem; // 크기 증가
         color: #222;
         vertical-align: middle;
         border-right: 1px solid #d9e4d4;
@@ -140,99 +281,112 @@
     }
   }
 
-  // 오른쪽: 출근/퇴근/휴가신청
+  // 오른쪽 4카드형 출퇴근/부재/휴가 UI
   .rightCell {
-    flex: 2;
-    text-align: center;
-    .rightFlexBox {
+    background: #f3fbe9 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    .cardGrid {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      gap: 2rem;
+      width: 100%;
       justify-content: center;
       align-items: stretch;
-      height: 100%;
+      margin: 0 auto;
+      max-width: 1000px;
+      background: #f3fbe9;
+      padding: 2.2rem 1.5rem 2.2rem 1.5rem;
+      border-radius: 28px;
+    }
+    .card {
+      background: #f6faf3;
+      border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(80, 120, 80, 0.08);
+      flex: 1 1 0;
+      min-width: 180px;
+      max-width: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.2rem 1.5rem 1.2rem;
+      gap: 1.1rem;
+      text-align: center;
+      transition: box-shadow 0.2s;
+    }
+    .card.todayMessageCard {
+      background: linear-gradient(135deg, #f6faf3 60%);
+    }
+    .cardLabel,
+    .leaveLabel {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #388e3c;
+      margin-bottom: 0.2rem;
+    }
+    .cardValue,
+    .leaveValue {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #25663b;
+      margin-bottom: 0.2rem;
+    }
+    .cardButton,
+    .cardButtonSub,
+    .btnMain,
+    .btnSub {
       width: 100%;
-      padding: 0;
-      .rightTableWrap {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        width: 100%;
-        .rightTable {
-          width: 100%;
-          min-width: 400px;
-          margin-right: 0;
-          height: 100%;
-          vertical-align: middle;
-          display: table;
-          table-layout: fixed;
-          border-collapse: separate;
-          border-spacing: 0 0.3rem;
-          background: none;
-          margin: 0 auto;
-          th {
-            background: #e6f2e2;
-            color: #222;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-align: center;
-            padding: 0.6rem 1.2rem;
-            border: 2px solid #b7d7b0;
-          }
-          td {
-            border: 2px solid #b7d7b0;
-            padding: 0.5rem 0.6rem;
-            background: #fff;
-            font-size: 1.05rem;
-            text-align: center;
-            min-width: 60px;
-            vertical-align: middle;
-            &[rowspan='2'] {
-              vertical-align: middle;
-              background: #f8f9f5;
-              min-width: 90px;
-            }
-          }
-          .btnMain {
-            width: 100%;
-            min-width: 90px;
-            margin: 0 0.2rem 0 0;
-            display: inline-block;
-          }
-          .btnSub {
-            width: 100%;
-            min-width: 90px;
-            margin: 0.2rem 0;
-            display: inline-block;
-          }
-          .chkLabel {
-            margin: 0 0.2rem;
-            font-size: 0.98rem;
-            color: #333;
-            font-weight: 500;
-            display: inline-block;
-            input[type='checkbox'] {
-              margin-right: 0.2rem;
-              accent-color: #4caf50;
-            }
-          }
-        }
-        .todayTitle {
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #222;
-          background: #e6f2e2 !important;
-          text-align: center;
-        }
-        .centerTime {
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: black;
-          margin-bottom: 0.5rem;
-          text-align: left;
-          width: 60%;
-          min-width: 400px;
-        }
+      min-height: 44px;
+      border-radius: 10px;
+      font-size: 1.08rem;
+      font-weight: 600;
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      margin-top: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      &:hover {
+        background: #388e3c;
       }
+    }
+    .cardButtonRow {
+      display: flex;
+      gap: 0.7rem;
+      width: 100%;
+      margin-top: 0.5rem;
+      justify-content: center;
+    }
+    .cardSub {
+      font-size: 1rem;
+      color: #888;
+      margin-top: 0.3rem;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .mainMessage {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #25663b;
+      margin-bottom: 0.7rem;
+      line-height: 1.5;
+      word-break: keep-all;
+      white-space: pre-line;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .rightCell .cardGrid {
+      flex-direction: column;
+      gap: 1.2rem;
+      align-items: stretch;
+    }
+    .rightCell .card {
+      max-width: 100%;
+      min-width: 0;
     }
   }
 
@@ -384,7 +538,6 @@
     background: #388e3c;
   }
 }
-
 .btnSub {
   background: #e0f2f1;
   color: #388e3c;
@@ -435,4 +588,102 @@
   transition:
     background 0.2s,
     border 0.2s;
+}
+
+// 새로운 상태 정보 스타일
+.workStatusInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+
+  .statusItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+
+    .statusLabel {
+      color: #6c757d;
+      font-weight: 500;
+      margin-right: 0.5rem;
+    }
+
+    .statusValue {
+      color: #25663b;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      background: #e6f2e2;
+      border-radius: 4px;
+      min-width: 60px;
+      text-align: center;
+    }
+  }
+}
+
+// 요일별 문구 스타일
+.dayMessageBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  min-height: 60px;
+  justify-content: center;
+
+  .dayMessage {
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .timeMessage {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    font-weight: 500;
+  }
+}
+
+// 건강팁 스타일
+.healthTipBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  min-height: 60px;
+  justify-content: center;
+
+  .healthTip {
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .healthDetail {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    font-weight: 500;
+  }
+}
+
+.dashboardDateTimeInfo {
+  text-align: center;
+  color: #25663b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.01em;
+  background: none;
 }

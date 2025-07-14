@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './Dashboard.module.scss'; // styles import
+import { attendanceService } from '../../services/attendanceService';
+
 import {
   PieChart,
   Pie,
@@ -117,6 +119,15 @@ function DashboardStats() {
 
 // 대시보드 오른쪽 영역: 사용자 프로필 및 출근표를 보여주는 컴포넌트
 function DashboardProfile() {
+  const [attendanceData, setAttendanceData] = useState({
+    checkInTime: null,
+    checkOutTime: null,
+    goOutTime: null,
+    returnTime: null,
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+
   // 현재 시각/날짜 상태
   const [now, setNow] = useState(() => {
     const d = new Date();
@@ -126,6 +137,7 @@ function DashboardProfile() {
     const d = new Date();
     return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
   });
+
   useEffect(() => {
     const timer = setInterval(() => {
       const d = new Date();
@@ -138,6 +150,98 @@ function DashboardProfile() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // 오늘의 출근 데이터 가져오기
+  useEffect(() => {
+    const fetchTodayAttendance = async () => {
+      setIsLoading(true);
+      try {
+        // 백엔드에서 오늘의 출근 데이터 가져오기
+        const response = await attendanceService.getTodayAttendance();
+
+        if (response.success && response.result) {
+          setAttendanceData({
+            checkInTime: response.result.checkInTime,
+            checkOutTime: response.result.checkOutTime,
+            goOutTime: response.result.goOutTime,
+            returnTime: response.result.returnTime,
+          });
+        }
+      } catch (error) {
+        console.error('오늘의 출근 데이터 조회 실패:', error);
+        // 에러 시 sessionStorage에서 가져오기 (fallback)
+        const todayCheckIn = sessionStorage.getItem('TODAY_CHECK_IN');
+        const todayCheckOut = sessionStorage.getItem('TODAY_CHECK_OUT');
+        const todayGoOut = sessionStorage.getItem('TODAY_GO_OUT');
+        const todayReturn = sessionStorage.getItem('TODAY_RETURN');
+
+        setAttendanceData({
+          checkInTime: todayCheckIn,
+          checkOutTime: todayCheckOut,
+          goOutTime: todayGoOut,
+          returnTime: todayReturn,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTodayAttendance();
+  }, []);
+
+  // 시간 포맷팅 함수
+  const formatTime = (time) => {
+    if (!time) return '00:00';
+
+    // Date 객체인 경우
+    if (time instanceof Date) {
+      return time.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+    }
+
+    // 문자열인 경우 (ISO 형식 등)
+    if (typeof time === 'string') {
+      try {
+        const date = new Date(time);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+        }
+        // 이미 HH:mm 형식인 경우
+        if (time.match(/^\d{2}:\d{2}$/)) {
+          return time;
+        }
+      } catch (e) {
+        // 파싱 실패 시 원본 반환
+        return time;
+      }
+    }
+
+    return '00:00';
+  };
+
+  // 출근 상태에 따른 상태 텍스트 반환
+  const getAttendanceStatus = () => {
+    if (attendanceData.checkOutTime) {
+      return { text: '퇴근완료', color: '#ccc' };
+    } else if (attendanceData.returnTime) {
+      return { text: '복귀완료', color: '#66be80' };
+    } else if (attendanceData.goOutTime) {
+      return { text: '외출중', color: '#f7b731' };
+    } else if (attendanceData.checkInTime) {
+      return { text: '출근중', color: '#4b7bec' };
+    } else {
+      return { text: '미출근', color: '#eb3b5a' };
+    }
+  };
+
+  const statusInfo = getAttendanceStatus();
 
   return (
     <div className={styles.dashboardProfile}>
@@ -156,14 +260,9 @@ function DashboardProfile() {
           <hr /> {/* 구분선 */}
           <ul>
             <li>
-              <span className={styles.profilePin} /> {/* 핀 아이콘 */}
+              <span className={styles.profilePin} />
               입사일
               <span className={styles.profileValue}>2025-06-20</span>
-            </li>
-            <li>
-              <span className={styles.profilePin} />
-              출근 시간
-              <span className={styles.profileValue}>08:50</span>
             </li>
             <li>
               <span className={styles.profilePin} />
@@ -177,6 +276,7 @@ function DashboardProfile() {
           </ul>
         </div>
       </div>
+
       {/* 현재 연월일/시각 */}
       <div
         style={{
@@ -215,6 +315,9 @@ function DashboardProfile() {
           {now}
         </span>
       </div>
+
+      {/* 출근 상태 표시 박스 완전 삭제! */}
+
       {/* 출근표 테이블 영역 */}
       <div className={styles.profileTable}>
         <div className={styles.profileTableRow}>
@@ -223,23 +326,31 @@ function DashboardProfile() {
           >
             출근
           </div>
-          <div className={styles.profileTableCell}>08:50</div>
-          <div className={`${styles.profileTableCell} ${styles.cellHead}`}>
-            복귀
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.checkInTime)}
           </div>
-          <div className={styles.profileTableCell}>00:00</div>
+          <div className={`${styles.profileTableCell} ${styles.cellHead}`}>
+            퇴근
+          </div>
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.checkOutTime)}
+          </div>
         </div>
         <div className={styles.profileTableRow}>
           <div className={`${styles.profileTableCell} ${styles.cellHead}`}>
             외출
           </div>
-          <div className={styles.profileTableCell}>00:00</div>
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.goOutTime)}
+          </div>
           <div
             className={`${styles.profileTableCell} ${styles.cellHead} ${styles.cellGreen}`}
           >
-            퇴근
+            복귀
           </div>
-          <div className={styles.profileTableCell}>18:01</div>
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.returnTime)}
+          </div>
         </div>
       </div>
     </div>

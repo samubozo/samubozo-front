@@ -42,6 +42,11 @@ export const AuthContextProvider = (props) => {
       if (res.ok) {
         const data = await res.json();
         const userInfo = data.result;
+
+        console.log('🧾userInfo:', userInfo);
+
+        sessionStorage.setItem('USER_EMAIL', userInfo.email || '');
+
         sessionStorage.setItem('USER_NAME', userInfo.userName || '');
         sessionStorage.setItem(
           'USER_DEPARTMENT',
@@ -53,6 +58,8 @@ export const AuthContextProvider = (props) => {
         );
         sessionStorage.setItem('USER_POSITION', userInfo.positionName || '');
         sessionStorage.setItem('USER_EMPLOYEE_NO', userInfo.employeeNo || '');
+
+        sessionStorage.setItem('USER_ROLE', userInfo.hrRole || '');
       }
     } catch (e) {
       console.error('유저 상세정보 조회 실패:', e);
@@ -100,6 +107,11 @@ export const AuthContextProvider = (props) => {
         onLogout: logoutHandler,
         userRole,
         isInit,
+        user: {
+          email: sessionStorage.getItem('USER_EMAIL'),
+          employeeNo: sessionStorage.getItem('USER_EMPLOYEE_NO'),
+          hrRole: sessionStorage.getItem('USER_ROLE'),
+        },
       }}
     >
       {props.children}

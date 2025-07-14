@@ -3,7 +3,7 @@ import styles from './Signup.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
 import VerifyModal from './VerifyModal';
-import axios from 'axios';
+import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
 
 const defaultForm = {
@@ -75,9 +75,7 @@ const validateField = (name, value, form) => {
 
 const Signup = () => {
   const [form, setForm] = useState(defaultForm);
-  const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [errors, setErrors] = useState({});
   const [departments, setDepartments] = useState([]);
   const [positions, setPositions] = useState([]);
@@ -89,7 +87,7 @@ const Signup = () => {
     const fetchData = async () => {
       try {
         // 부서 목록 가져오기
-        const deptResponse = await axios.get(
+        const deptResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/departments`,
         );
         console.log('부서 API 응답:', deptResponse);
@@ -99,7 +97,9 @@ const Signup = () => {
         setDepartments(deptData);
 
         // 직책 목록 가져오기
-        const posResponse = await axios.get(`${API_BASE_URL}${HR}/positions`);
+        const posResponse = await axiosInstance.get(
+          `${API_BASE_URL}${HR}/positions`,
+        );
         console.log('직책 API 응답:', posResponse);
         const posData = Array.isArray(posResponse.data.result)
           ? posResponse.data.result
@@ -190,7 +190,7 @@ const Signup = () => {
       return;
     }
     try {
-      await axios.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
         email: form.email,
       });
       setShowModal(true);
@@ -218,12 +218,6 @@ const Signup = () => {
       }
     });
 
-    // 이메일 인증 여부
-    if (!isEmailVerified) {
-      newErrors.email = '이메일 인증을 완료해 주세요.';
-      isValid = false;
-    }
-
     if (!isValid) {
       setErrors(newErrors);
       return;
@@ -231,7 +225,7 @@ const Signup = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post(`${API_BASE_URL}${HR}/users/signup`, form);
+      await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
       alert('회원가입이 완료되었습니다!');
       navigate('/');
     } catch (error) {
@@ -244,14 +238,14 @@ const Signup = () => {
 
   // 인증 모달 재발송/완료
   const handleModalResend = async () => {
-    await axios.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+    await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
       email: form.email,
     });
   };
 
   const handleModalComplete = async (code) => {
     try {
-      const res = await axios.post(`${API_BASE_URL}${AUTH}/verify`, {
+      const res = await axiosInstance.post(`${API_BASE_URL}${AUTH}/verify`, {
         email: form.email,
         code,
       });
@@ -311,15 +305,6 @@ const Signup = () => {
 
   return (
     <div className={styles.outerBg}>
-      {showModal && (
-        <VerifyModal
-          email={form.email || 'aaa***@samubozo.com'}
-          onResend={handleModalResend}
-          onComplete={handleModalComplete}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-
       <div className={styles.registerNav}>
         <Link to={'/'}>로그인</Link> |{' '}
         <span
@@ -331,9 +316,9 @@ const Signup = () => {
           }
         >
           ID 찾기
-        </span>
+        </span>{' '}
         | <Link to={'/passwordFind'}>PW 찾기</Link>
-        <span className={styles.icon}>👤</span> {/* styles.icon 적용 */}
+        <span className={styles.icon}>👤</span>
       </div>
 
       <img src={Logo} alt='로고' className={styles.registerLogo} />
@@ -346,25 +331,14 @@ const Signup = () => {
             <div className={styles.registerGrid}>
               <div className={styles.registerLeft}>
                 <label>이메일</label>
-                <div className={styles.emailRow}>
-                  <input
-                    type='email'
-                    name='email'
-                    placeholder='이메일을 입력하세요.'
-                    value={form.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    disabled={isEmailVerified}
-                  />
-                  <button
-                    type='button'
-                    className={styles.emailBtn}
-                    onClick={handleEmailVerify}
-                    disabled={isEmailVerified}
-                  >
-                    {isEmailVerified ? '인증완료' : '인증'}
-                  </button>
-                </div>
+                <input
+                  type='email'
+                  name='email'
+                  placeholder='이메일을 입력하세요.'
+                  value={form.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                />
                 {errors.email && (
                   <div className={styles.error}>{errors.email}</div>
                 )}
@@ -406,7 +380,7 @@ const Signup = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                 />
-                {errors.name && (
+                {errors.userName && (
                   <div className={styles.error}>{errors.userName}</div>
                 )}
 
@@ -422,7 +396,7 @@ const Signup = () => {
                         onBlur={handleBlur}
                       />
                     </div>
-                    {errors.birth && (
+                    {errors.birthDate && (
                       <div className={styles.error}>{errors.birthDate}</div>
                     )}
                   </div>
