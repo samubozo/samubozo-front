@@ -4,11 +4,20 @@ import styles from './PayrollManagement.module.scss';
 import AuthContext from '../../context/UserContext';
 
 const employeeData = [
-  { id: 1, name: '신한국', position: '팀장' },
-  { id: 2, name: '이호영', position: '부팀장' },
-  { id: 3, name: '김예은', position: '사원' },
-  { id: 4, name: '주영찬', position: '사원' },
-  { id: 5, name: '구현희', position: '사원' },
+  { id: 1, name: '신한국', position: '팀장', department: '경영지원' },
+  { id: 2, name: '이호영', position: '부팀장', department: '영업부' },
+  { id: 3, name: '김예은', position: '사원', department: '기획부' },
+  { id: 4, name: '주영찬', position: '사원', department: '마케팅' },
+  { id: 5, name: '구현희', position: '사원', department: '디자인' },
+];
+
+const departmentOptions = [
+  '전체',
+  '경영지원',
+  '영업부',
+  '기획부',
+  '마케팅',
+  '디자인',
 ];
 
 const PayrollManagement = () => {
@@ -19,6 +28,7 @@ const PayrollManagement = () => {
     mealAllowance: '',
   });
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('전체');
 
   const { user } = useContext(AuthContext);
 
@@ -108,6 +118,12 @@ const PayrollManagement = () => {
     );
   };
 
+  // 부서 필터링
+  const filteredEmployees =
+    selectedDepartment === '전체'
+      ? employeeData
+      : employeeData.filter((emp) => emp.department === selectedDepartment);
+
   // 계산 로직
   const base = payrollData.basePayroll || 0;
   const allowance = payrollData.positionAllowance || 0;
@@ -135,11 +151,15 @@ const PayrollManagement = () => {
         <div className={styles['filter-group']}>
           부서:
           <label>
-            <select>
-              <option>전체</option>
-              <option>경영지원</option>
-              <option>영업</option>
-              {/* 기타 부서 */}
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+            >
+              {departmentOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
             </select>
           </label>
           급여월:
@@ -176,7 +196,7 @@ const PayrollManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {employeeData.map((emp, idx) => (
+              {filteredEmployees.map((emp, idx) => (
                 <tr key={emp.id}>
                   <td>
                     <input
@@ -196,7 +216,7 @@ const PayrollManagement = () => {
           {/* 하단 인원(퇴직) 요약 */}
           <div className={styles['employee-summary']}>
             <span>인원 (퇴직)</span>
-            <span>{employeeData.length}</span>
+            <span>{filteredEmployees.length}</span>
           </div>
         </div>
 
