@@ -50,6 +50,18 @@ export const attendanceService = {
     }
   },
 
+  // 남은 근무시간 조회
+  getRemainingWorkTime: async () => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${ATTENDANCE}/remaining-work-time`,
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // 월별 근태 조회
   getMonthlyAttendance: async (year, month) => {
     try {
