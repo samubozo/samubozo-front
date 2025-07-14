@@ -368,49 +368,56 @@ function MessageWriteModal({
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append(
-        'request',
-        new Blob(
-          [
-            JSON.stringify({
-              receiverId: receivers[0].id,
-              subject: subject.trim(),
-              content: content.trim(),
-            }),
-          ],
-          { type: 'application/json' },
-        ),
-      );
-      files.forEach((file) => {
-        formData.append('attachment', file);
-      });
+    let successCount = 0;
+    let failCount = 0;
 
-      const response = await axiosInstance.post(
-        `${API_BASE_URL}${MESSAGE}`,
-        formData,
-      );
+    for (const receiver of receivers) {
+      try {
+        const formData = new FormData();
+        formData.append(
+          'request',
+          new Blob(
+            [
+              JSON.stringify({
+                receiverId: receiver.id,
+                subject: subject.trim(),
+                content: content.trim(),
+              }),
+            ],
+            { type: 'application/json' },
+          ),
+        );
+        files.forEach((file) => {
+          formData.append('attachment', file);
+        });
 
-      // API 응답 확인
-      if (response.status === 200 || response.status === 201) {
-        // 성공 후 폼 초기화
-        setReceivers([]);
-        setSubject('');
-        setContent('');
-        setFiles([]);
-        if (editorRef.current) {
-          editorRef.current.getInstance().setMarkdown('');
+        const response = await axiosInstance.post(
+          `${API_BASE_URL}${MESSAGE}`,
+          formData,
+        );
+
+        if (response.status === 200 || response.status === 201) {
+          successCount++;
+        } else {
+          failCount++;
         }
-
-        onSend(response.data); // 응답 데이터 전달
-      } else {
-        throw new Error('API 응답이 성공이 아닙니다.');
+      } catch (error) {
+        failCount++;
       }
-    } catch (error) {
-      console.error('쪽지 전송 실패:', error);
-      alert('쪽지 전송에 실패했습니다.');
     }
+
+    alert(
+      `쪽지 전송 완료: ${successCount}명 성공${failCount > 0 ? `, ${failCount}명 실패` : ''}`,
+    );
+    // 폼 초기화 등 기존 로직 유지
+    setReceivers([]);
+    setSubject('');
+    setContent('');
+    setFiles([]);
+    if (editorRef.current) {
+      editorRef.current.getInstance().setMarkdown('');
+    }
+    onSend({ success: successCount > 0 });
   };
 
   const handleClose = () => {
@@ -574,7 +581,9 @@ const Message = () => {
   const location = useLocation();
 
   // 탭: 받은/보낸
-  const [tab, setTab] = useState('received');
+  const [tab, setTab] = useState(
+    () => localStorage.getItem('messageTab') || 'received',
+  );
   // 필터/검색 상태
   const [period, setPeriod] = useState('all');
   const [searchType, setSearchType] = useState('title');
@@ -604,6 +613,13 @@ const Message = () => {
       fetchSentMessages();
     }
   }, [tab]);
+
+  useEffect(() => {
+    if (tab === 'received') {
+      fetchReceivedMessages();
+    }
+    // eslint-disable-next-line
+  }, [unreadOnly]);
 
   // URL 파라미터에서 messageId 확인 (페이지 로드 시에만)
   useEffect(() => {
@@ -964,6 +980,7 @@ const Message = () => {
   };
 
   const handleTabChange = (newTab) => {
+    localStorage.setItem('messageTab', newTab);
     console.log('탭 변경:', tab, '->', newTab);
     setIsTabChanging(true);
     setTab(newTab);
@@ -1116,40 +1133,38 @@ const Message = () => {
                   onChange={handleCheckAll}
                 />
               </th>
-              {tab === 'received' ? (
-                <>
-                  <th>보낸사람</th>
-                  <th>제목</th>
-                  <th>일시</th>
-                </>
-              ) : (
-                <>
-                  <th>받는사람</th>
-                  <th>제목</th>
-                  <th>일시</th>
-                  <th>수신여부</th>
-                </>
-              )}
+              <th>{tab === 'received' ? '보낸사람' : '받는사람'}</th>
+              <th>제목</th>
+              <th>일시</th>
+              <th>수신여부</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
                 <td
-                  colSpan={tab === 'received' ? 4 : 5}
+                  colSpan={5}
                   className={styles.noData}
+                  style={{ height: 120 }}
                 >
                   로딩 중...
                 </td>
               </tr>
             ) : paged.length === 0 ? (
               <tr>
-                <td
-                  colSpan={tab === 'received' ? 4 : 5}
-                  className={styles.noData}
-                >
+                <td>
+                  <input
+                    type='checkbox'
+                    disabled
+                    style={{ opacity: 0.5, pointerEvents: 'none' }}
+                  />
+                </td>
+                <td></td>
+                <td style={{ textAlign: 'center', color: '#bbb' }}>
                   쪽지가 없습니다.
                 </td>
+                <td></td>
+                <td></td>
               </tr>
             ) : (
               paged.map((msg) => (
@@ -1167,53 +1182,55 @@ const Message = () => {
                   }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <td>
-                    <input
-                      type='checkbox'
-                      checked={checked.includes(msg.id || msg.messageId)}
-                      onChange={() => handleCheck(msg.id || msg.messageId)}
-                    />
+                  <td
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ cursor: 'pointer', width: 40, minWidth: 32 }}
+                  >
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer',
+                        padding: 6,
+                      }}
+                    >
+                      <input
+                        type='checkbox'
+                        checked={checked.includes(msg.id || msg.messageId)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleCheck(msg.id || msg.messageId);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </label>
                   </td>
-                  {tab === 'received' ? (
-                    <>
-                      <td>
-                        {msg.senderName ||
-                          msg.sender?.userName ||
-                          `사용자 ${msg.senderId}` ||
-                          '보낸사람 없음'}
-                      </td>
-                      <td>{msg.subject || '제목 없음'}</td>
-                      <td>
-                        {msg.sentAt
-                          ? new Date(msg.sentAt).toLocaleString()
-                          : msg.createdAt
-                            ? new Date(msg.createdAt).toLocaleString()
-                            : msg.createdDate
-                              ? new Date(msg.createdDate).toLocaleString()
-                              : ''}
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td>
-                        {msg.receiverName ||
-                          msg.receiver?.userName ||
-                          `사용자 ${msg.receiverId}` ||
-                          '받는사람 없음'}
-                      </td>
-                      <td>{msg.subject || '제목 없음'}</td>
-                      <td>
-                        {msg.sentAt
-                          ? new Date(msg.sentAt).toLocaleString()
-                          : msg.createdAt
-                            ? new Date(msg.createdAt).toLocaleString()
-                            : msg.createdDate
-                              ? new Date(msg.createdDate).toLocaleString()
-                              : ''}
-                      </td>
-                      <td>{msg.isRead ? '읽음' : '미확인'}</td>
-                    </>
-                  )}
+                  <td>
+                    {tab === 'received'
+                      ? msg.senderName ||
+                        msg.sender?.userName ||
+                        `사용자 ${msg.senderId}` ||
+                        '보낸사람 없음'
+                      : msg.receiverName ||
+                        msg.receiver?.userName ||
+                        `사용자 ${msg.receiverId}` ||
+                        '받는사람 없음'}
+                  </td>
+                  <td>{msg.subject || '제목 없음'}</td>
+                  <td>
+                    {msg.sentAt
+                      ? new Date(msg.sentAt).toLocaleString()
+                      : msg.createdAt
+                        ? new Date(msg.createdAt).toLocaleString()
+                        : msg.createdDate
+                          ? new Date(msg.createdDate).toLocaleString()
+                          : ''}
+                  </td>
+                  <td>
+                    {tab === 'sent' ? (msg.isRead ? '읽음' : '미확인') : ''}
+                  </td>
                 </tr>
               ))
             )}
@@ -1249,7 +1266,23 @@ const Message = () => {
           </div>
           {checked.length > 0 && (
             <button className={styles.deleteBtn} onClick={handleDelete}>
-              삭제
+              {tab === 'sent'
+                ? // 보낸쪽지함일 때
+                  (() => {
+                    // 선택된 쪽지 중 하나라도 읽음이면 '삭제', 모두 미확인이면 '취소'
+                    const selected = paged.filter((msg) =>
+                      checked.includes(msg.id || msg.messageId),
+                    );
+                    if (
+                      selected.length > 0 &&
+                      selected.every((msg) => msg.isRead === false)
+                    ) {
+                      return '취소';
+                    } else {
+                      return '삭제';
+                    }
+                  })()
+                : '삭제'}
             </button>
           )}
         </div>
