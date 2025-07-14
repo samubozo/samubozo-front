@@ -3,6 +3,17 @@ import styles from './OrgChart.module.scss';
 import { HexColorPicker } from 'react-colorful';
 // import UserSearchModal from './UserSearchModal';
 
+// 사용 가능한 색상 목록 (OrgChart COLOR_OPTIONS와 동일하게 유지)
+const COLOR_OPTIONS = [
+  '#e6f0fb', // 파랑
+  '#dafbe5', // 초록
+  '#fff0cc', // 노랑
+  '#ffe6e6', // 빨강
+  '#e0c3f7', // 보라
+  '#e0e0e0', // 회색
+  '#eaffd0', // 연두
+];
+
 function AddDeptModal({ open, onClose, onAdd, existingDepartments = [] }) {
   // 상태 관리
   const [color, setColor] = useState('#e6f0fb');
@@ -28,7 +39,18 @@ function AddDeptModal({ open, onClose, onAdd, existingDepartments = [] }) {
   useEffect(() => {
     if (open) {
       setName('');
-      setColor('#e6f0fb');
+      // 이미 사용 중인 색상 제외 후 랜덤 선택
+      const usedColors = existingDepartments
+        .map((dept) => dept.departmentColor || dept.color)
+        .filter(Boolean);
+      const availableColors = COLOR_OPTIONS.filter(
+        (color) => !usedColors.includes(color),
+      );
+      const randomColor =
+        availableColors.length > 0
+          ? availableColors[Math.floor(Math.random() * availableColors.length)]
+          : COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+      setColor(randomColor);
       // setHead(null);
       setSelectedFile(null);
       setImagePreview(null);
@@ -36,7 +58,7 @@ function AddDeptModal({ open, onClose, onAdd, existingDepartments = [] }) {
       setIsSubmitting(false);
       setShowPicker(false);
     }
-  }, [open]);
+  }, [open, existingDepartments]);
 
   // 컬러피커 팝업 바깥 클릭 시 닫기
   useEffect(() => {
