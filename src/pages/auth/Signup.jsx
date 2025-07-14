@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styles from './Signup.module.scss';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
-import VerifyModal from './VerifyModal';
 import axiosInstance from '../../configs/axios-config';
-import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
+import { API_BASE_URL, HR } from '../../configs/host-config';
 
 const defaultForm = {
   email: '',
@@ -90,7 +89,6 @@ const Signup = () => {
         const deptResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/departments`,
         );
-        console.log('부서 API 응답:', deptResponse);
         const deptData = Array.isArray(deptResponse.data.result)
           ? deptResponse.data.result
           : [];
@@ -100,13 +98,11 @@ const Signup = () => {
         const posResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/positions`,
         );
-        console.log('직책 API 응답:', posResponse);
         const posData = Array.isArray(posResponse.data.result)
           ? posResponse.data.result
           : [];
         setPositions(posData);
       } catch (error) {
-        console.error('부서/직책 데이터 로딩 실패:', error);
         setDepartments([
           { departmentId: 1, name: '경영지원', departmentColor: '#FFAB91' },
           { departmentId: 2, name: '인사팀', departmentColor: '#B39DDB' },
@@ -159,15 +155,18 @@ const Signup = () => {
     }
   };
 
-  // 성별 버튼 처리 (실시간 체크)
-  const handleGender = (gender) => {
+  // 성별 버튼 처리 (실시간 체크, 서버에는 'M'/'F'로 전달)
+  const handleGender = (genderCode) => {
     setForm((prev) => ({
       ...prev,
-      gender,
+      gender: genderCode,
     }));
     setErrors((prev) => ({
       ...prev,
-      gender: validateField('gender', gender, { ...form, gender }),
+      gender: validateField('gender', genderCode, {
+        ...form,
+        gender: genderCode,
+      }),
     }));
   };
 
@@ -190,10 +189,10 @@ const Signup = () => {
       return;
     }
     try {
-      await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
+      await axiosInstance.post(`${API_BASE_URL}${HR}/email-valid`, {
         email: form.email,
       });
-      setShowModal(true);
+      // setShowModal(true); // 모달 관련 코드 제거
     } catch (e) {
       setErrors((prev) => ({
         ...prev,
@@ -227,47 +226,13 @@ const Signup = () => {
     try {
       await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
       alert('회원가입이 완료되었습니다!');
-      navigate('/');
+      navigate('/employee');
     } catch (error) {
       alert(
         '회원가입 실패: ' + (error.response?.data?.message || error.message),
       );
     }
     setIsSubmitting(false);
-  };
-
-  // 인증 모달 재발송/완료
-  const handleModalResend = async () => {
-    await axiosInstance.post(`${API_BASE_URL}${AUTH}/email-valid`, {
-      email: form.email,
-    });
-  };
-
-  const handleModalComplete = async (code) => {
-    try {
-      const res = await axiosInstance.post(`${API_BASE_URL}${AUTH}/verify`, {
-        email: form.email,
-        code,
-      });
-      if (res.status === 200 && res.data === '인증 성공!') {
-        setIsEmailVerified(true);
-        setShowModal(false);
-        setErrors((prev) => ({ ...prev, email: undefined }));
-        alert('이메일 인증이 완료되었습니다.');
-      } else {
-        setErrors((prev) => ({
-          ...prev,
-          email: res.data.message || '인증에 실패했습니다.',
-        }));
-      }
-    } catch (err) {
-      setErrors((prev) => ({
-        ...prev,
-        email:
-          err.response?.data?.message ||
-          '인증에 실패했습니다. 인증번호를 확인해 주세요.',
-      }));
-    }
   };
 
   // 주소찾기 함수 추가
@@ -331,14 +296,18 @@ const Signup = () => {
             <div className={styles.registerGrid}>
               <div className={styles.registerLeft}>
                 <label>이메일</label>
-                <input
-                  type='email'
-                  name='email'
-                  placeholder='이메일을 입력하세요.'
-                  value={form.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type='email'
+                    name='email'
+                    placeholder='이메일을 입력하세요.'
+                    value={form.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    style={{ flex: 1 }}
+                  />
+                  {/* 중복확인 버튼 제거 */}
+                </div>
                 {errors.email && (
                   <div className={styles.error}>{errors.email}</div>
                 )}
@@ -351,6 +320,7 @@ const Signup = () => {
                   value={form.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  autoComplete='new-password'
                 />
                 {errors.password && (
                   <div className={styles.error}>{errors.password}</div>
@@ -364,6 +334,7 @@ const Signup = () => {
                   value={form.passwordCheck}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  autoComplete='new-password'
                 />
                 {errors.passwordCheck && (
                   <div className={styles.error}>{errors.passwordCheck}</div>
@@ -403,15 +374,15 @@ const Signup = () => {
                     <div className={styles.genderBtns}>
                       <button
                         type='button'
-                        className={form.gender === '남자' ? styles.active : ''}
-                        onClick={() => handleGender('남자')}
+                        className={form.gender === 'M' ? styles.active : ''}
+                        onClick={() => handleGender('M')}
                       >
                         남자
                       </button>
                       <button
                         type='button'
-                        className={form.gender === '여자' ? styles.active : ''}
-                        onClick={() => handleGender('여자')}
+                        className={form.gender === 'F' ? styles.active : ''}
+                        onClick={() => handleGender('F')}
                       >
                         여자
                       </button>

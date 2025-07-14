@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Approval.module.scss';
+import { useLocation } from 'react-router-dom';
 
 // 독립 컴포넌트: Tab
 function ApprovalTabs({ tab, setTab }) {
@@ -112,8 +113,12 @@ function ApprovalTable({ columns, data, selected, setSelected }) {
 
 // 메인 Approval 컴포넌트
 function Approval() {
-  // 탭 상태
-  const [tab, setTab] = useState('leave');
+  const location = useLocation();
+  // 쿼리 파라미터에서 tab 값을 읽어옴
+  const params = new URLSearchParams(location.search);
+  const initialTab =
+    params.get('tab') === 'certificate' ? 'certificate' : 'leave';
+  const [tab, setTab] = useState(initialTab);
 
   // 공통 상태
   const [item, setItem] = useState('all');
@@ -141,6 +146,17 @@ function Approval() {
     setFilterValue('');
     setSelected([]);
   }, [tab]);
+
+  // URL 쿼리(tab)가 바뀌면 탭 상태도 동기화
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlTab = params.get('tab');
+    if (urlTab === 'certificate' && tab !== 'certificate') {
+      setTab('certificate');
+    } else if (urlTab !== 'certificate' && tab !== 'leave') {
+      setTab('leave');
+    }
+  }, [location.search]);
 
   // 더미 데이터
   const leaveOptions = [

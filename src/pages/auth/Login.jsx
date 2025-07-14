@@ -12,55 +12,21 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [emailList, setEmailList] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
-  const emailInputRef = useRef(null);
-  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const rememberedEmails = JSON.parse(
       localStorage.getItem('rememberedEmails') || '[]',
     );
-    setEmailList(rememberedEmails);
     if (rememberedEmails.length > 0) {
       setEmail(rememberedEmails[0]);
       setRemember(true);
     }
   }, []);
 
-  // 바깥 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (
-        emailInputRef.current &&
-        !emailInputRef.current.contains(e.target) &&
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target)
-      ) {
-        setShowDropdown(false);
-      }
-    }
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
-
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
-    setShowDropdown(true);
-  };
-
-  const handleSelectEmail = (selectedEmail) => {
-    setEmail(selectedEmail);
-    setShowDropdown(false);
-    setRemember(true);
   };
 
   const updateRememberedEmails = (email, checked) => {
@@ -76,7 +42,6 @@ const Login = () => {
       rememberedEmails = rememberedEmails.filter((e) => e !== email);
     }
     localStorage.setItem('rememberedEmails', JSON.stringify(rememberedEmails));
-    setEmailList(rememberedEmails);
   };
 
   const handleSubmit = async (e) => {
@@ -112,14 +77,13 @@ const Login = () => {
           provider,
         });
         if (typeof onLogin === 'function') {
-          onLogin({ accessToken, refreshToken, id, role, provider });
+          await onLogin({ accessToken, refreshToken, id, role, provider });
         }
         sessionStorage.setItem('ACCESS_TOKEN', accessToken);
         localStorage.setItem('REFRESH_TOKEN', refreshToken);
       } else {
         console.log('로그인 응답에 토큰 없음:', res.data);
       }
-      alert('로그인 성공!');
       navigate('/dashboard');
     } catch (e) {
       console.log('로그인 에러', e);
@@ -137,57 +101,45 @@ const Login = () => {
         <div className={styles.logoSection}>
           <img src={Logo} alt='사무보조 로고' />
         </div>
-        <form onSubmit={handleSubmit} autoComplete='off'>
+        {/* 보안을 위한 숨겨진 필드 추가 */}
+        <input
+          type='text'
+          style={{ display: 'none' }}
+          autoComplete='username'
+          tabIndex='-1'
+        />
+        <input
+          type='password'
+          style={{ display: 'none' }}
+          autoComplete='current-password'
+          tabIndex='-1'
+        />
+        <input
+          type='text'
+          style={{ display: 'none' }}
+          name='fakeusernameremembered'
+        />
+        <input
+          type='password'
+          style={{ display: 'none' }}
+          name='fakepasswordremembered'
+        />
+        <form onSubmit={handleSubmit} autoComplete='new-password' method='post'>
           <div style={{ position: 'relative', width: '100%' }}>
             <input
-              ref={emailInputRef}
               className={styles.emailInput}
               type='email'
               placeholder='Email'
               value={email}
               onChange={handleEmailChange}
               onFocus={() => setShowDropdown(true)}
-              autoComplete='off'
+              autoComplete='username'
+              name='email'
+              id='email'
+              required
+              spellCheck='false'
             />
-            {showDropdown && emailList.length > 0 && (
-              <ul
-                ref={dropdownRef}
-                style={{
-                  position: 'absolute',
-                  top: 'auto',
-                  bottom: '100%',
-                  left: 0,
-                  width: '100%',
-                  background: '#fff',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px 8px 0 0',
-                  boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
-                  zIndex: 10,
-                  margin: 0,
-                  padding: 0,
-                  listStyle: 'none',
-                  maxHeight: 120,
-                  overflowY: 'auto',
-                }}
-              >
-                {emailList
-                  .filter((e) => email === '' || e.includes(email))
-                  .map((e, idx) => (
-                    <li
-                      key={e}
-                      style={{
-                        padding: '8px 14px',
-                        cursor: 'pointer',
-                        background: e === email ? '#eafaf1' : 'transparent',
-                        fontWeight: e === email ? 700 : 400,
-                      }}
-                      onMouseDown={() => handleSelectEmail(e)}
-                    >
-                      {e}
-                    </li>
-                  ))}
-              </ul>
-            )}
+            {/* 이메일 자동완성 드롭다운(ul) 완전 제거 */}
           </div>
           <input
             className={styles.passwordInput}
@@ -195,6 +147,11 @@ const Login = () => {
             placeholder='Password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete='new-password'
+            name='password'
+            id='password'
+            required
+            spellCheck='false'
             style={{ width: '100%' }}
           />
           <div className={styles.rememberSection}>

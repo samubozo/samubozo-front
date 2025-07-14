@@ -27,6 +27,7 @@ export default function PasswordUpdate() {
               placeholder='새 비밀번호 입력'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete='new-password'
             />
           </div>
           <div className={styles.inputRow}>
@@ -37,6 +38,7 @@ export default function PasswordUpdate() {
               placeholder='새 비밀번호 확인'
               value={passwordCheck}
               onChange={(e) => setPasswordCheck(e.target.value)}
+              autoComplete='new-password'
             />
           </div>
           <div className={styles.nextBtnRow}>
