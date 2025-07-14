@@ -197,4 +197,16 @@ export const attendanceService = {
       throw error;
     }
   },
+
+  // 연차 현황 조회
+  getVacationBalance: async () => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${ATTENDANCE}/balance`,
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
