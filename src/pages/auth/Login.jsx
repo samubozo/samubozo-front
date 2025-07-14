@@ -77,14 +77,13 @@ const Login = () => {
           provider,
         });
         if (typeof onLogin === 'function') {
-          onLogin({ accessToken, refreshToken, id, role, provider });
+          await onLogin({ accessToken, refreshToken, id, role, provider });
         }
         sessionStorage.setItem('ACCESS_TOKEN', accessToken);
         localStorage.setItem('REFRESH_TOKEN', refreshToken);
       } else {
         console.log('로그인 응답에 토큰 없음:', res.data);
       }
-      alert('로그인 성공!');
       navigate('/dashboard');
     } catch (e) {
       console.log('로그인 에러', e);
@@ -102,7 +101,30 @@ const Login = () => {
         <div className={styles.logoSection}>
           <img src={Logo} alt='사무보조 로고' />
         </div>
-        <form onSubmit={handleSubmit} autoComplete='off'>
+        {/* 보안을 위한 숨겨진 필드 추가 */}
+        <input
+          type='text'
+          style={{ display: 'none' }}
+          autoComplete='username'
+          tabIndex='-1'
+        />
+        <input
+          type='password'
+          style={{ display: 'none' }}
+          autoComplete='current-password'
+          tabIndex='-1'
+        />
+        <input
+          type='text'
+          style={{ display: 'none' }}
+          name='fakeusernameremembered'
+        />
+        <input
+          type='password'
+          style={{ display: 'none' }}
+          name='fakepasswordremembered'
+        />
+        <form onSubmit={handleSubmit} autoComplete='new-password' method='post'>
           <div style={{ position: 'relative', width: '100%' }}>
             <input
               className={styles.emailInput}
@@ -110,7 +132,12 @@ const Login = () => {
               placeholder='Email'
               value={email}
               onChange={handleEmailChange}
-              autoComplete='off'
+              onFocus={() => setShowDropdown(true)}
+              autoComplete='username'
+              name='email'
+              id='email'
+              required
+              spellCheck='false'
             />
             {/* 이메일 자동완성 드롭다운(ul) 완전 제거 */}
           </div>
@@ -120,6 +147,11 @@ const Login = () => {
             placeholder='Password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete='new-password'
+            name='password'
+            id='password'
+            required
+            spellCheck='false'
             style={{ width: '100%' }}
           />
           <div className={styles.rememberSection}>

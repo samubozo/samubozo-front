@@ -1,182 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import styles from './Schedule.module.scss';
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, SCHEDULE } from '../../configs/host-config';
+import { HexColorPicker } from 'react-colorful';
+import debounce from 'lodash/debounce';
 
-// 더미 카테고리/일정 데이터
-const initialCategories = [
-  { id: 1, name: '내 캘린더', color: '#4caf50', checked: true, type: 'my' },
-  { id: 2, name: '부재', color: '#b39ddb', checked: true, type: 'my' },
-  { id: 3, name: '고객관리', color: '#f48fb1', checked: true, type: 'my' },
-  { id: 4, name: '사무보조', color: '#ffd600', checked: true, type: 'group' },
-  { id: 5, name: '대전 출장', color: '#cddc39', checked: true, type: 'group' },
-  { id: 6, name: '연차/반차', color: '#2196f3', checked: true, type: 'group' },
-  { id: 7, name: '출장', color: '#f44336', checked: true, type: 'group' },
-  { id: 8, name: '영업부', color: '#ff9800', checked: true, type: 'group' },
-  { id: 9, name: '마케팅', color: '#00bcd4', checked: true, type: 'group' },
+// 색상 대비 계산 함수
+function getContrastColor(backgroundColor) {
+  // HEX 색상을 RGB로 변환
+  const hex = backgroundColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+
+  // 밝기 계산 (YIQ 공식)
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+  // 밝기가 128보다 크면 어두운 글씨, 작으면 밝은 글씨
+  // 매우 어두운 색상의 경우 더 강한 대비를 위해 흰색 사용
+  if (brightness <= 50) {
+    return '#ffffff'; // 매우 어두운 색상
+  } else if (brightness > 128) {
+    return '#000000'; // 밝은 색상
+  } else {
+    return '#ffffff'; // 중간 어두운 색상
+  }
+}
+
+const SCHEDULE_TYPES = [
+  { label: '연차', value: 'ANNUAL_LEAVE' },
+  { label: '반차', value: 'HALF_LEAVE' },
+  { label: '출장', value: 'BUSINESS_TRIP' },
+  { label: '회의', value: 'MEETING' },
+  { label: '기타', value: 'ETC' },
+  { label: '할 일', value: 'TODO' },
 ];
 
-const SCHEDULE_TYPES = ['연차', '반차', '출장', '회의', '기타', '할 일'];
-
-const today = new Date();
-const yyyy = today.getFullYear();
-const mm = String(today.getMonth() + 1).padStart(2, '0');
-const dd = String(today.getDate()).padStart(2, '0');
-const todayStr = `${yyyy}-${mm}-${dd}`;
-const tomorrowDate = new Date(today);
-tomorrowDate.setDate(today.getDate() + 1);
-const tomorrowStr = tomorrowDate.toISOString().slice(0, 10);
-const lastMonthDate = new Date(today);
-lastMonthDate.setMonth(today.getMonth() - 1);
-const lastMonthStr = lastMonthDate.toISOString().slice(0, 10);
-const nextMonthDate = new Date(today);
-nextMonthDate.setMonth(today.getMonth() + 1);
-const nextMonthStr = nextMonthDate.toISOString().slice(0, 10);
-
-const initialEvents = [
-  // 오늘 일정
-  {
-    id: 1,
-    title: '오늘 일정',
-    start: todayStr,
-    end: todayStr,
-    categoryId: 1,
-    type: '회의',
-    memo: '오늘 일정입니다.',
-  },
-  // 내일 일정
-  {
-    id: 2,
-    title: '내일 일정',
-    start: tomorrowStr,
-    end: tomorrowStr,
-    categoryId: 2,
-    type: '출장',
-    memo: '내일 일정입니다.',
-  },
-  // 지난 일정
-  {
-    id: 3,
-    title: '지난 일정',
-    start: lastMonthStr,
-    end: lastMonthStr,
-    categoryId: 3,
-    type: '연차',
-    memo: '지난 일정입니다.',
-  },
-  // 다음 일정
-  {
-    id: 4,
-    title: '다음 일정',
-    start: nextMonthStr,
-    end: nextMonthStr,
-    categoryId: 4,
-    type: '회의',
-    memo: '다음 일정입니다.',
-  },
-  // 월 경계 연속 일정(이달~다음달)
-  {
-    id: 5,
-    title: '월경계 연속 일정',
-    start: todayStr,
-    end: nextMonthStr,
-    categoryId: 5,
-    type: '프로젝트',
-    memo: '이달~다음달 연속 일정입니다.',
-  },
-  // 기한 없는 할일
-  {
-    id: 6,
-    title: '기한 없는 할일',
-    start: '',
-    end: '',
-    categoryId: 6,
-    type: '할 일',
-    memo: '기한 없는 할일입니다.',
-  },
-  // 이번달 중간 일정
-  {
-    id: 7,
-    title: '이번달 중간 일정',
-    start: `${yyyy}-${mm}-15`,
-    end: `${yyyy}-${mm}-16`,
-    categoryId: 7,
-    type: '회의',
-    memo: '이번달 중간 일정입니다.',
-  },
-  // 7월 1일 단일 일정
-  {
-    id: 101,
-    title: '7월 1일 단일 일정',
-    start: '2025-07-01',
-    end: '2025-07-01',
-    categoryId: 1,
-    type: '회의',
-    memo: '7월 1일 하루짜리 일정입니다.',
-  },
-  // 7월 10~12일 연속 일정
-  {
-    id: 102,
-    title: '7월 10~12일 연속 일정',
-    start: '2025-07-10',
-    end: '2025-07-12',
-    categoryId: 2,
-    type: '프로젝트',
-    memo: '7월 10~12일 연속 일정입니다.',
-  },
-  // 7월 15일 단일 일정
-  {
-    id: 103,
-    title: '7월 15일 단일 일정',
-    start: '2025-07-15',
-    end: '2025-07-15',
-    categoryId: 3,
-    type: '출장',
-    memo: '7월 15일 하루짜리 일정입니다.',
-  },
-  // 7월 20~25일 연속 일정
-  {
-    id: 104,
-    title: '7월 20~25일 연속 일정',
-    start: '2025-07-20',
-    end: '2025-07-25',
-    categoryId: 4,
-    type: '연차',
-    memo: '7월 20~25일 연속 일정입니다.',
-  },
-  // 7월 31일 단일 일정
-  {
-    id: 105,
-    title: '7월 31일 단일 일정',
-    start: '2025-07-31',
-    end: '2025-07-31',
-    categoryId: 5,
-    type: '회의',
-    memo: '7월 31일 하루짜리 일정입니다.',
-  },
-  // 7월 5~8일 연속 일정
-  {
-    id: 106,
-    title: '7월 5~8일 연속 일정',
-    start: '2025-07-05',
-    end: '2025-07-08',
-    categoryId: 6,
-    type: '프로젝트',
-    memo: '7월 5~8일 연속 일정입니다.',
-  },
-  // 7월 1~31일 한달 전체 일정
-  {
-    id: 107,
-    title: '7월 한달 전체 일정',
-    start: '2025-07-01',
-    end: '2025-07-31',
-    categoryId: 7,
-    type: '장기',
-    memo: '7월 한달 전체 일정입니다.',
-  },
-];
+const SCHEDULE_TYPE_LABELS = {
+  ANNUAL_LEAVE: '연차',
+  HALF_LEAVE: '반차',
+  BUSINESS_TRIP: '출장',
+  MEETING: '회의',
+  ETC: '기타',
+  TODO: '할 일',
+};
 
 function getMonthDays(year, month) {
-  // month: 0-indexed
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const days = [];
@@ -196,56 +66,189 @@ function isBetween(date, start, end) {
   return d >= start && d <= end;
 }
 
-// 날짜를 연,월,일만 남기고 0시로 맞추는 함수
 function toDateOnly(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 function Schedule() {
-  // 날짜/달력 상태
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  // 카테고리/일정 상태
-  const [categories, setCategories] = useState(initialCategories);
-  const [events, setEvents] = useState(initialEvents);
-  // 팝업/검색/필터 상태
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [showCategoryModal, setShowCategoryModal] = useState(null); // null | 'PERSONAL' | 'GROUP'
   const [showEventModal, setShowEventModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [hoveredEvent, setHoveredEvent] = useState(null); // {id, type, dateStr}
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchActiveIdx, setSearchActiveIdx] = useState(-1);
+  const searchInputRef = useRef(null);
+  const [hoveredEvent, setHoveredEvent] = useState(null);
   const [popupPos, setPopupPos] = useState({ left: 0, top: 0 });
   const [rightHoveredEvent, setRightHoveredEvent] = useState(null);
   const [rightPopupPos, setRightPopupPos] = useState(null);
-  // 우측 할일 상세 팝업 상태
   const [rightDetail, setRightDetail] = useState(null);
-  // 오늘 셀 하이라이트 상태
   const [highlightTodayCell, setHighlightTodayCell] = useState(false);
+  const [rightTodos, setRightTodos] = useState([]);
+  const [editEvent, setEditEvent] = useState(null); // 수정할 일정 상태
+  const [popupHover, setPopupHover] = useState(false);
+  const hideTimerRef = useRef(null);
 
-  // 달력 날짜 배열
+  // 카테고리 데이터 처리 함수 (checked 필드 기본값 설정)
+  const processCategoriesData = (categoriesData) => {
+    return (categoriesData || []).map((cat) => ({
+      ...cat,
+      checked: !!cat.checked, // undefined나 null이면 false
+    }));
+  };
+
+  // 달력 날짜 배열 및 첫 요일
   const days = getMonthDays(currentYear, currentMonth);
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
 
-  // 카테고리 체크박스 핸들러
+  // 카테고리 목록 조회
+  useEffect(() => {
+    axiosInstance
+      .get(`${API_BASE_URL}${SCHEDULE}/categories`)
+      .then((res) => {
+        // 최초 진입 시 모두 true로 체크
+        const categoriesWithChecked = (res.data || []).map((cat) => ({
+          ...cat,
+          checked: true,
+        }));
+        setCategories(categoriesWithChecked);
+      })
+      .catch((err) => {
+        console.error('카테고리 조회 에러:', err);
+        setCategories([]);
+      });
+  }, []);
+
+  // 일정 목록 조회 (연/월 변경 시)
+  useEffect(() => {
+    axiosInstance
+      .get(`${API_BASE_URL}${SCHEDULE}/events`, {
+        params: { year: currentYear, month: currentMonth + 1 },
+      })
+      .then((res) => {
+        console.log('일정 조회 응답:', res.data);
+        console.log('일정 조회 res.data.result:', res.data.result);
+        setEvents(res.data || []); // res.data.result 대신 res.data 사용
+      })
+      .catch((err) => {
+        console.error('일정 조회 에러:', err);
+        setEvents([]);
+      });
+  }, [currentYear, currentMonth]);
+
+  // 기한 없는 할일(isAllDay)만 별도 조회
+  useEffect(() => {
+    axiosInstance
+      .get(`${API_BASE_URL}${SCHEDULE}/events/all-day`)
+      .then((res) => {
+        console.log('all-day 일정:', res.data);
+        setRightTodos(res.data || []);
+      })
+      .catch((err) => {
+        console.error('기한 없는 할일 조회 에러:', err);
+        setRightTodos([]);
+      });
+  }, []);
+
+  // 카테고리 추가
+  const handleCategoryAdd = (cat) => {
+    axiosInstance
+      .post(`${API_BASE_URL}${SCHEDULE}/categories`, cat)
+      .then(() => axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/categories`))
+      .then((res) => {
+        // 기존 체크 상태 유지, 새로 추가된 카테고리만 true
+        setCategories((prev) => {
+          const prevMap = new Map(prev.map((c) => [c.id, c.checked]));
+          return (res.data || []).map((cat) => ({
+            ...cat,
+            checked: prevMap.has(cat.id) ? prevMap.get(cat.id) : true,
+          }));
+        });
+        alert('카테고리가 정상적으로 추가되었습니다.');
+      })
+      .catch(() => {});
+    setShowCategoryModal(null);
+  };
+  // 카테고리 삭제
+  const handleCategoryDelete = (id) => {
+    axiosInstance
+      .delete(`${API_BASE_URL}${SCHEDULE}/categories/${id}`)
+      .then(() => axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/categories`))
+      .then((res) => {
+        setCategories(processCategoriesData(res.data));
+        alert('카테고리가 정상적으로 삭제되었습니다.');
+      })
+      .catch((err) => {
+        // 에러 응답 구조 전체 출력(디버깅용)
+        if (err.response && err.response.data) {
+          console.error(
+            '카테고리 삭제 에러 응답:',
+            JSON.stringify(err.response.data),
+          );
+        }
+        // 다양한 필드에서 메시지 체크
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.response?.data?.detail ||
+          '';
+        if (
+          err.response &&
+          (err.response.status === 400 ||
+            err.response.status === 409 ||
+            (typeof msg === 'string' &&
+              msg.includes('일정이 존재하여 삭제할 수 없습니다')))
+        ) {
+          alert(
+            '해당 카테고리에 속한 일정이 남아있어 삭제할 수 없습니다. 먼저 일정을 모두 삭제해 주세요.',
+          );
+        } else {
+          alert('카테고리 삭제 중 오류가 발생했습니다.');
+        }
+        console.error('카테고리 삭제 에러:', err);
+      });
+  };
+  // 카테고리 체크박스 토글 (프론트 상태만 변경)
   const handleCategoryCheck = (id) => {
-    setCategories(
-      categories.map((cat) =>
+    setCategories((prev) =>
+      prev.map((cat) =>
         cat.id === id ? { ...cat, checked: !cat.checked } : cat,
       ),
     );
   };
-  // 카테고리 삭제
-  const handleCategoryDelete = (id) => {
-    setCategories(categories.filter((cat) => cat.id !== id));
-  };
-  // 카테고리 추가
-  const handleCategoryAdd = (cat) => {
-    setCategories([...categories, { ...cat, id: Date.now(), checked: true }]);
-    setShowCategoryModal(false);
-  };
+
   // 일정 추가
   const handleEventAdd = (event) => {
-    setEvents([...events, { ...event, id: Date.now() }]);
+    console.log('일정 추가 전송 데이터:', event);
+    axiosInstance
+      .post(`${API_BASE_URL}${SCHEDULE}/events`, event)
+      .then(() =>
+        axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events`, {
+          params: { year: currentYear, month: currentMonth + 1 },
+        }),
+      )
+      .then((res) => {
+        setEvents(res.data || []);
+        // 기한 없는 할일 추가 시 rightTodos도 즉시 갱신
+        if (
+          event.isAllDay ||
+          (!event.startDate && !event.endDate && event.type === 'TODO')
+        ) {
+          axiosInstance
+            .get(`${API_BASE_URL}${SCHEDULE}/events/all-day`)
+            .then((res) => setRightTodos(res.data || []));
+        }
+        alert('일정이 정상적으로 추가되었습니다.');
+      })
+      .catch((err) => {
+        console.error('일정 추가 에러:', err);
+        console.error('에러 응답:', err.response?.data);
+      });
     setShowEventModal(false);
   };
 
@@ -257,7 +260,93 @@ function Schedule() {
     visibleCategoryIds.includes(e.categoryId),
   );
 
-  // 달력 네비게이션
+  console.log('전체 일정:', events);
+  console.log(
+    '카테고리 상태:',
+    categories.map((c) => ({ id: c.id, name: c.name, checked: c.checked })),
+  );
+  console.log('체크된 카테고리 IDs:', visibleCategoryIds);
+  console.log('필터링된 일정:', visibleEvents);
+
+  // 1. 현재 달의 시작/끝 구하기
+  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+  // 2. 월별 할일만 필터링
+  const filteredEvents = visibleEvents.filter((e) => {
+    const start = new Date(e.startDate);
+    const end = new Date(e.endDate);
+    // 일정이 이번 달에 걸쳐 있으면 표시
+    return end >= monthStart && start <= monthEnd;
+  });
+
+  console.log('현재 달력 월:', currentYear, currentMonth + 1);
+  console.log('월별 필터링된 일정:', filteredEvents);
+
+  // 3. 오늘 기준 분류
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+
+  const rightNormal = filteredEvents.filter(
+    (e) => e.type !== 'TODO' || (e.startDate && e.endDate),
+  );
+
+  const pastEvents = rightNormal.filter(
+    (e) => e.endDate && e.endDate < todayStr,
+  );
+  const todayEvents = rightNormal.filter(
+    (e) => e.startDate <= todayStr && e.endDate >= todayStr,
+  );
+  const tomorrowEvents = rightNormal.filter(
+    (e) =>
+      e.startDate <= tomorrowStr &&
+      e.endDate >= tomorrowStr &&
+      e.startDate !== todayStr,
+  );
+  const futureEvents = rightNormal.filter((e) => e.startDate > tomorrowStr);
+
+  // 연속 일정 바 렌더링: 한 달 내에서 start~end가 겹치는 일정은 한 번만 표시
+  function getEventBarsForMonth(year, month, events) {
+    const bars = [];
+    events.forEach((ev) => {
+      // 기한 없는 할일은 달력에 표시 X
+      if (ev.type === 'TODO' && (!ev.startDate || !ev.endDate)) return;
+      if (!ev.startDate || !ev.endDate) return;
+      const start = new Date(ev.startDate);
+      const end = new Date(ev.endDate);
+      if (
+        (start.getFullYear() < year ||
+          (start.getFullYear() === year && start.getMonth() <= month)) &&
+        (end.getFullYear() > year ||
+          (end.getFullYear() === year && end.getMonth() >= month))
+      ) {
+        const barStart =
+          start.getFullYear() === year && start.getMonth() === month
+            ? start.getDate()
+            : 1;
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        const barEnd =
+          end.getFullYear() === year && end.getMonth() === month
+            ? end.getDate()
+            : lastDay;
+        bars.push({ ...ev, barStart, barEnd });
+      }
+    });
+    return bars;
+  }
+  const eventBars = getEventBarsForMonth(
+    currentYear,
+    currentMonth,
+    visibleEvents,
+  );
+  const eventBarIds = new Set(eventBars.map((bar) => bar.id));
+  console.log('연속 일정 바:', eventBars);
+  console.log('연속 일정 바 IDs:', Array.from(eventBarIds));
+
+  // 달력 네비게이션 함수 복구
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
       setCurrentYear(currentYear - 1);
@@ -282,74 +371,175 @@ function Schedule() {
     setTimeout(() => setHighlightTodayCell(false), 1010); // 1초 후 해제
   };
 
-  // 1. 현재 달의 시작/끝 구하기
-  const monthStart = new Date(currentYear, currentMonth, 1);
-  const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+  // 일정 삭제 핸들러
+  const handleEventDelete = (event) => {
+    if (!window.confirm('정말로 이 일정을 삭제하시겠습니까?')) return;
+    axiosInstance
+      .delete(`${API_BASE_URL}${SCHEDULE}/events/${event.id}`)
+      .then(() => {
+        // 일반 일정 목록 갱신
+        return axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events`, {
+          params: { year: currentYear, month: currentMonth + 1 },
+        });
+      })
+      .then((res) => {
+        setEvents(res.data || []);
+        // 기한 없는 할일도 갱신 (삭제된 일정이 기한 없는 할일일 수 있음)
+        return axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events/all-day`);
+      })
+      .then((res) => {
+        setRightTodos(res.data || []);
+        alert('일정이 정상적으로 삭제되었습니다.');
+      })
+      .catch((err) => {
+        alert('일정 삭제 중 오류가 발생했습니다.');
+        console.error('일정 삭제 에러:', err);
+      });
+  };
+  // 일정 수정 핸들러(모달 오픈)
+  const handleEventEdit = (event) => {
+    setEditEvent(event);
+  };
+  // 일정 수정 완료 핸들러
+  const handleEventUpdate = (updated) => {
+    axiosInstance
+      .put(`${API_BASE_URL}${SCHEDULE}/events/${editEvent.id}`, updated)
+      .then(() => {
+        // 일반 일정 목록 갱신
+        return axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events`, {
+          params: { year: currentYear, month: currentMonth + 1 },
+        });
+      })
+      .then((res) => {
+        setEvents(res.data || []);
+        // 기한 없는 할일도 갱신 (수정된 일정이 기한 없는 할일일 수 있음)
+        return axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events/all-day`);
+      })
+      .then((res) => {
+        setRightTodos(res.data || []);
+        alert('일정이 정상적으로 수정되었습니다.');
+        setEditEvent(null);
+      })
+      .catch((err) => {
+        alert('일정 수정 중 오류가 발생했습니다.');
+        console.error('일정 수정 에러:', err);
+      });
+  };
 
-  // 2. 월별 할일만 필터링
-  const filteredEvents = visibleEvents.filter((e) => {
-    if (!e.start && !e.end) return true; // 기한 없는 할일은 항상 표시
-    const start = new Date(e.start);
-    const end = new Date(e.end);
-    // 일정이 이번 달에 걸쳐 있으면 표시
-    return end >= monthStart && start <= monthEnd;
-  });
+  // 트리거(일정 바/아이템)에서
+  const handleEventMouseEnter = (ev, pos, type, dateStr) => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    setHoveredEvent({ ...ev, type, dateStr });
+    setPopupPos(pos);
+  };
+  const handleEventMouseLeave = () => {
+    hideTimerRef.current = setTimeout(() => setHoveredEvent(null), 250);
+  };
 
-  // 3. 오늘 기준 분류
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  // 상세 모달에서
+  const handlePopupMouseEnter = () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    setPopupHover(true);
+  };
+  const handlePopupMouseLeave = () => {
+    setPopupHover(false);
+    hideTimerRef.current = setTimeout(() => setHoveredEvent(null), 250);
+  };
 
-  const rightTodos = filteredEvents.filter(
-    (e) => e.type === '할 일' && !e.start && !e.end,
-  );
-  const rightNormal = filteredEvents.filter(
-    (e) => e.type !== '할 일' || (e.start && e.end),
-  );
+  // 검색어 입력 시 실시간 필터링
+  // 서버 기반 전체 기간 검색 (debounce 적용)
+  const fetchSearchResults = debounce(async (keyword) => {
+    if (!keyword.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      setSearchActiveIdx(-1);
+      return;
+    }
+    try {
+      const res = await axiosInstance.get(
+        `${API_BASE_URL}${SCHEDULE}/events/search`,
+        {
+          params: { keyword },
+        },
+      );
+      setSearchResults(res.data || []);
+      setShowSearchDropdown(true);
+      setSearchActiveIdx(res.data && res.data.length > 0 ? 0 : -1);
+    } catch (e) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      setSearchActiveIdx(-1);
+    }
+  }, 300);
 
-  const pastEvents = rightNormal.filter((e) => e.end && e.end < todayStr);
-  const todayEvents = rightNormal.filter(
-    (e) => e.start <= todayStr && e.end >= todayStr,
-  );
-  const tomorrowEvents = rightNormal.filter(
-    (e) =>
-      e.start <= tomorrowStr && e.end >= tomorrowStr && e.start !== todayStr,
-  );
-  const futureEvents = rightNormal.filter((e) => e.start > tomorrowStr);
+  useEffect(() => {
+    fetchSearchResults(searchTerm);
+    // cleanup: debounce 취소
+    return () => fetchSearchResults.cancel();
+  }, [searchTerm]);
 
-  // 연속 일정 바 렌더링: 한 달 내에서 start~end가 겹치는 일정은 한 번만 표시
-  function getEventBarsForMonth(year, month) {
-    const bars = [];
-    visibleEvents.forEach((ev) => {
-      // 기한 없는 할일은 달력에 표시 X
-      if (ev.type === '할 일' && (!ev.start || !ev.end)) return;
-      if (!ev.start || !ev.end) return;
-      const start = new Date(ev.start);
-      const end = new Date(ev.end);
-      if (
-        (start.getFullYear() < year ||
-          (start.getFullYear() === year && start.getMonth() <= month)) &&
-        (end.getFullYear() > year ||
-          (end.getFullYear() === year && end.getMonth() >= month))
-      ) {
-        const barStart =
-          start.getFullYear() === year && start.getMonth() === month
-            ? start.getDate()
-            : 1;
-        const lastDay = new Date(year, month + 1, 0).getDate();
-        const barEnd =
-          end.getFullYear() === year && end.getMonth() === month
-            ? end.getDate()
-            : lastDay;
-        bars.push({ ...ev, barStart, barEnd });
+  // 키보드 네비게이션
+  const handleSearchKeyDown = (e) => {
+    if (!showSearchDropdown || searchResults.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSearchActiveIdx((idx) => (idx + 1) % searchResults.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSearchActiveIdx(
+        (idx) => (idx - 1 + searchResults.length) % searchResults.length,
+      );
+    } else if (e.key === 'Enter') {
+      if (searchActiveIdx >= 0 && searchActiveIdx < searchResults.length) {
+        handleSearchSelect(searchResults[searchActiveIdx]);
       }
-    });
-    return bars;
+    } else if (e.key === 'Escape') {
+      setShowSearchDropdown(false);
+    }
+  };
+
+  // 하이라이트 함수
+  function highlightText(text, keyword) {
+    if (!keyword) return text;
+    const regex = new RegExp(
+      `(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+      'gi',
+    );
+    return text.split(regex).map((part, i) =>
+      regex.test(part) ? (
+        <mark
+          key={i}
+          style={{ background: '#ffe066', color: '#222', padding: 0 }}
+        >
+          {part}
+        </mark>
+      ) : (
+        part
+      ),
+    );
   }
-  const eventBars = getEventBarsForMonth(currentYear, currentMonth);
-  const eventBarIds = new Set(eventBars.map((bar) => bar.id));
+
+  // 일정 선택 시 해당 월/일로 이동
+  const handleSearchSelect = (ev) => {
+    setShowSearchDropdown(false);
+    setSearchTerm('');
+    // 기한 없는 할일은 이동 없이 상세 모달만 띄움
+    if (!ev.startDate || !ev.endDate) {
+      // 상세 모달 띄우기(오른쪽 사이드바 기준)
+      setRightHoveredEvent(ev);
+      setRightPopupPos({ left: 0, top: 100 }); // 적당한 위치
+      return;
+    }
+    // 해당 월/연도로 이동
+    const start = new Date(ev.startDate);
+    setCurrentYear(start.getFullYear());
+    setCurrentMonth(start.getMonth());
+    // 해당 날짜 셀에 hover 효과(선택된 일정 강조 등 추가 가능)
+    setTimeout(() => {
+      setHoveredEvent({ ...ev, type: 'single', dateStr: ev.startDate });
+      setPopupPos({ left: 0, top: 100 });
+    }, 300);
+  };
 
   return (
     <div className={styles.scheduleWrapper}>
@@ -361,13 +551,13 @@ function Schedule() {
             <span className={styles.categoryGroupTitle}>내 캘린더</span>
             <button
               className={styles.categoryAddBtn}
-              onClick={() => setShowCategoryModal(true)}
+              onClick={() => setShowCategoryModal('PERSONAL')}
             >
               +
             </button>
           </div>
           {categories
-            .filter((c) => c.type === 'my')
+            .filter((c) => c.type === 'PERSONAL')
             .map((cat) => (
               <div className={styles.categoryItem} key={cat.id}>
                 <input
@@ -394,13 +584,13 @@ function Schedule() {
             <span className={styles.categoryGroupTitle}>그룹 캘린더</span>
             <button
               className={styles.categoryAddBtn}
-              onClick={() => setShowCategoryModal(true)}
+              onClick={() => setShowCategoryModal('GROUP')}
             >
               +
             </button>
           </div>
           {categories
-            .filter((c) => c.type === 'group')
+            .filter((c) => c.type === 'GROUP')
             .map((cat) => (
               <div className={styles.categoryItem} key={cat.id}>
                 <input
@@ -470,22 +660,31 @@ function Schedule() {
                 const dateStr = date.toISOString().slice(0, 10);
                 // 1. 연속 일정 바(해당 날짜가 bar의 실제 start~end에 포함되는 모든 바)
                 const barsForCell = eventBars.filter((bar) => {
-                  const start = toDateOnly(new Date(bar.start));
-                  const end = toDateOnly(new Date(bar.end));
+                  const start = toDateOnly(new Date(bar.startDate));
+                  const end = toDateOnly(new Date(bar.endDate));
                   const cellDate = toDateOnly(date);
                   return cellDate >= start && cellDate <= end;
                 });
                 // 2. 당일 단일 일정(기한 없는 할일은 무조건 제외)
                 const dayEvents = visibleEvents.filter((e) => {
-                  if (e.type === '할 일' && !e.start && !e.end) return false;
-                  if (!e.start || !e.end) return isSameDay(date, dateStr); // 기한 없음(날짜 지정된 할일만)
+                  if (e.type === 'TODO' && !e.startDate && !e.endDate)
+                    return false;
+                  if (!e.startDate || !e.endDate)
+                    return isSameDay(date, dateStr); // 기한 없음(날짜 지정된 할일만)
                   // 연속 일정 바로 처리되는 일정은 무조건 제외
                   if (eventBarIds.has(e.id)) return false;
                   // 날짜 비교도 toDateOnly로 보정
-                  const start = toDateOnly(new Date(e.start));
-                  const end = toDateOnly(new Date(e.end));
+                  const start = toDateOnly(new Date(e.startDate));
+                  const end = toDateOnly(new Date(e.endDate));
                   const cellDate = toDateOnly(date);
-                  return cellDate >= start && cellDate <= end;
+                  const isInRange = cellDate >= start && cellDate <= end;
+                  console.log(`날짜 ${dateStr} 일정 ${e.title}:`, {
+                    start: e.startDate,
+                    end: e.endDate,
+                    cellDate: dateStr,
+                    isInRange,
+                  });
+                  return isInRange;
                 });
                 cells.push(
                   <td
@@ -510,42 +709,47 @@ function Schedule() {
                         const cat = categories.find(
                           (c) => c.id === ev.categoryId,
                         );
-                        const isHovered =
-                          hoveredEvent &&
-                          hoveredEvent.id === ev.id &&
-                          hoveredEvent.type === 'single' &&
-                          hoveredEvent.dateStr === dateStr;
                         return (
                           <div
                             key={ev.id}
                             className={styles.eventBar}
                             style={{
                               background: cat?.color,
+                              color: cat?.color
+                                ? getContrastColor(cat.color)
+                                : '#222',
                               position: 'relative',
                             }}
                             onMouseEnter={(e) => {
                               const rect =
                                 e.currentTarget.getBoundingClientRect();
-                              setPopupPos({
-                                left: rect.left,
-                                top: rect.bottom + 4,
-                              });
-                              setHoveredEvent({
-                                id: ev.id,
-                                type: 'single',
+                              handleEventMouseEnter(
+                                ev,
+                                {
+                                  left: rect.left,
+                                  top: rect.bottom + 4,
+                                },
+                                'single',
                                 dateStr,
-                              });
+                              );
                             }}
-                            onMouseLeave={() => setHoveredEvent(null)}
+                            onMouseLeave={handleEventMouseLeave}
                           >
                             {ev.title}
-                            {isHovered && (
-                              <EventDetailPopup
-                                event={ev}
-                                category={cat}
-                                popupPos={popupPos}
-                              />
-                            )}
+                            {hoveredEvent &&
+                              hoveredEvent.id === ev.id &&
+                              hoveredEvent.type === 'single' &&
+                              hoveredEvent.dateStr === dateStr && (
+                                <EventDetailPopup
+                                  event={ev}
+                                  category={cat}
+                                  popupPos={popupPos}
+                                  onEdit={handleEventEdit}
+                                  onDelete={handleEventDelete}
+                                  onMouseEnter={handlePopupMouseEnter}
+                                  onMouseLeave={handlePopupMouseLeave}
+                                />
+                              )}
                           </div>
                         );
                       })}
@@ -556,53 +760,47 @@ function Schedule() {
                       const cat = categories.find(
                         (c) => c.id === bar.categoryId,
                       );
-                      const isHovered =
-                        hoveredEvent &&
-                        hoveredEvent.id === bar.id &&
-                        hoveredEvent.type === 'bar' &&
-                        hoveredEvent.dateStr === dateStr;
-                      // 연속 일정 바의 위치에 따라 클래스 분기
-                      let barClass = styles.continuousEventBar;
-                      if (bar.barStart === bar.barEnd) {
-                        barClass += ' ' + styles.continuousEventBarSingle;
-                      } else if (date.getDate() === bar.barStart) {
-                        barClass += ' ' + styles.continuousEventBarStart;
-                      } else if (date.getDate() === bar.barEnd) {
-                        barClass += ' ' + styles.continuousEventBarEnd;
-                      } else {
-                        barClass += ' ' + styles.continuousEventBarMiddle;
-                      }
                       return (
                         <div
                           key={bar.id + '-' + dateStr}
-                          className={barClass}
+                          className={styles.continuousEventBar}
                           style={{
                             background: cat?.color,
+                            color: cat?.color
+                              ? getContrastColor(cat.color)
+                              : '#222',
                             position: 'relative',
                           }}
                           onMouseEnter={(e) => {
                             const rect =
                               e.currentTarget.getBoundingClientRect();
-                            setPopupPos({
-                              left: rect.left,
-                              top: rect.bottom + 4,
-                            });
-                            setHoveredEvent({
-                              id: bar.id,
-                              type: 'bar',
+                            handleEventMouseEnter(
+                              bar,
+                              {
+                                left: rect.left,
+                                top: rect.bottom + 4,
+                              },
+                              'bar',
                               dateStr,
-                            });
+                            );
                           }}
-                          onMouseLeave={() => setHoveredEvent(null)}
+                          onMouseLeave={handleEventMouseLeave}
                         >
                           {bar.title}
-                          {isHovered && (
-                            <EventDetailPopup
-                              event={bar}
-                              category={cat}
-                              popupPos={popupPos}
-                            />
-                          )}
+                          {hoveredEvent &&
+                            hoveredEvent.id === bar.id &&
+                            hoveredEvent.type === 'bar' &&
+                            hoveredEvent.dateStr === dateStr && (
+                              <EventDetailPopup
+                                event={bar}
+                                category={cat}
+                                popupPos={popupPos}
+                                onEdit={handleEventEdit}
+                                onDelete={handleEventDelete}
+                                onMouseEnter={handlePopupMouseEnter}
+                                onMouseLeave={handlePopupMouseLeave}
+                              />
+                            )}
                         </div>
                       );
                     })}
@@ -628,16 +826,76 @@ function Schedule() {
 
       {/* 우측: 일정 검색/카테고리별 일정 목록 */}
       <aside className={styles.rightbar}>
-        <div className={styles.searchBox}>
+        <div className={styles.searchBox} style={{ position: 'relative' }}>
           <input
+            ref={searchInputRef}
             className={styles.searchInput}
             placeholder='제목, 내용'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => searchTerm && setShowSearchDropdown(true)}
+            onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
+            onKeyDown={handleSearchKeyDown}
+            autoComplete='off'
           />
           <button className={styles.searchBtn}>
             <span className={styles.searchIcon}>🔍</span>
           </button>
+          {showSearchDropdown && searchResults.length > 0 && (
+            <ul
+              style={{
+                position: 'absolute',
+                top: 38,
+                left: 0,
+                right: 0,
+                background: '#fff',
+                border: '1px solid #ddd',
+                borderRadius: 8,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                zIndex: 1000,
+                maxHeight: 220,
+                overflowY: 'auto',
+                margin: 0,
+                padding: 0,
+                listStyle: 'none',
+              }}
+            >
+              {searchResults.map((ev, idx) => (
+                <li
+                  key={ev.id}
+                  style={{
+                    padding: '10px 16px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #f0f0f0',
+                    fontSize: 15,
+                    background: idx === searchActiveIdx ? '#eafaf1' : '#fff',
+                    fontWeight: idx === searchActiveIdx ? 700 : 400,
+                  }}
+                  onMouseDown={() => handleSearchSelect(ev)}
+                  onMouseEnter={() => setSearchActiveIdx(idx)}
+                >
+                  <span style={{ fontWeight: 600 }}>
+                    {highlightText(ev.title, searchTerm)}
+                  </span>
+                  <span style={{ color: '#888', marginLeft: 8, fontSize: 13 }}>
+                    {ev.startDate ? `(${ev.startDate})` : '(기한 없음)'}
+                  </span>
+                  <div
+                    style={{
+                      color: '#666',
+                      fontSize: 13,
+                      marginTop: 2,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {highlightText(ev.content, searchTerm)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className={styles.eventListSection}>
           <div className={styles.eventListGroup}>
@@ -678,6 +936,10 @@ function Schedule() {
                       category={categories.find((c) => c.id === ev.categoryId)}
                       popupPos={rightPopupPos}
                       fixed
+                      onEdit={handleEventEdit}
+                      onDelete={handleEventDelete}
+                      onMouseEnter={handlePopupMouseEnter}
+                      onMouseLeave={handlePopupMouseLeave}
                     />
                   )}
               </div>
@@ -721,6 +983,10 @@ function Schedule() {
                       category={categories.find((c) => c.id === ev.categoryId)}
                       popupPos={rightPopupPos}
                       fixed
+                      onEdit={handleEventEdit}
+                      onDelete={handleEventDelete}
+                      onMouseEnter={handlePopupMouseEnter}
+                      onMouseLeave={handlePopupMouseLeave}
                     />
                   )}
               </div>
@@ -760,6 +1026,10 @@ function Schedule() {
                       category={categories.find((c) => c.id === ev.categoryId)}
                       popupPos={rightPopupPos}
                       fixed
+                      onEdit={handleEventEdit}
+                      onDelete={handleEventDelete}
+                      onMouseEnter={handlePopupMouseEnter}
+                      onMouseLeave={handlePopupMouseLeave}
                     />
                   )}
               </div>
@@ -799,6 +1069,10 @@ function Schedule() {
                       category={categories.find((c) => c.id === ev.categoryId)}
                       popupPos={rightPopupPos}
                       fixed
+                      onEdit={handleEventEdit}
+                      onDelete={handleEventDelete}
+                      onMouseEnter={handlePopupMouseEnter}
+                      onMouseLeave={handlePopupMouseLeave}
                     />
                   )}
               </div>
@@ -812,6 +1086,7 @@ function Schedule() {
             >
               기한 없는 할일 <span>({rightTodos.length})</span>
             </div>
+            {console.log('rightTodos:', rightTodos)}
             {rightTodos.map((ev) => (
               <div
                 className={styles.eventListItem}
@@ -829,8 +1104,7 @@ function Schedule() {
                 <span
                   className={styles.eventListColor}
                   style={{
-                    background: categories.find((c) => c.id === ev.categoryId)
-                      ?.color,
+                    background: ev.categoryColor || '#ccc',
                   }}
                 ></span>
                 {ev.title}
@@ -842,6 +1116,10 @@ function Schedule() {
                       category={categories.find((c) => c.id === ev.categoryId)}
                       popupPos={rightPopupPos}
                       fixed
+                      onEdit={handleEventEdit}
+                      onDelete={handleEventDelete}
+                      onMouseEnter={handlePopupMouseEnter}
+                      onMouseLeave={handlePopupMouseLeave}
                     />
                   )}
               </div>
@@ -856,6 +1134,10 @@ function Schedule() {
                   category={categories.find(
                     (c) => c.id === rightDetail.categoryId,
                   )}
+                  onEdit={handleEventEdit}
+                  onDelete={handleEventDelete}
+                  onMouseEnter={handlePopupMouseEnter}
+                  onMouseLeave={handlePopupMouseLeave}
                 />
               </div>
             )}
@@ -866,8 +1148,9 @@ function Schedule() {
       {/* 카테고리 추가 모달 */}
       {showCategoryModal && (
         <CategoryModal
-          onClose={() => setShowCategoryModal(false)}
+          onClose={() => setShowCategoryModal(null)}
           onAdd={handleCategoryAdd}
+          defaultType={showCategoryModal}
         />
       )}
       {/* 일정 추가 모달 */}
@@ -878,12 +1161,30 @@ function Schedule() {
           categories={categories}
         />
       )}
+      {/* 일정 수정 모달 */}
+      {editEvent && (
+        <EventModal
+          onClose={() => setEditEvent(null)}
+          onAdd={handleEventUpdate}
+          categories={categories}
+          defaultEvent={editEvent}
+        />
+      )}
     </div>
   );
 }
 
 // 일정 상세 팝업(hover, Portal)
-function EventDetailPopup({ event, category, popupPos, fixed }) {
+function EventDetailPopup({
+  event,
+  category,
+  popupPos,
+  fixed,
+  onEdit,
+  onDelete,
+  onMouseEnter,
+  onMouseLeave,
+}) {
   if (!popupPos) return null;
   return ReactDOM.createPortal(
     <div
@@ -894,49 +1195,192 @@ function EventDetailPopup({ event, category, popupPos, fixed }) {
         top: popupPos.top,
         zIndex: 99999,
       }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
-      <div className={styles.eventDetailTitle}>일정 상세</div>
+      <div
+        className={styles.eventDetailTitle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span>일정 상세</span>
+        <span style={{ display: 'flex', gap: 8 }}>
+          <button
+            style={{
+              background: '#48b96c',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              padding: '6px 18px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onClick={() => onEdit && onEdit(event)}
+          >
+            수정
+          </button>
+          <button
+            style={{
+              background: '#f44336',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              padding: '6px 18px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onClick={() => onDelete && onDelete(event)}
+          >
+            삭제
+          </button>
+        </span>
+      </div>
       <div className={styles.eventDetailRow}>
         <span className={styles.eventDetailLabel}>제목</span>
         <span className={styles.eventDetailValue}>{event.title}</span>
       </div>
+      {event.content && (
+        <div className={styles.eventDetailRow}>
+          <span className={styles.eventDetailLabel}>내용</span>
+          <span className={styles.eventDetailValue}>{event.content}</span>
+        </div>
+      )}
       <div className={styles.eventDetailRow}>
         <span className={styles.eventDetailLabel}>일자</span>
         <span className={styles.eventDetailValue}>
-          {event.start && event.end
-            ? `${event.start} ~ ${event.end}`
+          {event.startDate && event.endDate
+            ? `${event.startDate} ~ ${event.endDate}`
             : '기한 없음'}
         </span>
       </div>
       <div className={styles.eventDetailRow}>
         <span className={styles.eventDetailLabel}>일정구분</span>
-        <span className={styles.eventDetailValue}>{event.type}</span>
+        <span className={styles.eventDetailValue}>
+          {SCHEDULE_TYPE_LABELS[event.type] || event.type}
+        </span>
       </div>
-      <div className={styles.eventDetailRow}>
-        <span className={styles.eventDetailLabel}>메모</span>
-        <span className={styles.eventDetailValue}>{event.memo || '-'}</span>
-      </div>
+      {category && (
+        <div className={styles.eventDetailRow}>
+          <span className={styles.eventDetailLabel}>카테고리</span>
+          <span className={styles.eventDetailValue}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                background: category.color,
+                marginRight: 6,
+              }}
+            ></span>
+            {category.name}
+          </span>
+        </div>
+      )}
     </div>,
     document.body,
   );
 }
 
 // 카테고리 추가 모달
-function CategoryModal({ onClose, onAdd }) {
+function CategoryModal({ onClose, onAdd, defaultType = 'PERSONAL' }) {
   const [color, setColor] = useState('#e6f0fb');
   const [name, setName] = useState('');
-  const [type, setType] = useState('my');
+  const [type, setType] = useState(defaultType); // 기본값 동적 적용
+  const [showPicker, setShowPicker] = useState(false);
+  const colorCircleRef = useRef(null);
+  const pickerRef = useRef(null);
+
+  // 팝업 바깥 클릭 시 닫기
+  useEffect(() => {
+    if (!showPicker) return;
+    function handleClick(e) {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(e.target) &&
+        colorCircleRef.current &&
+        !colorCircleRef.current.contains(e.target)
+      ) {
+        setShowPicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showPicker]);
+
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalBox}>
         <div className={styles.modalTitle}>캘린더 추가</div>
         <div className={styles.modalField}>
           <label>색상</label>
-          <input
-            type='color'
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-          />
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            {/* 동그라미 미리보기 (클릭 시 컬러 피커) */}
+            <div
+              ref={colorCircleRef}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                border: '1px solid #ccc',
+                background: color,
+                cursor: 'pointer',
+              }}
+              title={color}
+              onClick={() => setShowPicker((v) => !v)}
+            />
+            {/* 색상 코드 */}
+            <span style={{ fontSize: 14 }}>{color}</span>
+            {/* 커스텀 컬러 피커 (동그라미 아래에 위치) */}
+            {showPicker && (
+              <div
+                ref={pickerRef}
+                style={{
+                  position: 'absolute',
+                  top: 40,
+                  left: 0,
+                  zIndex: 1000,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '32px 0 0 0', // 상단만 여백, 좌우/하단 여백 없음
+                  minWidth: 180,
+                  minHeight: 220,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* 닫기 버튼: 상단 여백 공간에 위치 */}
+                <button
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 12,
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: 18,
+                    cursor: 'pointer',
+                    zIndex: 2,
+                  }}
+                  onClick={() => setShowPicker(false)}
+                  aria-label='닫기'
+                >
+                  ×
+                </button>
+                {/* 컬러 피커 본체 */}
+                <HexColorPicker color={color} onChange={setColor} />
+              </div>
+            )}
+          </div>
         </div>
         <div className={styles.modalField}>
           <label>제목</label>
@@ -949,8 +1393,8 @@ function CategoryModal({ onClose, onAdd }) {
         <div className={styles.modalField}>
           <label>구분</label>
           <select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value='my'>내 캘린더</option>
-            <option value='group'>그룹 캘린더</option>
+            <option value='PERSONAL'>내 캘린더</option>
+            <option value='GROUP'>그룹 캘린더</option>
           </select>
         </div>
         <div className={styles.modalBtnRow}>
@@ -958,7 +1402,29 @@ function CategoryModal({ onClose, onAdd }) {
             className={styles.modalOkBtn}
             onClick={() => {
               if (name) {
-                onAdd({ name, color, type });
+                const base = { name, color, type };
+                const userDeptId = sessionStorage.getItem('USER_DEPARTMENT_ID');
+                if (
+                  type === 'GROUP' &&
+                  (!userDeptId ||
+                    userDeptId === 'null' ||
+                    userDeptId === 'undefined')
+                ) {
+                  alert('부서 정보가 없습니다. 다시 로그인 해주세요.');
+                  return;
+                }
+                const data =
+                  type === 'PERSONAL'
+                    ? {
+                        ...base,
+                        ownerEmployeeNo:
+                          sessionStorage.getItem('USER_EMPLOYEE_NO'),
+                      }
+                    : {
+                        ...base,
+                        departmentId: Number(userDeptId),
+                      };
+                onAdd(data);
                 setName('');
                 setColor('#e6f0fb');
               }
@@ -976,24 +1442,50 @@ function CategoryModal({ onClose, onAdd }) {
 }
 
 // 일정 추가 모달
-function EventModal({ onClose, onAdd, categories }) {
+function EventModal({ onClose, onAdd, categories, defaultEvent }) {
   const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
-  const [type, setType] = useState(SCHEDULE_TYPES[0]);
-  const [memo, setMemo] = useState('');
+  const [type, setType] = useState(SCHEDULE_TYPES[0].value);
   const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
   const [noDue, setNoDue] = useState(false);
+  const [error, setError] = useState('');
+
+  // defaultEvent가 있으면 기존 값 세팅
+  useEffect(() => {
+    if (defaultEvent) {
+      setTitle(defaultEvent.title);
+      setContent(defaultEvent.content || '');
+      setStart(defaultEvent.startDate || '');
+      setEnd(defaultEvent.endDate || '');
+      setType(defaultEvent.type);
+      setCategoryId(defaultEvent.categoryId);
+      setNoDue(defaultEvent.isAllDay);
+    }
+  }, [defaultEvent]);
+
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalBox}>
         <div className={styles.modalTitle}>일정 추가</div>
+        {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
         <div className={styles.modalField}>
           <label>제목</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder='일정 제목'
+          />
+        </div>
+        <div className={styles.modalField}>
+          <label>내용</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder='일정 내용'
+            rows={3}
+            style={{ resize: 'none' }}
           />
         </div>
         <div className={styles.modalField}>
@@ -1036,47 +1528,84 @@ function EventModal({ onClose, onAdd, categories }) {
           <label>일정구분</label>
           <select value={type} onChange={(e) => setType(e.target.value)}>
             {SCHEDULE_TYPES.map((opt) => (
-              <option value={opt} key={opt}>
-                {opt}
+              <option value={opt.value} key={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
-        </div>
-        <div className={styles.modalField}>
-          <label>메모</label>
-          <textarea
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder='메모 입력'
-            rows={3}
-            style={{ resize: 'none' }}
-          />
         </div>
         <div className={styles.modalField}>
           <label>캘린더</label>
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(Number(e.target.value))}
+            disabled={categories.length === 0}
           >
-            {categories.map((cat) => (
-              <option value={cat.id} key={cat.id}>
-                {cat.name}
-              </option>
-            ))}
+            {categories.length === 0 ? (
+              <option value=''>등록된 캘린더가 없습니다</option>
+            ) : (
+              categories.map((cat) => (
+                <option value={cat.id} key={cat.id}>
+                  {cat.name}
+                </option>
+              ))
+            )}
           </select>
         </div>
         <div className={styles.modalBtnRow}>
           <button
             className={styles.modalOkBtn}
             onClick={() => {
-              if (title && (noDue || (start && end))) {
-                onAdd({ title, start, end, type, memo, categoryId });
-                setTitle('');
-                setStart('');
-                setEnd('');
-                setMemo('');
-                setNoDue(false);
+              if (!title) {
+                setError('제목을 입력하세요.');
+                return;
               }
+              if (!content) {
+                setError('내용을 입력하세요.');
+                return;
+              }
+              if (!noDue && (!start || !end)) {
+                setError('일자를 입력하세요.');
+                return;
+              }
+              // 시작일-종료일 유효성 검사 추가
+              if (!noDue && start && end && start > end) {
+                setError('시작일은 종료일보다 늦을 수 없습니다.');
+                return;
+              }
+              if (
+                !categoryId ||
+                !categories.find((cat) => cat.id === categoryId)
+              ) {
+                setError('캘린더(카테고리)를 선택하세요.');
+                return;
+              }
+              setError('');
+              const selectedCategory = categories.find(
+                (cat) => cat.id === categoryId,
+              );
+              let eventData = {
+                title: title, // 일정 제목
+                content: content, // 일정 내용 (별도 입력)
+                startDate: start, // 서버 필드명에 맞춤
+                endDate: end, // 서버 필드명에 맞춤
+                type,
+                categoryId,
+                isAllDay: noDue, // 기한 없음 상태와 연동
+              };
+              if (selectedCategory && selectedCategory.type === 'GROUP') {
+                const userDeptId = sessionStorage.getItem('USER_DEPARTMENT_ID');
+                eventData = {
+                  ...eventData,
+                  departmentId: userDeptId ? Number(userDeptId) : null,
+                };
+              }
+              onAdd(eventData);
+              setTitle('');
+              setContent('');
+              setStart('');
+              setEnd('');
+              setNoDue(false);
             }}
           >
             확인

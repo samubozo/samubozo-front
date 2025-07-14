@@ -320,6 +320,7 @@ const Signup = () => {
                   value={form.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  autoComplete='new-password'
                 />
                 {errors.password && (
                   <div className={styles.error}>{errors.password}</div>
@@ -333,6 +334,7 @@ const Signup = () => {
                   value={form.passwordCheck}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  autoComplete='new-password'
                 />
                 {errors.passwordCheck && (
                   <div className={styles.error}>{errors.passwordCheck}</div>
