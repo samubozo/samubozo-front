@@ -4,10 +4,11 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, HR } from '../../configs/host-config';
 
 // --- MUI Autocomplete 기반 UserSearchModal ---
-function UserSearchModal({ open, onClose, onSelect }) {
-  console.log('UserSearchModal 렌더링됨', open);
+function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
+  console.log('UserSearchModal 렌더링됨', open, 'hrRoleFilter:', hrRoleFilter);
 
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ function UserSearchModal({ open, onClose, onSelect }) {
 
   // API 호출 함수
   const fetchUsers = async (keyword) => {
-    console.log('fetchUsers 호출됨', keyword);
+    console.log('fetchUsers 호출됨', keyword, 'hrRoleFilter:', hrRoleFilter);
     setLoading(true);
     try {
       let params = {};
@@ -28,25 +29,48 @@ function UserSearchModal({ open, onClose, onSelect }) {
         params.page = 0;
         params.size = 10;
       }
+
+      // HRROLE 필터 추가
+      if (hrRoleFilter) {
+        params.hrRole = 'Y';
+      }
+
+      console.log('API 요청 파라미터:', params);
+
       // 이름/부서명 동시 검색: 백엔드가 둘 다 있으면 AND, 둘 중 하나만 있으면 OR로 동작할 수 있음
       // 실제로는 둘 다 보내면 AND, 하나만 보내면 해당 조건만 적용됨
       // 여기서는 둘 다 같은 값으로 보내서 이름 또는 부서명에 포함된 사용자 모두 반환
-      const res = await axiosInstance.get('/hr-service/hr/users/search', {
+      const res = await axiosInstance.get(`${API_BASE_URL}${HR}/users/search`, {
         params,
       });
       console.log('API 응답:', res);
-      setOptions(res.data.result?.content || []);
-      console.log('옵션 배열:', res.data.result?.content || []);
+      console.log('res.data.result:', res.data.result);
+
+      // API 응답 구조: { statusCode: 200, statusMessage: "Success", result: [...] }
+      const usersData = res.data.result || [];
+      console.log('usersData:', usersData);
+      console.log('usersData 타입:', typeof usersData);
+      console.log('Array.isArray(usersData):', Array.isArray(usersData));
+
+      setOptions(usersData);
+      console.log('옵션 배열:', usersData);
     } catch (e) {
       setOptions([]);
       console.log('API 에러:', e);
+      console.log('에러 상세:', e.response?.data);
     }
     setLoading(false);
   };
 
   // inputValue 변경 시 debounce로 API 호출
   useEffect(() => {
-    console.log('useEffect 실행됨', inputValue, open);
+    console.log(
+      'useEffect 실행됨',
+      inputValue,
+      open,
+      'hrRoleFilter:',
+      hrRoleFilter,
+    );
     if (!open) return;
     setOptions([]);
     setLoading(true);
@@ -58,7 +82,7 @@ function UserSearchModal({ open, onClose, onSelect }) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
     // eslint-disable-next-line
-  }, [inputValue, open]);
+  }, [inputValue, open, hrRoleFilter]);
 
   // 모달이 열릴 때 초기화
   useEffect(() => {
@@ -67,13 +91,15 @@ function UserSearchModal({ open, onClose, onSelect }) {
       fetchUsers('');
     }
     // eslint-disable-next-line
-  }, [open]);
+  }, [open, hrRoleFilter]);
 
   return !open ? null : (
     <div className={styles.modalOverlay}>
       <div className={styles.userSearchModalBox}>
         <div className={styles.userSearchModalHeader}>
-          <span className={styles.userSearchModalTitle}>부서장 검색</span>
+          <span className={styles.userSearchModalTitle}>
+            {hrRoleFilter ? 'HR 권한자 검색' : '부서장 검색'}
+          </span>
           <button className={styles.userSearchModalCloseBtn} onClick={onClose}>
             &times;
           </button>
@@ -85,14 +111,14 @@ function UserSearchModal({ open, onClose, onSelect }) {
             options={options}
             loading={loading}
             getOptionLabel={(option) =>
-              option.userName && option.departmentName
-                ? `${option.userName} (${option.departmentName})`
-                : ''
+              option.userName && option.department?.name
+                ? `${option.userName} (${option.department.name})`
+                : option.userName || ''
             }
             renderInput={(params) => (
               <TextField
                 {...params}
-                label='이름 또는 부서 검색'
+                label={hrRoleFilter ? 'HR 권한자 검색' : '이름 또는 부서 검색'}
                 variant='outlined'
                 InputProps={{
                   ...params.InputProps,
@@ -125,11 +151,25 @@ function UserSearchModal({ open, onClose, onSelect }) {
                     fontWeight: 500,
                   }}
                 >
-                  {option.departmentName}
+                  {option.department?.name || '부서 없음'}
                 </span>
                 <span style={{ fontSize: 13, color: '#888' }}>
                   {option.positionName}
                 </span>
+                {hrRoleFilter && (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: '#fff',
+                      background: '#48b96c',
+                      borderRadius: 4,
+                      padding: '2px 6px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    HR
+                  </span>
+                )}
               </li>
             )}
             inputValue={inputValue}
@@ -143,16 +183,12 @@ function UserSearchModal({ open, onClose, onSelect }) {
                 onClose();
               }
             }}
-            noOptionsText='검색 결과 없음'
+            noOptionsText={
+              hrRoleFilter ? 'HR 권한자가 없습니다' : '검색 결과 없음'
+            }
             openOnFocus
             blurOnSelect
           />
-          <button
-            onClick={() => fetchUsers(inputValue)}
-            style={{ marginTop: 12 }}
-          >
-            강제 검색 (디버그)
-          </button>
         </div>
       </div>
     </div>

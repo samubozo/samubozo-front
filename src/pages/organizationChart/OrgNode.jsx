@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styles from './OrgChart.module.scss';
+import { getContrastColor } from './OrgChart';
 
 function OrgNode({ node, onCardClick, selectedId, deptColorMap }) {
   const [hover, setHover] = useState(false);
@@ -23,7 +24,14 @@ function OrgNode({ node, onCardClick, selectedId, deptColorMap }) {
           <div className={styles.profilePosition}>{node.position}</div>
           <div
             className={styles.roleBadge}
-            style={badgeColor ? { background: badgeColor, color: '#222' } : {}}
+            style={
+              badgeColor
+                ? {
+                    background: badgeColor,
+                    color: getContrastColor(badgeColor),
+                  }
+                : {}
+            }
           >
             {node.role}
           </div>
