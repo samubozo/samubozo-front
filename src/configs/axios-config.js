@@ -53,10 +53,24 @@ axiosInstance.interceptors.response.use(
   (response) => response, // 응답에 문제가 없다면 그대로 응답 객체 리턴.
   async (error) => {
     console.log('response interceptor 동작함! 응답에 문제가 발생!');
-    console.log(error);
+    console.log('에러 상세:', {
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      statusMessage: error.response?.data?.statusMessage,
+    });
 
-    if (error.response.data.message === 'NO_LOGIN') {
+    // NO_LOGIN 에러 처리
+    if (error.response?.data?.message === 'NO_LOGIN') {
       console.log('아예 로그인을 하지 않아서 재발급 요청 들어갈 수 없음!');
+      return Promise.reject(error);
+    }
+
+    // EXPIRED_RT 에러 처리 (리프레시 토큰 만료)
+    if (error.response?.data?.statusMessage === 'EXPIRED_RT') {
+      console.log('리프레시 토큰이 만료되었습니다. 재로그인이 필요합니다.');
+      sessionStorage.clear();
+      localStorage.removeItem('REFRESH_TOKEN');
+      window.location.href = '/login';
       return Promise.reject(error);
     }
 
@@ -64,41 +78,69 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // 토큰 재발급 로직 작성
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true; // 무한 루프 방지
       console.log('응답상태 401 발생! 토큰 재발급 필요!');
 
       try {
-        const id = sessionStorage.getItem('USER_EMPLOYEE_NO');
+        const employeeNo = sessionStorage.getItem('USER_EMPLOYEE_NO');
         const refreshToken = localStorage.getItem('REFRESH_TOKEN');
-        if (!id || !refreshToken) {
-          // 리프레시 토큰 없으면 그냥 에러만 리턴
+
+        if (!employeeNo || !refreshToken) {
+          console.log(
+            '리프레시 토큰 또는 employeeNo가 없습니다. 재로그인이 필요합니다.',
+          );
+          sessionStorage.clear();
+          localStorage.removeItem('REFRESH_TOKEN');
+          window.location.href = '/login';
           return Promise.reject(error);
         }
+
+        console.log('리프레시 토큰으로 새로운 액세스 토큰 요청 중...');
+
         // refreshToken으로 accessToken 재발급
         const res = await axios.post(
           `${API_BASE_URL}${AUTH}/refresh`,
-          { refreshToken },
+          {
+            refreshToken,
+            employeeNo,
+          },
           { headers: { 'Content-Type': 'application/json' } },
         );
+
+        console.log('리프레시 응답:', res.data);
+
         // 응답 구조 안전 체크 (서버는 { accessToken: ... } 형태)
-        const newAccessToken = res?.data?.accessToken;
+        const newAccessToken =
+          res?.data?.accessToken || res?.data?.result?.accessToken;
         if (!newAccessToken) {
           console.error('리프레시 응답에 accessToken 없음:', res.data);
+          sessionStorage.clear();
+          localStorage.removeItem('REFRESH_TOKEN');
+          window.location.href = '/login';
           return Promise.reject(new Error('리프레시 응답에 accessToken 없음'));
         }
+
+        console.log('새로운 액세스 토큰 발급 성공');
         sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
+
         // 실패한 원본 요청 정보에서 Authorization의 값을 새 토큰으로 갈아 끼우자 (headers가 undefined일 수 있으니 복사)
         originalRequest.headers = {
           ...originalRequest.headers,
           Authorization: `Bearer ${newAccessToken}`,
         };
+
+        console.log('원본 요청 재시도 중...');
         // axiosInstance를 사용하여 다시한번 원본 요청을 보내고, 응답은 원래 호출한 곳으로 리턴
         return axiosInstance(originalRequest);
-      } catch (error) {
-        console.log(error);
-        // refreshToken도 만료/실패 시 아무것도 하지 않고 에러만 리턴
-        return Promise.reject(error);
+      } catch (refreshError) {
+        console.error('리프레시 토큰 갱신 실패:', refreshError);
+
+        // 리프레시 토큰 갱신 실패 시 로그아웃 처리
+        sessionStorage.clear();
+        localStorage.removeItem('REFRESH_TOKEN');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
     }
 
