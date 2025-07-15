@@ -79,12 +79,14 @@ const Chatbot = ({ inHeader }) => {
     }
   }, [messages, open]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const handleSend = async (msg) => {
+    // msg가 문자열이 아니면 input을 사용
+    const messageToSend = typeof msg === 'string' ? msg : input;
+    if (!messageToSend.trim() || isLoading) return;
     const req = {
-      message: input,
+      message: messageToSend,
     };
-    const userMsg = { from: 'user', text: input };
+    const userMsg = { from: 'user', text: messageToSend };
     setMessages((msgs) => [...msgs, userMsg]);
     setInput('');
     setIsLoading(true);
@@ -113,6 +115,18 @@ const Chatbot = ({ inHeader }) => {
       ]);
     }
     setIsLoading(false);
+  };
+
+  // 엔터키로 메시지 전송 (입력값이 남는 현상 방지)
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // 반드시 가장 먼저 호출
+      if (input.trim() && !isLoading) {
+        const msg = input;
+        setInput(''); // 먼저 input을 비움
+        handleSend(msg); // input 값을 인자로 넘김
+      }
+    }
   };
 
   return (
@@ -152,8 +166,13 @@ const Chatbot = ({ inHeader }) => {
               onChange={(e) => setInput(e.target.value)}
               placeholder={PLACEHOLDER}
               rows={1}
+              onKeyDown={handleKeyDown}
             />
-            <button className={styles.sendBtn} onClick={handleSend}>
+            <button
+              className={styles.sendBtn}
+              onClick={() => handleSend()}
+              type='button'
+            >
               전송
             </button>
           </div>

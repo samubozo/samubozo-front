@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import styles from './Header.module.scss';
 import Logo from '../assets/samubozo-logo2.png';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import AuthContext from '../context/UserContext';
 import Chatbot from './Chatbot';
 import ToastNotification from './ToastNotification';
 import axiosInstance from '../configs/axios-config';
@@ -16,6 +18,7 @@ console.log(styles);
 const Header = ({ showChatbot }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isLoggedIn } = useContext(AuthContext);
   const [userName, setUserName] = useState('');
   const [userPosition, setUserPosition] = useState('');
   const [userDepartment, setUserDepartment] = useState('');
@@ -156,6 +159,9 @@ const Header = ({ showChatbot }) => {
     }
   }
 
+  const sseRetryDelayRef = useRef(3000); // 최초 3초
+  const SSE_MAX_RETRY_DELAY = 60000; // 최대 1분
+
   // SSE 구독 설정
   const setupSSE = () => {
     if (eventSourceRef.current) {
@@ -189,12 +195,50 @@ const Header = ({ showChatbot }) => {
       }
     };
 
-    eventSource.onerror = (error) => {
+    eventSource.onerror = async (error) => {
       console.error('SSE 연결 오류:', error);
-      // 연결이 끊어지면 3초 후 재연결 시도
+      if (eventSource.readyState === EventSource.CLOSED) {
+        const refreshToken = localStorage.getItem('REFRESH_TOKEN');
+        if (refreshToken) {
+          try {
+            const res = await axiosInstance.post(
+              `${API_BASE_URL}/auth-service/auth/refresh`,
+              { refreshToken },
+              { headers: { 'Content-Type': 'application/json' } },
+            );
+            const newAccessToken =
+              res.data.accessToken || res.data.result?.accessToken;
+            if (newAccessToken) {
+              sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
+              setupSSE();
+              return;
+            }
+          } catch (e) {
+            sessionStorage.clear();
+            localStorage.removeItem('REFRESH_TOKEN');
+            window.location.href = '/login';
+            return;
+          }
+        } else {
+          sessionStorage.clear();
+          localStorage.removeItem('REFRESH_TOKEN');
+          window.location.href = '/login';
+          return;
+        }
+      }
+      // 실패 시 재연결 딜레이 적용 (점진적 backoff)
       setTimeout(() => {
         setupSSE();
-      }, 3000);
+        sseRetryDelayRef.current = Math.min(
+          sseRetryDelayRef.current * 2,
+          SSE_MAX_RETRY_DELAY,
+        );
+      }, sseRetryDelayRef.current);
+    };
+
+    eventSource.onopen = () => {
+      // 연결 성공 시 딜레이 초기화
+      sseRetryDelayRef.current = 3000;
     };
 
     return () => {
@@ -461,9 +505,25 @@ const Header = ({ showChatbot }) => {
             </div>
           )}
           <div className={styles.headerRight}>
-            <NavLink to='/' className={styles.headerLink}>
+            {/* 홈 버튼: 로그인 상태면 /dashboard, 아니면 / */}
+            <button
+              className={styles.headerLink}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                if (isLoggedIn || sessionStorage.getItem('ACCESS_TOKEN')) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/');
+                }
+              }}
+            >
               홈
-            </NavLink>
+            </button>
             <span className={styles.headerDivider}>|</span>
             <NavLink to='/orgchart' className={styles.headerLink}>
               조직도
@@ -472,52 +532,6 @@ const Header = ({ showChatbot }) => {
             <NavLink to='/approval' className={styles.headerLink}>
               전자결재
             </NavLink>
-
-            {/* 테스트 버튼들 */}
-            <div style={{ display: 'flex', gap: '8px', marginLeft: '15px' }}>
-              <button
-                onClick={() => addTestToast(testNotifications[0])}
-                style={{
-                  background: '#2196f3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                쪽지 테스트
-              </button>
-              <button
-                onClick={() => addTestToast(testNotifications[1])}
-                style={{
-                  background: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                근태 테스트
-              </button>
-              <button
-                onClick={() => addTestToast(testNotifications[2])}
-                style={{
-                  background: '#ff9800',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                전자결재 테스트
-              </button>
-            </div>
 
             {/* 알림함 버튼 */}
             <div

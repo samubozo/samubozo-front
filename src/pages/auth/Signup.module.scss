@@ -37,7 +37,7 @@
 
 .registerContainer {
   // .register-container
-  margin-top: 130px;
+  margin-top: 40px;
   border: 8px solid #66be80;
   border-radius: 24px;
   width: 1200px;
@@ -208,7 +208,7 @@ select {
 .registerSubmit {
   // .register-submit
   width: 100%;
-  margin-top: 28px;
+  margin-top: 10px;
   padding: 15px 0;
   background: #66be80;
   color: #fff;
@@ -230,6 +230,43 @@ select {
   margin-top: 4px;
   margin-bottom: 6px;
   font-weight: 500;
+}
+
+.registerCloseBtn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 48px;
+  color: #bbb;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0 8px;
+  line-height: 1;
+  transition: color 0.18s;
+  &:hover {
+    color: #e10000;
+  }
+}
+
+.addressSearchBtn {
+  background: #66be80;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-size: 17px;
+  font-weight: 500;
+  padding: 11px 16px;
+  height: 45px;
+  cursor: pointer;
+  transition: background 0.18s;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  &:hover {
+    background: #5ab475;
+  }
 }
 
 @media (max-width: 900px) {
