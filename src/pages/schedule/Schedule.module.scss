@@ -160,6 +160,52 @@
   }
 }
 
+.disabledBtn {
+  background: #cccccc !important;
+  color: #999999 !important;
+  cursor: not-allowed !important;
+  &:hover {
+    background: #cccccc !important;
+  }
+}
+
+.noCategoryMessage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.createCategoryBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.noCategoryInModal {
+  .noCategoryWarning {
+    margin-top: 8px;
+    color: #d32f2f;
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+
 .calendarTable {
   width: 100%;
   table-layout: fixed;
