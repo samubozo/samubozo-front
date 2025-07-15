@@ -23,370 +23,202 @@
   }
 
   // =========================
-  // 상단 헤더 테이블 (dashboardHeaderTable)
+  // 상단 대시보드 그리드 (새로운 2단 레이아웃)
   // =========================
-  .dashboardHeaderTable {
-    display: flex;
+  .dashboardGrid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
     width: 100%;
-    height: 200px;
-    gap: 1rem;
-    align-items: stretch;
 
-    .leftFlexBox,
-    .workTimeBox,
-    .rightCell {
-      flex: 1 1 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      background: #fff;
-      border: 2px solid #b7d7b0;
-      border-radius: 10px;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
-    .leftFlexBox {
-      display: flex;
-      flex-direction: row;
-      align-items: stretch;
-      justify-content: center;
-      gap: 1.25rem;
-      background: #f3fbe9;
-      border-radius: 8px;
-      box-shadow: 0 1px 6px rgba(80, 120, 80, 0.07);
-      padding: 1.25rem 1.25rem;
-      min-width: 450px;
-      min-height: 170px;
-
-      .card {
-        background: #f6faf3;
-        border-radius: 8px;
-        box-shadow: 0 0.5px 4px rgba(80, 120, 80, 0.1);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-width: 140px;
-        min-height: 130px;
-        padding: 0.75rem 0.75rem;
-        box-sizing: border-box;
-        flex: 1 1 0;
-        text-align: center;
-        gap: 0.6rem;
-      }
-
-      .circleGraphBox {
-        @extend .card;
-        padding: 0.75rem 0.75rem;
-        position: relative;
-        .circleGraph {
-          width: 130%;
-          height: 130%;
-          display: block;
-          margin: 0 auto;
-        }
-        .graphCenter {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-          pointer-events: none;
-        }
-        .percentText {
-          font-size: 1.6rem;
-          font-weight: 700;
-          color: #388e3c;
-          margin-bottom: 0.1rem;
-          line-height: 1.1;
-        }
-        .usageLabel {
-          font-size: 0.625rem;
-          color: #388e3c;
-          margin-bottom: 0.25rem;
-        }
-        .workStatus {
-          font-size: 0.525rem;
-          color: #25663b;
-          background: #e6f2e2;
-          border-radius: 4px;
-          padding: 0.15rem 0.5rem;
-          margin-top: 0.25rem;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.2rem;
-        }
-      }
-
-      .circleGraphBox .workStatus {
-        display: none;
-      }
-
-      .leaveTableCard {
-        @extend .card;
-        align-items: flex-start;
-        gap: 0.35rem;
-        .leaveRow {
-          display: flex;
-          justify-content: space-between;
-          width: 100%;
-          font-size: 0.565rem;
-          .leaveLabel {
-            color: #888;
-          }
-          .leaveValue {
-            font-weight: 700;
-            color: #388e3c;
-          }
-        }
-        .leaveTip {
-          margin-top: 0.35rem;
-          font-size: 0.49rem;
-          color: #388e3c;
-          background: #f3fbe9;
-          border-radius: 3px;
-          padding: 0.25rem 0.4rem;
-          text-align: center;
-          font-weight: 500;
-          width: 100%;
-        }
-      }
-
-      .memoCard {
-        @extend .card;
-        padding: 0;
-        textarea.todayMemoInput {
-          width: 100%;
-          height: 100%;
-          min-height: 90px;
-          border: none;
-          border-radius: 8px;
-          background: #f8f9f5;
-          color: #25663b;
-          font-size: 0.565rem;
-          padding: 1rem 1.25rem;
-          box-sizing: border-box;
-          resize: none;
-          font-family: inherit;
-          outline: none;
-          transition: box-shadow 0.2s;
-          box-shadow: none;
-          &:focus {
-            background: #f3fbe9;
-            box-shadow: 0 0 0 1px #b7d7b0;
-          }
-        }
-      }
-    }
-
-    .workTimeBox {
-      justify-content: center;
-      .workTimeTable {
-        width: 100%;
-        td,
-        th {
-          text-align: center;
-          padding: 0.6rem 1rem;
-          font-size: 0.6rem;
-        }
-      }
-    }
-
-    .rightCell {
-      justify-content: center;
-      .rightTableWrap {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-      .rightTable {
-        width: 100%;
-        height: 100%;
-        td,
-        th {
-          text-align: center;
-          padding: 0.6rem 1rem;
-          font-size: 0.6rem;
-        }
-      }
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
     }
   }
 
-  // 가운데: 내 근무 시간
-  .workTimeBox {
-    width: 100%;
-    max-width: 200px; // 크기 증가
-    margin: 0 auto;
+  // =========================
+  // 메인 컨텐츠 (왼쪽 열)
+  // =========================
+  .mainContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  // =========================
+  // 사이드바 (오른쪽 열)
+  // =========================
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  // =========================
+  // 공통 카드 스타일
+  // =========================
+  .card {
     background: #fff;
-    border: 1px solid #b7d7b0;
-    overflow: hidden;
-    .workTimeTable {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      table-layout: fixed;
-      border-spacing: 0;
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      th {
-        background: #e6f2e2;
-        color: #222;
-        font-weight: 700;
-        font-size: 0.6rem; // 크기 증가
-        text-align: center;
-        padding: 0.6rem 0.4rem; // 패딩 증가
-        border-bottom: 1px solid #b7d7b0;
-      }
-      tr {
-        height: 35px; // 높이 증가
-        border-bottom: 1px solid #d9e4d4;
-        &:last-child {
-          border-bottom: none;
-        }
-      }
-      td {
-        padding: 0 0.6rem; // 패딩 증가
-        font-size: 0.55rem; // 크기 증가
-        color: #222;
-        vertical-align: middle;
-        border-right: 1px solid #d9e4d4;
-        box-sizing: border-box;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        &:first-child {
-          text-align: left;
-          font-weight: 500;
-          width: 60%;
-        }
-        &:last-child {
-          text-align: right;
-          font-weight: 700;
-          color: #388e3c;
-          width: 40%;
-          border-right: none;
-        }
-      }
-    }
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
-  // 오른쪽 4카드형 출퇴근/부재/휴가 UI
-  .rightCell {
-    background: #f3fbe9 !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    .cardGrid {
-      display: flex;
-      flex-direction: row;
-      gap: 1rem;
-      width: 100%;
-      justify-content: center;
-      align-items: stretch;
-      margin: 0 auto;
-      max-width: 500px;
-      background: #f3fbe9;
-      padding: 1.1rem 0.75rem 1.1rem 0.75rem;
-      border-radius: 14px;
+  .cardLabel {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #343a40;
+    margin-bottom: 0.5rem;
+  }
+
+  // =========================
+  // 개별 카드 스타일
+  // =========================
+
+  // 출퇴근 카드
+  .actionsCard {
+    .actionsGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
     }
-    .card {
-      background: #f6faf3;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(80, 120, 80, 0.08);
-      flex: 1 1 0;
-      min-width: 90px;
-      max-width: 110px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem 0.6rem 0.75rem 0.6rem;
-      gap: 0.55rem;
+    .actionItem {
       text-align: center;
-      transition: box-shadow 0.2s;
     }
-    .card.todayMessageCard {
-      background: linear-gradient(135deg, #f6faf3 60%);
-    }
-    .cardLabel,
-    .leaveLabel {
-      font-size: 0.575rem;
-      font-weight: 700;
-      color: #388e3c;
-      margin-bottom: 0.1rem;
-    }
-    .cardValue,
-    .leaveValue {
-      font-size: 1.1rem;
+    .cardValue {
+      font-size: 2rem;
       font-weight: 700;
       color: #25663b;
-      margin-bottom: 0.1rem;
+      margin: 0.5rem 0;
     }
-    .cardButton,
-    .cardButtonSub,
-    .btnMain,
-    .btnSub {
+    .cardButton {
       width: 100%;
-      min-height: 22px;
-      border-radius: 5px;
-      font-size: 0.54rem;
-      font-weight: 600;
-      background: #4caf50;
-      color: #fff;
-      border: none;
-      margin-top: 0.25rem;
-      cursor: pointer;
-      transition: background 0.2s;
-      &:hover {
-        background: #388e3c;
+      padding: 0.75rem;
+      font-size: 1rem;
+    }
+  }
+
+  // 근무 시간 카드
+  .workTimeCard {
+    .workTimeBody {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .workTimeItem {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1rem;
+      span:first-child {
+        color: #495057;
       }
     }
-    .cardButtonRow {
-      display: flex;
-      gap: 0.35rem;
-      width: 100%;
-      margin-top: 0.25rem;
-      justify-content: center;
+    .timeValue {
+      font-weight: 700;
+      color: #25663b;
+    }
+  }
+
+  .horizontalCardContainer {
+    display: grid; /* grid로 변경 */
+    grid-template-columns: 1fr 1fr; /* 2개의 열 */
+    gap: 1.5rem;
+    height: 100%; /* 높이 100% 추가 */
+  }
+
+  .verticalCardContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: 100%; /* 높이 100% 추가 */
+  }
+
+  // 오늘의 한마디 카드
+  .todayMessageCard {
+    background: linear-gradient(135deg, #f3fbe9, #e6f2e2);
+    .mainMessage {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #25663b;
+      white-space: pre-line;
+      line-height: 1.5;
     }
     .cardSub {
-      font-size: 0.5rem;
-      color: #888;
-      margin-top: 0.15rem;
-      text-align: center;
+      font-size: 0.9rem;
+      color: #495057;
       line-height: 1.4;
-    }
-    .mainMessage {
-      font-size: 0.625rem;
-      font-weight: 700;
-      color: #25663b;
-      margin-bottom: 0.35rem;
-      line-height: 1.5;
-      word-break: keep-all;
-      white-space: pre-line;
     }
   }
 
-  @media (max-width: 900px) {
-    .rightCell .cardGrid {
+  // 연차 현황 카드
+  .vacationCard {
+    flex-grow: 1; /* 높이 유동적으로 채우도록 변경 */
+    height: 100%; /* 높이 100% 추가 */
+    .leaveDetails {
+      width: 100%;
+      display: flex;
       flex-direction: column;
-      gap: 0.6rem;
-      align-items: stretch;
+      gap: 0.5rem;
     }
-    .rightCell .card {
-      max-width: 100%;
-      min-width: 0;
+    .leaveRow {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+    .leaveLabel {
+      color: #495057;
+    }
+    .leaveValue {
+      font-weight: 700;
+      color: #388e3c;
+    }
+  }
+
+  .graphCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    .circleGraphBox {
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .graphCenter {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .percentText {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #388e3c;
+    }
+    .usageLabel {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+  }
+
+  // 부재/휴가 신청 카드
+  .requestCard {
+    .cardButtonRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .cardButtonSub {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 0.9rem;
     }
   }
 
@@ -686,4 +518,16 @@
   margin-bottom: 1.2rem;
   letter-spacing: 0.01em;
   background: none;
+  margin-top: 1.5rem; /* 상단 여백 추가 */
+}
+
+.dashboardDateTimeInfo {
+  text-align: center;
+  color: #25663b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.01em;
+  background: none;
+  margin-top: 1.5rem; /* 상단 여백 추가 */
 }
