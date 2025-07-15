@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import styles from './Header.module.scss';
 import Logo from '../assets/samubozo-logo2.png';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import AuthContext from '../context/UserContext';
 import Chatbot from './Chatbot';
 import ToastNotification from './ToastNotification';
 import axiosInstance from '../configs/axios-config';
@@ -16,6 +18,7 @@ console.log(styles);
 const Header = ({ showChatbot }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isLoggedIn } = useContext(AuthContext);
   const [userName, setUserName] = useState('');
   const [userPosition, setUserPosition] = useState('');
   const [userDepartment, setUserDepartment] = useState('');
@@ -502,9 +505,25 @@ const Header = ({ showChatbot }) => {
             </div>
           )}
           <div className={styles.headerRight}>
-            <NavLink to='/' className={styles.headerLink}>
+            {/* 홈 버튼: 로그인 상태면 /dashboard, 아니면 / */}
+            <button
+              className={styles.headerLink}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                if (isLoggedIn || sessionStorage.getItem('ACCESS_TOKEN')) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/');
+                }
+              }}
+            >
               홈
-            </NavLink>
+            </button>
             <span className={styles.headerDivider}>|</span>
             <NavLink to='/orgchart' className={styles.headerLink}>
               조직도
