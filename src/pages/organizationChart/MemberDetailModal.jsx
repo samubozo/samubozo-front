@@ -1,18 +1,29 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import styles from './OrgChart.module.scss';
+import { getContrastColor } from './OrgChart';
 
-function MemberDetailModal({ open, onClose, member }) {
+function MemberDetailModal({ open, onClose, member, onSendMessage, isSelf }) {
   if (!open || !member) return null;
 
-  // 더미 데이터로 부족한 정보 보완
+  // 실제 API 데이터 구조에 맞게 매핑 - 더미 데이터 보완 최소화
   const memberDetail = {
-    ...member,
-    phone: member.phone || '010-1234-5678',
-    email:
-      member.email ||
-      `${member.name.toLowerCase().replace(/\s+/g, '')}@samubozo.com`,
-    address:
-      member.address || '서울특별시 강남구 테헤란로 123 사무보조빌딩 8층',
+    name: member.userName || member.name || '이름 없음',
+    position: member.positionName || member.position || '직책 없음',
+    department: member.departmentName || member.department?.name || '부서 없음',
+    image:
+      member.profileImage ||
+      member.image ||
+      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjYwIiB5PSI2MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5OTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+Cjwvc3ZnPgo=',
+    // 실제 API에서 제공되는 정보만 사용, 더미 데이터 최소화
+    phone: member.phone || member.phoneNumber || '연락처 정보 없음',
+    email: member.email || member.emailAddress || '이메일 정보 없음',
+    address: member.address || '주소 정보 없음',
+    period: member.hireDate
+      ? `${new Date(member.hireDate).getFullYear()}년 입사`
+      : '근무 기간 정보 없음',
+    // 부서 배지 색상 (실제 API에서 제공되지 않으면 기본값)
+    badgeColor:
+      member.departmentColor || member.department?.departmentColor || '#e6f0fb',
   };
 
   return (
@@ -33,10 +44,11 @@ function MemberDetailModal({ open, onClose, member }) {
             <img
               src={memberDetail.image}
               alt={memberDetail.name}
-              onError={(e) =>
-                (e.target.src =
-                  'https://via.placeholder.com/120x120?text=No+Image')
-              }
+              onError={(e) => {
+                // 에러 시 기본 SVG 이미지로 대체
+                e.target.src =
+                  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjYwIiB5PSI2MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5OTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+Cjwvc3ZnPgo=';
+              }}
             />
           </div>
 
@@ -60,9 +72,12 @@ function MemberDetailModal({ open, onClose, member }) {
               <span className={styles.memberDetailValue}>
                 <span
                   className={styles.memberDetailBadge}
-                  style={{ background: memberDetail.badgeColor }}
+                  style={{
+                    background: memberDetail.badgeColor,
+                    color: getContrastColor(memberDetail.badgeColor),
+                  }}
                 >
-                  {memberDetail.role}
+                  {memberDetail.department}
                 </span>
               </span>
             </div>
@@ -101,7 +116,14 @@ function MemberDetailModal({ open, onClose, member }) {
           <button className={styles.memberDetailBtn} onClick={onClose}>
             닫기
           </button>
-          <button className={styles.memberDetailBtnPrimary}>쪽지 보내기</button>
+          {!isSelf && (
+            <button
+              className={styles.memberDetailBtnPrimary}
+              onClick={() => onSendMessage && onSendMessage(member)}
+            >
+              쪽지 보내기
+            </button>
+          )}
         </div>
       </div>
     </div>

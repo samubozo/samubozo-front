@@ -196,6 +196,17 @@ function UserSearchModal({ open, onClose, onSelect }) {
 
 function MessageModal({ open, onClose, onReply, message }) {
   if (!open || !message) return null;
+  // 첨부파일 여러 개 지원: attachmentUrl, originalFileName이 배열일 수도 있음
+  const attachmentUrls = Array.isArray(message.attachmentUrl)
+    ? message.attachmentUrl
+    : message.attachmentUrl
+      ? [message.attachmentUrl]
+      : [];
+  const originalFileNames = Array.isArray(message.originalFileName)
+    ? message.originalFileName
+    : message.originalFileName
+      ? [message.originalFileName]
+      : [];
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalBox}>
@@ -233,21 +244,27 @@ function MessageModal({ open, onClose, onReply, message }) {
             dangerouslySetInnerHTML={{ __html: message.content || '' }}
           />
         </div>
-        {message.attachmentUrl && (
-          <div className={styles.modalField}>
-            <label>첨부파일</label>
-            <div className={styles.fileLinksBox}>
-              <a
-                href={message.attachmentUrl}
-                target='_blank'
-                rel='noopener noreferrer'
-                className={styles.fileLink}
-              >
-                첨부파일 다운로드
-              </a>
+        {/* 첨부파일 표시 */}
+        {Array.isArray(message.attachments) &&
+          message.attachments.length > 0 && (
+            <div className={styles.modalField}>
+              <label>첨부파일</label>
+              <div className={styles.fileLinksBox}>
+                {message.attachments.map((file, idx) => (
+                  <a
+                    key={file.attachmentId || idx}
+                    href={file.attachmentUrl}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={styles.fileLink}
+                    download={file.originalFileName || undefined}
+                  >
+                    {file.originalFileName || '첨부파일 다운로드'}
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
         <div className={styles.modalBtnRow}>
           <button
             className={styles.modalOkBtn}
@@ -388,7 +405,7 @@ function MessageWriteModal({
           ),
         );
         files.forEach((file) => {
-          formData.append('attachment', file);
+          formData.append('attachments', file);
         });
 
         const response = await axiosInstance.post(
@@ -406,18 +423,24 @@ function MessageWriteModal({
       }
     }
 
-    alert(
-      `쪽지 전송 완료: ${successCount}명 성공${failCount > 0 ? `, ${failCount}명 실패` : ''}`,
-    );
-    // 폼 초기화 등 기존 로직 유지
-    setReceivers([]);
-    setSubject('');
-    setContent('');
-    setFiles([]);
-    if (editorRef.current) {
-      editorRef.current.getInstance().setMarkdown('');
+    if (successCount > 0) {
+      alert(
+        `쪽지 전송 완료: ${successCount}명 성공${failCount > 0 ? `, ${failCount}명 실패` : ''}`,
+      );
+      // 폼 초기화 등 기존 로직 유지
+      setReceivers([]);
+      setSubject('');
+      setContent('');
+      setFiles([]);
+      if (editorRef.current) {
+        editorRef.current.getInstance().setMarkdown('');
+      }
+      onSend({ success: true });
+    } else {
+      alert('쪽지 전송에 실패했습니다.');
+      // 폼 상태는 그대로 유지
+      onSend({ success: false });
     }
-    onSend({ success: successCount > 0 });
   };
 
   const handleClose = () => {
@@ -516,6 +539,16 @@ function MessageWriteModal({
               }}
               height='300px'
               previewStyle='vertical'
+              extendedAutolinks={true}
+              customHTMLSanitizer={(html) => html}
+              hideModeSwitch={false}
+              toolbarItems={[
+                ['heading', 'bold', 'italic', 'strike'],
+                ['hr', 'quote'],
+                ['ul', 'ol', 'task', 'indent', 'outdent'],
+                ['table', 'image', 'link'],
+                ['code', 'codeblock'],
+              ]}
             />
           </div>
           <div className={styles.modalField}>
@@ -1309,4 +1342,5 @@ const Message = () => {
   );
 };
 
+export { MessageWriteModal };
 export default Message;

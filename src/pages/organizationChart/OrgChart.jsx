@@ -1,8 +1,9 @@
 // OrgChart.jsx
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import styles from './OrgChart.module.scss';
 import axiosInstance from '../../configs/axios-config';
-import { API_BASE_URL } from '../../configs/host-config';
+import { API_BASE_URL, HR } from '../../configs/host-config';
 import { ChromePicker } from 'react-color';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
@@ -18,75 +19,10 @@ import AddDeptModal from './AddDeptModal';
 import DepartmentFilter from './DepartmentFilter';
 import OrgNode from './OrgNode';
 import MemberDetailModal from './MemberDetailModal';
+import EditDeptModal from './EditDeptModal';
+import { MessageWriteModal } from '../message/Message'; // 쪽지 쓰기 모달 import (named import)
 
-// 예시용 조직도 데이터
-const orgData = [
-  {
-    name: '김예은',
-    position: '대표이사',
-    role: 'CEO',
-    roleColor: 'ceo',
-    department: '경영지원부',
-    children: [
-      {
-        name: '구현희',
-        position: '개발팀장',
-        role: 'Engineering',
-        roleColor: 'engineering',
-        department: '개발부',
-        children: [
-          {
-            name: '팔현희',
-            position: '선임개발자',
-            role: 'Engineering',
-            roleColor: 'engineering',
-            department: '개발부',
-          },
-        ],
-      },
-      {
-        name: '이호영',
-        position: '마케팅팀장',
-        role: 'Marketing',
-        roleColor: 'marketing',
-        department: '마케팅부',
-        children: [
-          {
-            name: '삼호영',
-            position: '마케팅 매니저',
-            role: 'Marketing',
-            roleColor: 'marketing',
-            department: '마케팅부',
-            email: 'bbb@samubozo.com',
-            phone: '02-1234-5678',
-          },
-        ],
-      },
-      {
-        name: '주영찬',
-        position: '영업팀장',
-        role: 'Sales',
-        roleColor: 'sales',
-        department: '영업부',
-      },
-      {
-        name: '신현국',
-        position: '인사팀장',
-        role: 'Hr',
-        roleColor: 'hr',
-        department: '경영지원부',
-      },
-    ],
-  },
-];
-
-const DEFAULT_DEPARTMENTS = [
-  { name: '개발부', color: '#e6f0fb' },
-  { name: '마케팅부', color: '#dafbe5' },
-  { name: '영업부', color: '#fff0cc' },
-  { name: '경영지원부', color: '#ffe6e6' },
-];
-
+// 더미 데이터 완전 삭제 - 실제 API 연동 데이터만 사용
 const COLOR_OPTIONS = [
   { name: '파랑', value: '#e6f0fb' },
   { name: '초록', value: '#dafbe5' },
@@ -97,6 +33,7 @@ const COLOR_OPTIONS = [
   { name: '연두', value: '#eaffd0' },
 ];
 
+// 실제 API 연동 데이터 필터링 함수
 const filterOrgData = (data, selectedDepts) => {
   if (!selectedDepts.length) return data;
   return data.map((ceo) => ({
@@ -105,125 +42,66 @@ const filterOrgData = (data, selectedDepts) => {
   }));
 };
 
-// 카드형 조직도용 더미 데이터 (100명 이상, role이 부서명과 정확히 일치)
-const deptNames = ['개발팀', '디자인팀', '마케팅팀', '영업팀'];
-const cardOrgData = Array.from({ length: 120 }).map((_, i) => {
-  const names = [
-    '김석현',
-    '김원성',
-    '김윤아',
-    '김지현',
-    '박수진',
-    '이민희',
-    '이영수',
-    '장민혁',
-  ];
-  const positions = [
-    'SRE(사이트 안전 엔지니어)',
-    '선임 소프트웨어 엔지니어',
-    '브랜드 디자이너',
-    '인사 전문가',
-    '마케팅 팀장',
-    '영업사원',
-    '지원 담당자',
-    '프로덕트 디자이너',
-  ];
-  const dept = deptNames[i % deptNames.length];
-  const images = [
-    'https://randomuser.me/api/portraits/men/32.jpg',
-    'https://randomuser.me/api/portraits/men/33.jpg',
-    'https://randomuser.me/api/portraits/women/44.jpg',
-    'https://randomuser.me/api/portraits/women/45.jpg',
-    'https://randomuser.me/api/portraits/women/46.jpg',
-    'https://randomuser.me/api/portraits/women/47.jpg',
-    'https://randomuser.me/api/portraits/men/34.jpg',
-    'https://randomuser.me/api/portraits/men/35.jpg',
-  ];
-  return {
-    id: i + 1,
-    name: names[i % names.length] + (i + 1),
-    position: positions[i % positions.length],
-    role: dept, // 부서명과 정확히 일치
-    roleColor: ['#e8d6f7', '#d6eaf7', '#f7e6d6', '#f7f6d6'][i % 4],
-    badge: dept,
-    badgeColor: ['#e8d6f7', '#d6eaf7', '#f7e6d6', '#f7f6d6'][i % 4],
-    image: images[i % images.length],
-    period: (Math.random() * 30 + 10).toFixed(1) + ' 개월',
-    desc: positions[i % positions.length],
-  };
-});
-
-// 부서(팀) 카드용 더미 데이터 (name이 위와 정확히 일치)
-const cardDeptData = [
-  {
-    id: 1,
-    name: '개발팀',
-    desc: '최고의 서비스를 만드는 개발팀',
-    count: cardOrgData.filter((u) => u.role === '개발팀').length,
-    image:
-      'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 2,
-    name: '디자인팀',
-    desc: '브랜드와 UX를 책임지는 디자인팀',
-    count: cardOrgData.filter((u) => u.role === '디자인팀').length,
-    image:
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 3,
-    name: '마케팅팀',
-    desc: '고객과 시장을 연결하는 마케팅팀',
-    count: cardOrgData.filter((u) => u.role === '마케팅팀').length,
-    image:
-      'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 4,
-    name: '영업팀',
-    desc: '비즈니스의 최전선, 영업팀',
-    count: cardOrgData.filter((u) => u.role === '영업팀').length,
-    image:
-      'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
-  },
-];
+// 색상 대비 계산 함수 (일정관리에서 차용)
+export function getContrastColor(backgroundColor) {
+  if (!backgroundColor) return '#222';
+  const hex = backgroundColor.replace('#', '');
+  if (hex.length !== 6) return '#222';
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  if (brightness <= 50) {
+    return '#ffffff';
+  } else if (brightness > 128) {
+    return '#000000';
+  } else {
+    return '#ffffff';
+  }
+}
 
 const OrgChart = () => {
-  const [tab, setTab] = useState('all');
+  // 실제 API 연동 데이터 상태
+  const [members, setMembers] = useState([]); // 직원 목록
+  const [departments, setDepartments] = useState([]); // 부서 목록
+  const [loading, setLoading] = useState(false); // 로딩 상태
+
+  // UI 상태
+  // 탭 상태: localStorage → 쿼리스트링 → 'team' 순으로 초기값 결정
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab');
+  const storageTab = localStorage.getItem('orgchartTab');
+  const initialTab = storageTab || urlTab || 'team';
+  const [tab, setTab] = useState(initialTab);
   const [search, setSearch] = useState('');
-  const [filteredMembers, setFilteredMembers] = useState(cardOrgData);
-  const [visibleMembers, setVisibleMembers] = useState(
-    cardOrgData.slice(0, 16),
-  );
-  const [hasMore, setHasMore] = useState(cardOrgData.length > 16);
-  // 부서 상세 뷰 상태
-  const [deptView, setDeptView] = useState(null); // {id, name, ...} or null
+  const [deptView, setDeptView] = useState(null); // 부서 상세 뷰 상태
   const [deptMembers, setDeptMembers] = useState([]);
   const [deptVisibleMembers, setDeptVisibleMembers] = useState([]);
   const [deptHasMore, setDeptHasMore] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editDeptForm, setEditDeptForm] = useState({
+    name: '',
+    color: '',
+    imageFile: null,
+  });
 
-  // 필터/정렬 상태 추가
-  const [selectedTeam, setSelectedTeam] = useState('all'); // 'all', '개발팀', '디자인팀', '마케팅팀', '영업팀'
-  const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
+  // 필터/정렬 상태
+  const [selectedTeam, setSelectedTeam] = useState('all');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
-  // 멤버 상세 모달 상태
+  // 모달 상태
   const [selectedMember, setSelectedMember] = useState(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
-
-  // 부서 추가 모달 상태
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
-  const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
+  const [showMessageWriteModal, setShowMessageWriteModal] = useState(false);
+  const [messageReceiver, setMessageReceiver] = useState(null);
 
-  // 팀 목록
+  // 실제 API에서 받아온 부서 목록 기반 팀 옵션 생성
   const teamOptions = [
     { value: 'all', label: '전체 팀' },
-    { value: '개발팀', label: '개발팀' },
-    { value: '디자인팀', label: '디자인팀' },
-    { value: '마케팅팀', label: '마케팅팀' },
-    { value: '영업팀', label: '영업팀' },
+    ...departments.map((dept) => ({ value: dept.name, label: dept.name })),
   ];
 
   // 정렬 옵션
@@ -232,122 +110,179 @@ const OrgChart = () => {
     { value: 'desc', label: '이름 내림차순' },
   ];
 
-  // 필터링된 데이터로 부서 카드 데이터 업데이트
-  const getFilteredDeptData = () => {
-    let filtered = cardOrgData;
-
-    // 팀 필터 적용
-    if (selectedTeam !== 'all') {
-      filtered = filtered.filter((user) => user.role === selectedTeam);
+  // 탭 변경 시 쿼리스트링과 localStorage 모두에 저장
+  const handleTabChange = (newTab) => {
+    setTab(newTab);
+    setSearchParams({ ...Object.fromEntries(searchParams), tab: newTab });
+    localStorage.setItem('orgchartTab', newTab);
+  };
+  // 쿼리스트링이 바뀌면 상태와 localStorage도 동기화
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && urlTab !== tab) {
+      setTab(urlTab);
+      localStorage.setItem('orgchartTab', urlTab);
     }
+  }, [searchParams]);
 
-    // 검색어 필터 적용
-    if (search) {
-      filtered = filtered.filter(
-        (u) =>
-          u.name.includes(search) ||
-          u.position.includes(search) ||
-          u.desc.includes(search),
+  // 실제 API 데이터 로드 함수 - host-config.js의 HR 상수 사용
+  const loadMembers = async () => {
+    setLoading(true);
+    try {
+      console.log('직원 목록 API 호출:', `${API_BASE_URL}${HR}/user/list`);
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${HR}/user/list`,
       );
-    }
+      console.log('직원 목록 응답:', response.data);
 
-    // 이름 정렬 적용
-    filtered.sort((a, b) => {
-      if (sortOrder === 'asc') {
-        return a.name.localeCompare(b.name);
-      } else {
-        return b.name.localeCompare(a.name);
+      // API 응답 구조: { statusCode: 200, statusMessage: "Success", result: {content: [...], page: {...}} }
+      const result = response.data?.result;
+      const membersData = result?.content || [];
+
+      console.log('result:', result);
+      console.log('membersData:', membersData);
+      console.log('membersData 타입:', typeof membersData);
+      console.log('Array.isArray(membersData):', Array.isArray(membersData));
+
+      // 배열이 아닌 경우 빈 배열로 처리
+      if (!Array.isArray(membersData)) {
+        console.error('membersData가 배열이 아닙니다:', membersData);
+        setMembers([]);
+        return;
       }
-    });
 
-    // 필터링된 데이터에 따라 부서 카드 필터링
-    let filteredDeptData = cardDeptData;
+      // department 정보를 평면화하여 사용하기 쉽게 변환
+      const processedMembers = membersData.map((member) => {
+        console.log('처리 중인 member:', member);
+        return {
+          ...member,
+          departmentName: member.department?.name || '부서 없음',
+          departmentColor: member.department?.departmentColor || '#e6f0fb',
+          departmentId: member.department?.departmentId,
+        };
+      });
 
-    // 특정 팀이 선택된 경우 해당 팀만 표시
-    if (selectedTeam !== 'all') {
-      filteredDeptData = cardDeptData.filter(
-        (dept) => dept.name === selectedTeam,
-      );
+      console.log('처리된 멤버 데이터:', processedMembers);
+      setMembers(processedMembers);
+    } catch (error) {
+      console.error('직원 목록 로드 실패:', error);
+      console.error('에러 상세:', error.response?.data);
+      setMembers([]);
     }
-
-    // 검색어가 있는 경우 멤버가 있는 부서만 표시
-    if (search) {
-      filteredDeptData = filteredDeptData.filter((dept) =>
-        filtered.some((user) => user.role === dept.name),
-      );
-    }
-
-    const result = filteredDeptData.map((dept) => ({
-      ...dept,
-      count: filtered.filter((u) => u.role === dept.name).length,
-    }));
-
-    // 디버깅용 로그
-    console.log('=== getFilteredDeptData Debug ===');
-    console.log('selectedTeam:', selectedTeam);
-    console.log('search:', search);
-    console.log('sortOrder:', sortOrder);
-    console.log('filtered total:', filtered.length);
-    console.log(
-      'filteredDeptData:',
-      filteredDeptData.map((d) => d.name),
-    );
-    console.log('result:', result);
-    console.log('===============================');
-
-    return result;
+    setLoading(false);
   };
 
+  const loadDepartments = async () => {
+    try {
+      console.log('부서 목록 API 호출:', `${API_BASE_URL}${HR}/departments`);
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${HR}/departments`,
+      );
+      console.log('부서 목록 응답:', response.data);
+
+      // 실제 API 응답 구조에 맞게 데이터 처리
+      const departmentsData = response.data.result || [];
+      setDepartments(departmentsData);
+    } catch (error) {
+      console.error('부서 목록 로드 실패:', error);
+      setDepartments([]);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
-    // 검색어, 팀 필터, 정렬 적용
-    let filtered = cardOrgData;
+    loadMembers();
+    loadDepartments();
+  }, []);
+
+  // 실제 데이터 기반 필터링된 멤버 목록 생성
+  const getFilteredMembers = () => {
+    let filtered = [...members];
 
     // 팀 필터 적용
     if (selectedTeam !== 'all') {
-      filtered = filtered.filter((user) => user.role === selectedTeam);
+      filtered = filtered.filter(
+        (user) => user.departmentName === selectedTeam,
+      );
     }
 
     // 검색어 필터 적용
     if (search) {
       filtered = filtered.filter(
         (u) =>
-          u.name.includes(search) ||
-          u.position.includes(search) ||
-          u.desc.includes(search),
+          u.userName?.includes(search) ||
+          u.positionName?.includes(search) ||
+          u.departmentName?.includes(search),
       );
     }
 
     // 이름 정렬 적용
     filtered.sort((a, b) => {
       if (sortOrder === 'asc') {
-        return a.name.localeCompare(b.name);
+        return (a.userName || '').localeCompare(b.userName || '');
       } else {
-        return b.name.localeCompare(a.name);
+        return (b.userName || '').localeCompare(a.userName || '');
       }
     });
 
-    if (!deptView) {
-      setFilteredMembers(filtered);
-      setVisibleMembers(filtered.slice(0, 16));
-      setHasMore(filtered.length > 16);
-    } else {
-      // 부서 상세 뷰: 해당 부서 멤버만 필터링
-      const deptFiltered = filtered.filter((u) => u.role === deptView.name);
+    return filtered;
+  };
+
+  // 실제 데이터 기반 필터링된 부서 목록 생성
+  const getFilteredDepartments = () => {
+    let filtered = [...departments];
+
+    // 검색어가 있는 경우 해당 부서에 멤버가 있는 부서만 표시
+    if (search) {
+      const filteredMembers = getFilteredMembers();
+      const deptNamesWithMembers = [
+        ...new Set(filteredMembers.map((m) => m.departmentName)),
+      ];
+      filtered = filtered.filter((dept) =>
+        deptNamesWithMembers.includes(dept.name),
+      );
+    }
+
+    // 각 부서의 멤버 수 계산 및 부서 이미지 정보 추가
+    return filtered.map((dept) => {
+      // 해당 부서의 멤버들 찾기
+      const deptMembers = members.filter(
+        (m) => m.departmentId === dept.departmentId,
+      );
+
+      // 부서 이미지 URL (첫 번째 멤버의 department.imageUrl 사용)
+      const deptImageUrl =
+        deptMembers.length > 0 ? deptMembers[0].department?.imageUrl : null;
+
+      return {
+        ...dept,
+        count: deptMembers.length,
+        image:
+          dept.imageUrl ||
+          deptImageUrl ||
+          dept.image ||
+          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDMyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjE2MCIgeT0iNjAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkRlcGFydG1lbnQ8L3RleHQ+Cjwvc3ZnPgo=',
+      };
+    });
+  };
+
+  // 필터/검색/정렬 변경 시 부서 상세 뷰 업데이트
+  useEffect(() => {
+    if (deptView) {
+      const deptFiltered = getFilteredMembers().filter(
+        (u) => u.departmentName === deptView.name,
+      );
       setDeptMembers(deptFiltered);
       setDeptVisibleMembers(deptFiltered.slice(0, 16));
       setDeptHasMore(deptFiltered.length > 16);
     }
-  }, [search, deptView, selectedTeam, sortOrder]);
+  }, [search, deptView, selectedTeam, sortOrder, members]);
 
+  // 무한 스크롤 함수들
   const fetchMore = () => {
-    setTimeout(() => {
-      setVisibleMembers((prev) => [
-        ...prev,
-        ...filteredMembers.slice(prev.length, prev.length + 16),
-      ]);
-      setHasMore(visibleMembers.length + 16 < filteredMembers.length);
-    }, 400);
+    // 실제 API 기반 무한 스크롤 구현 필요 시 추가
   };
+
   const fetchDeptMore = () => {
     setTimeout(() => {
       setDeptVisibleMembers((prev) => [
@@ -358,46 +293,196 @@ const OrgChart = () => {
     }, 400);
   };
 
+  // 삭제 핸들러
+  const handleDeleteDept = async () => {
+    if (!deptView) return;
+    if (!window.confirm(`${deptView.name} 부서를 삭제하시겠습니까?`)) return;
+    try {
+      await axiosInstance.delete(
+        `${API_BASE_URL}${HR}/departments/${deptView.departmentId || deptView.id}`,
+      );
+      alert('부서가 삭제되었습니다.');
+      setDeptView(null);
+      await loadDepartments();
+    } catch (e) {
+      alert(
+        e.response?.status === 400
+          ? '해당 부서에 소속된 직원이 있어 삭제할 수 없습니다.'
+          : '부서 삭제 중 오류가 발생했습니다.',
+      );
+    }
+  };
+
+  // 수정 버튼 클릭 시 모달 오픈 및 기존 정보 세팅
+  const openEditModal = () => {
+    setEditDeptForm({
+      name: deptView.name || deptView.departmentName || '',
+      color: deptView.departmentColor || deptView.color || '#e6f0fb',
+      imageFile: null,
+    });
+    setShowEditModal(true);
+  };
+
+  // 수정 폼 제출
+  const handleEditDept = async (e) => {
+    e.preventDefault();
+    if (!editDeptForm.name.trim()) {
+      alert('부서명을 입력하세요.');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('name', editDeptForm.name);
+    formData.append('departmentColor', editDeptForm.color);
+    if (editDeptForm.imageFile) {
+      formData.append('departmentImage', editDeptForm.imageFile);
+    }
+    try {
+      await axiosInstance.put(
+        `${API_BASE_URL}${HR}/departments/${deptView.departmentId || deptView.id}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+      alert('부서 정보가 수정되었습니다.');
+      setShowEditModal(false);
+      await loadDepartments();
+      // 상세 뷰 갱신
+      setDeptView(
+        (prev) =>
+          prev && {
+            ...prev,
+            name: editDeptForm.name,
+            departmentColor: editDeptForm.color,
+          },
+      );
+    } catch (e) {
+      // 서버에서 statusMessage가 오면 그대로 alert로 안내
+      if (e.response && e.response.data && e.response.data.statusMessage) {
+        alert(e.response.data.statusMessage);
+      } else {
+        alert('부서 정보 수정 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  // 로딩 중 표시
+  if (loading) {
+    return (
+      <div className={styles.orgChartPage}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '200px',
+          }}
+        >
+          <CircularProgress />
+        </div>
+      </div>
+    );
+  }
+
+  // 쪽지 보내기 버튼 핸들러
+  const handleSendMessage = (member) => {
+    // MessageWriteModal이 기대하는 구조로 변환
+    setMessageReceiver({
+      id: member.employeeNo || member.id,
+      name: member.userName || member.name,
+      dept:
+        member.departmentName ||
+        (member.department && member.department.name) ||
+        '',
+    });
+    setShowMessageWriteModal(true);
+  };
+
+  // 현재 로그인한 사번(본인 식별)
+  const currentEmployeeNo = sessionStorage.getItem('USER_EMPLOYEE_NO');
+
   return (
     <div className={styles.orgChartPage}>
       {/* Modern 탭형 헤더 */}
       <div className={styles.orgChartHeader}>
         <div className={styles.orgChartTabs}>
-          {deptView ? (
-            <button
-              className={styles.orgChartBackBtn}
-              onClick={() => setDeptView(null)}
+          {deptView && (
+            <div
+              style={{ display: 'flex', alignItems: 'center', width: '100%' }}
             >
-              ←
-            </button>
-          ) : null}
+              <button
+                className={styles.orgChartBackBtn}
+                onClick={() => setDeptView(null)}
+                style={{ marginRight: 24 }}
+              >
+                ←
+              </button>
+              <span
+                className={styles.orgChartTabActive}
+                style={{ flex: 1, marginLeft: 0, marginRight: 24 }}
+              >
+                {deptView.name} 부서
+              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginLeft: 0,
+                }}
+              >
+                <button
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#48b96c',
+                    background: '#fff',
+                    border: '1px solid #48b96c',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                  onClick={openEditModal}
+                >
+                  부서 수정
+                </button>
+                <button
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#ff4444',
+                    background: '#fff',
+                    border: '1px solid #ff4444',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                  onClick={handleDeleteDept}
+                >
+                  부서 삭제
+                </button>
+              </div>
+            </div>
+          )}
           {!deptView && (
             <>
               <span
                 className={
-                  tab === 'all' ? styles.orgChartTabActive : styles.orgChartTab
-                }
-                onClick={() => setTab('all')}
-              >
-                전체 팀 멤버
-              </span>
-              <span
-                className={
                   tab === 'team' ? styles.orgChartTabActive : styles.orgChartTab
                 }
-                onClick={() => setTab('team')}
+                onClick={() => handleTabChange('team')}
               >
                 부서
               </span>
+              <span
+                className={
+                  tab === 'all' ? styles.orgChartTabActive : styles.orgChartTab
+                }
+                onClick={() => handleTabChange('all')}
+              >
+                전체 팀 멤버
+              </span>
             </>
-          )}
-          {deptView && (
-            <span
-              className={styles.orgChartTabActive}
-              style={{ marginLeft: 12 }}
-            >
-              {deptView.name} 부서
-            </span>
           )}
         </div>
         <div className={styles.orgChartHeaderRight}>
@@ -406,7 +491,7 @@ const OrgChart = () => {
               className={styles.orgChartSearchInput}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder='이름, 직책, 설명 검색'
+              placeholder='이름, 직책, 부서 검색'
               style={{ marginRight: 12, minWidth: 180 }}
             />
           )}
@@ -415,12 +500,31 @@ const OrgChart = () => {
           <div className={styles.filterSortDropdown}>
             <span
               className={styles.orgChartHeaderAction}
+              style={{
+                color: selectedTeam !== 'all' ? '#388e3c' : '#bbb',
+                fontWeight: selectedTeam !== 'all' ? 600 : 500,
+                position: 'relative',
+              }}
               onClick={() => {
                 setShowFilterDropdown(!showFilterDropdown);
                 setShowSortDropdown(false);
               }}
             >
               Filter
+              {selectedTeam !== 'all' && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-8px',
+                    width: '8px',
+                    height: '8px',
+                    backgroundColor: '#48b96c',
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                  }}
+                />
+              )}
             </span>
             {showFilterDropdown && (
               <div className={styles.dropdownMenu}>
@@ -428,12 +532,34 @@ const OrgChart = () => {
                   <div
                     key={option.value}
                     className={styles.dropdownMenuItem}
+                    style={{
+                      backgroundColor:
+                        selectedTeam === option.value
+                          ? '#eafaf1'
+                          : 'transparent',
+                      color: selectedTeam === option.value ? '#388e3c' : '#333',
+                      fontWeight: selectedTeam === option.value ? 600 : 400,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
                     onClick={() => {
                       setSelectedTeam(option.value);
                       setShowFilterDropdown(false);
                     }}
                   >
-                    {option.label}
+                    <span>{option.label}</span>
+                    {selectedTeam === option.value && (
+                      <span
+                        style={{
+                          fontSize: '16px',
+                          marginLeft: '12px',
+                          color: '#48b96c',
+                        }}
+                      >
+                        ✓
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -444,13 +570,29 @@ const OrgChart = () => {
           <div className={styles.filterSortDropdown}>
             <span
               className={styles.orgChartHeaderAction}
-              style={{ color: '#388e3c', fontWeight: 600 }}
+              style={{
+                color: '#388e3c',
+                fontWeight: 600,
+                position: 'relative',
+              }}
               onClick={() => {
                 setShowSortDropdown(!showSortDropdown);
                 setShowFilterDropdown(false);
               }}
             >
               Sort
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-8px',
+                  width: '8px',
+                  height: '8px',
+                  backgroundColor: '#48b96c',
+                  borderRadius: '50%',
+                  display: 'inline-block',
+                }}
+              />
             </span>
             {showSortDropdown && (
               <div className={styles.dropdownMenu}>
@@ -458,97 +600,130 @@ const OrgChart = () => {
                   <div
                     key={option.value}
                     className={styles.dropdownMenuItem}
+                    style={{
+                      backgroundColor:
+                        sortOrder === option.value ? '#eafaf1' : 'transparent',
+                      color: sortOrder === option.value ? '#388e3c' : '#333',
+                      fontWeight: sortOrder === option.value ? 600 : 400,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
                     onClick={() => {
                       setSortOrder(option.value);
                       setShowSortDropdown(false);
                     }}
                   >
-                    {option.label}
+                    <span>{option.label}</span>
+                    {sortOrder === option.value && (
+                      <span
+                        style={{
+                          fontSize: '16px',
+                          marginLeft: '12px',
+                          color: '#48b96c',
+                        }}
+                      >
+                        ✓
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* 부서 추가 버튼 */}
-          <button
-            className={styles.addDeptHeaderBtn}
-            onClick={() => setShowAddDeptModal(true)}
-            title='부서 추가'
-          >
-            <span className={styles.addDeptHeaderIcon}>+</span>
-            부서 추가
-          </button>
+          {/* 부서 추가 버튼 - 부서 탭에서만 표시 */}
+          {tab === 'team' && !deptView && (
+            <button
+              className={styles.addDeptHeaderBtn}
+              onClick={() => setShowAddDeptModal(true)}
+              title='부서 추가'
+            >
+              <span className={styles.addDeptHeaderIcon}>+</span>
+              부서 추가
+            </button>
+          )}
         </div>
       </div>
       <div className={styles.orgChartHeaderLine} />
+
       {/* 멤버/부서 카드 그리드 분기 */}
       {deptView ? (
-        <InfiniteScroll
-          dataLength={deptVisibleMembers.length}
-          next={fetchDeptMore}
-          hasMore={deptHasMore}
-          loader={
-            <div style={{ textAlign: 'center', color: '#888', padding: 18 }}>
-              불러오는 중...
-            </div>
-          }
-          endMessage={
-            <div style={{ textAlign: 'center', color: '#bbb', padding: 18 }}>
-              모든 멤버를 불러왔습니다.
-            </div>
-          }
-          style={{ overflow: 'visible' }}
-        >
-          <div className={styles.orgCardGrid}>
-            {deptVisibleMembers.map((user) => (
+        <div className={styles.orgCardGrid}>
+          {deptVisibleMembers.length > 0 ? (
+            deptVisibleMembers.map((user) => (
               <OrgCard
                 user={user}
-                key={user.id}
+                key={user.employeeNo}
                 onClick={() => {
                   setSelectedMember(user);
                   setShowMemberDetail(true);
                 }}
               />
-            ))}
-          </div>
-        </InfiniteScroll>
+            ))
+          ) : (
+            // 팀원이 없을 때 메시지 표시
+            <div
+              style={{
+                gridColumn: '1 / -1',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '80px 20px',
+                textAlign: 'center',
+                color: '#666',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '48px',
+                  marginBottom: '16px',
+                  opacity: 0.3,
+                }}
+              >
+                👥
+              </div>
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  marginBottom: '8px',
+                  color: '#333',
+                }}
+              >
+                팀원이 없습니다
+              </div>
+              <div
+                style={{
+                  fontSize: '14px',
+                  color: '#888',
+                }}
+              >
+                아직 이 부서에 소속된 팀원이 없어요
+              </div>
+            </div>
+          )}
+        </div>
       ) : tab === 'all' ? (
-        <InfiniteScroll
-          dataLength={visibleMembers.length}
-          next={fetchMore}
-          hasMore={hasMore}
-          loader={
-            <div style={{ textAlign: 'center', color: '#888', padding: 18 }}>
-              불러오는 중...
-            </div>
-          }
-          endMessage={
-            <div style={{ textAlign: 'center', color: '#bbb', padding: 18 }}>
-              모든 멤버를 불러왔습니다.
-            </div>
-          }
-          style={{ overflow: 'visible' }}
-        >
-          <div className={styles.orgCardGrid}>
-            {visibleMembers.map((user) => (
-              <OrgCard
-                user={user}
-                key={user.id}
-                onClick={() => {
-                  setSelectedMember(user);
-                  setShowMemberDetail(true);
-                }}
-              />
-            ))}
-          </div>
-        </InfiniteScroll>
+        <div className={styles.orgCardGrid}>
+          {getFilteredMembers().map((user) => (
+            <OrgCard
+              user={user}
+              key={user.employeeNo}
+              onClick={() => {
+                setSelectedMember(user);
+                setShowMemberDetail(true);
+              }}
+            />
+          ))}
+        </div>
       ) : (
         <div className={styles.orgCardGrid}>
-          {getFilteredDeptData().map((dept) => (
+          {getFilteredDepartments().map((dept) => (
             <OrgDeptCard
               dept={dept}
-              key={dept.id}
+              key={dept.departmentId || dept.id || `dept-${dept.name}`}
               onClick={() => setDeptView(dept)}
             />
           ))}
@@ -563,17 +738,118 @@ const OrgChart = () => {
           setSelectedMember(null);
         }}
         member={selectedMember}
+        onSendMessage={handleSendMessage}
+        isSelf={
+          selectedMember &&
+          String(selectedMember.employeeNo) === String(currentEmployeeNo)
+        }
+      />
+      {/* 쪽지 쓰기 모달 */}
+      <MessageWriteModal
+        open={showMessageWriteModal}
+        onClose={() => setShowMessageWriteModal(false)}
+        initialReceiver={messageReceiver}
+        onSend={() => setShowMessageWriteModal(false)}
       />
 
       {/* 부서 추가 모달 */}
       <AddDeptModal
         open={showAddDeptModal}
         onClose={() => setShowAddDeptModal(false)}
-        onAdd={(newDept) => {
-          setDepartments([...departments, newDept]);
-          setShowAddDeptModal(false);
+        existingDepartments={departments}
+        onAdd={async (newDept) => {
+          try {
+            console.log('부서 추가 데이터:', newDept);
+
+            // 백엔드 API에 맞춰 데이터 전송 방식 결정
+            let requestData;
+            let headers = {};
+
+            if (newDept.imageFile) {
+              // 이미지 파일이 있는 경우 FormData 사용
+              const formData = new FormData();
+              formData.append('name', newDept.name);
+              formData.append('departmentColor', newDept.color);
+              formData.append('departmentImage', newDept.imageFile); // <-- key 변경!
+
+              requestData = formData;
+              headers = {
+                'Content-Type': 'multipart/form-data',
+              };
+            } else {
+              // 이미지 파일이 없는 경우 JSON 사용
+              requestData = {
+                name: newDept.name,
+                departmentColor: newDept.color,
+              };
+              headers = {
+                'Content-Type': 'application/json',
+              };
+            }
+
+            // 실제 API 호출로 부서 추가
+            const response = await axiosInstance.post(
+              `${API_BASE_URL}${HR}/departments`,
+              requestData,
+              { headers },
+            );
+
+            console.log('부서 추가 성공:', response.data);
+
+            // 성공 시 부서 목록 새로고침
+            await loadDepartments();
+            alert('부서가 추가되었습니다.'); // 추가 성공 시 alert
+            setShowAddDeptModal(false); // 성공 시에만 닫기
+          } catch (error) {
+            console.error('부서 추가 실패:', error);
+            // alert 호출 제거, 반드시 throw만
+            throw error;
+          }
         }}
       />
+
+      {/* 부서 수정 모달 */}
+      {showEditModal && (
+        <EditDeptModal
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onEdit={async (formData) => {
+            try {
+              await axiosInstance.put(
+                `${API_BASE_URL}${HR}/departments/${deptView.departmentId || deptView.id}`,
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } },
+              );
+              alert('부서 정보가 수정되었습니다.'); // 수정 성공 시 alert
+              setShowEditModal(false); // 성공 시에만 닫기
+              await loadDepartments();
+              await loadMembers(); // ← 멤버 목록도 최신화
+              setDeptView(
+                (prev) =>
+                  prev && {
+                    ...prev,
+                    name: formData.get('name'),
+                    departmentColor: formData.get('departmentColor'),
+                  },
+              );
+            } catch (e) {
+              // 서버에서 statusMessage가 오면 그대로 alert로 안내 (중복 방지)
+              if (
+                e.response &&
+                e.response.data &&
+                e.response.data.statusMessage
+              ) {
+                alert(e.response.data.statusMessage);
+              } else {
+                alert('부서 정보 수정 중 오류가 발생했습니다.');
+              }
+              // throw e; // 중복 alert 방지를 위해 throw 제거
+            }
+          }}
+          initialDept={deptView}
+          existingDepartments={departments}
+        />
+      )}
     </div>
   );
 };

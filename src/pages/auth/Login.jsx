@@ -12,8 +12,10 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
+  const emailInputRef = useRef(null);
 
   useEffect(() => {
     const rememberedEmails = JSON.parse(
@@ -25,8 +27,29 @@ const Login = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        emailInputRef.current &&
+        !emailInputRef.current.contains(event.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
+  };
+
+  const handleEmailSelect = (selectedEmail) => {
+    setEmail(selectedEmail);
+    setShowDropdown(false);
   };
 
   const updateRememberedEmails = (email, checked) => {
@@ -125,7 +148,10 @@ const Login = () => {
           name='fakepasswordremembered'
         />
         <form onSubmit={handleSubmit} autoComplete='new-password' method='post'>
-          <div style={{ position: 'relative', width: '100%' }}>
+          <div
+            style={{ position: 'relative', width: '100%' }}
+            ref={emailInputRef}
+          >
             <input
               className={styles.emailInput}
               type='email'
@@ -139,6 +165,23 @@ const Login = () => {
               required
               spellCheck='false'
             />
+            {showDropdown && (
+              <ul className={styles.emailDropdown}>
+                {JSON.parse(localStorage.getItem('rememberedEmails') || '[]')
+                  .filter((savedEmail) =>
+                    savedEmail.toLowerCase().includes(email.toLowerCase()),
+                  )
+                  .map((savedEmail, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleEmailSelect(savedEmail)}
+                      className={styles.emailOption}
+                    >
+                      {savedEmail}
+                    </li>
+                  ))}
+              </ul>
+            )}
             {/* 이메일 자동완성 드롭다운(ul) 완전 제거 */}
           </div>
           <input
