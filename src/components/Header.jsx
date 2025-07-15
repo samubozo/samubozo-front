@@ -514,52 +514,6 @@ const Header = ({ showChatbot }) => {
               전자결재
             </NavLink>
 
-            {/* 테스트 버튼들 */}
-            <div style={{ display: 'flex', gap: '8px', marginLeft: '15px' }}>
-              <button
-                onClick={() => addTestToast(testNotifications[0])}
-                style={{
-                  background: '#2196f3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                쪽지 테스트
-              </button>
-              <button
-                onClick={() => addTestToast(testNotifications[1])}
-                style={{
-                  background: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                근태 테스트
-              </button>
-              <button
-                onClick={() => addTestToast(testNotifications[2])}
-                style={{
-                  background: '#ff9800',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                전자결재 테스트
-              </button>
-            </div>
-
             {/* 알림함 버튼 */}
             <div
               className={styles.headerIcons}
