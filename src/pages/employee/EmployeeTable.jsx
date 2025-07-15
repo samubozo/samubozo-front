@@ -116,6 +116,30 @@ const EmployeeTable = () => {
     XLSX.writeFile(workbook, '직원정보.xlsx');
   };
 
+  const handleRetireSuccess = async (retiredId) => {
+    let url = `${API_BASE_URL}${HR}/user/list`;
+    let params = {};
+    if (!includeRetired) {
+      params.activate = 'Y';
+    }
+    const res = await axiosInstance.get(url, { params });
+    const list = res.data.result?.content || res.data.result || [];
+    const mapped = list.map((emp) => ({
+      id: emp.employeeNo,
+      name: emp.userName,
+      position: emp.positionName,
+      department: emp.department?.name || emp.department?.departmentName || '',
+      joinDate: emp.hireDate,
+      phone: emp.phone,
+      email: emp.email,
+      address: emp.address,
+      isRetired: emp.activate === 'N' ? 'Y' : 'N',
+    }));
+    setEmployees(mapped);
+    const idx = mapped.findIndex((emp) => emp.id === retiredId);
+    setSelectedRow(idx);
+  };
+
   return (
     <div className={styles.employeeWrapper}>
       <div className={styles.searchBox}>
@@ -264,7 +288,10 @@ const EmployeeTable = () => {
       </div>
       {/* 직원 상세정보: 행 클릭 시에만 노출 */}
       {selectedRow !== null && (
-        <EmployeeDetail selectedEmployee={employees[selectedRow]} />
+        <EmployeeDetail
+          selectedEmployee={employees[selectedRow]}
+          onRetireSuccess={handleRetireSuccess}
+        />
       )}
     </div>
   );
