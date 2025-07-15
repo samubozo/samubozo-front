@@ -139,29 +139,6 @@ export const attendanceService = {
     }
   },
 
-  // 근태 통계 조회 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)
-  getAttendanceStats: async (year, month) => {
-    try {
-      // 실제로는 백엔드 API를 호출해야 하지만, 현재 백엔드에 해당 API가 없으므로
-      // 프론트엔드에서 임시로 처리
-      return {
-        success: true,
-        result: {
-          totalWorkDays: 22,
-          presentDays: 20,
-          absentDays: 2,
-          lateDays: 1,
-          earlyLeaveDays: 0,
-          overtimeHours: 8.5,
-          vacationDays: 3,
-          remainingVacationDays: 9,
-        },
-      };
-    } catch (error) {
-      throw error;
-    }
-  },
-
   // 근태 기록 수정 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)
   updateAttendance: async (attendanceId, updateData) => {
     try {
@@ -208,6 +185,18 @@ export const attendanceService = {
         `${API_BASE_URL}${VACATION}/balance`,
       );
       return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 월별 개인 근태 통계 조회 (실제 백엔드 API)
+  getPersonalStats: async (year, month) => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${ATTENDANCE}/personal-stats/${year}/${month}`,
+      );
+      return response.data; // 실제 백엔드 응답 구조에 맞게 반환
     } catch (error) {
       throw error;
     }
