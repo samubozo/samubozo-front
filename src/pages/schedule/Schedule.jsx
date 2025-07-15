@@ -631,11 +631,30 @@ function Schedule() {
           </button>
           <button
             onClick={() => setShowEventModal(true)}
-            className={styles.addEventBtn}
+            className={`${styles.addEventBtn} ${categories.length === 0 ? styles.disabledBtn : ''}`}
+            disabled={categories.length === 0}
+            title={
+              categories.length === 0
+                ? '먼저 캘린더 카테고리를 생성해주세요.'
+                : '일정을 추가합니다.'
+            }
           >
             일정추가
           </button>
         </div>
+        {categories.length === 0 && (
+          <div className={styles.noCategoryMessage}>
+            <span>
+              ⚠️ 일정을 추가하려면 먼저 캘린더 카테고리를 생성해주세요.
+            </span>
+            <button
+              onClick={() => setShowCategoryModal('PERSONAL')}
+              className={styles.createCategoryBtn}
+            >
+              카테고리 생성하기
+            </button>
+          </div>
+        )}
         <table className={styles.calendarTable}>
           <thead>
             <tr>
@@ -1536,21 +1555,27 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
         </div>
         <div className={styles.modalField}>
           <label>캘린더</label>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(Number(e.target.value))}
-            disabled={categories.length === 0}
-          >
-            {categories.length === 0 ? (
-              <option value=''>등록된 캘린더가 없습니다</option>
-            ) : (
-              categories.map((cat) => (
+          {categories.length === 0 ? (
+            <div className={styles.noCategoryInModal}>
+              <select disabled>
+                <option value=''>등록된 캘린더가 없습니다</option>
+              </select>
+              <div className={styles.noCategoryWarning}>
+                ⚠️ 일정을 추가하려면 먼저 캘린더 카테고리를 생성해주세요.
+              </div>
+            </div>
+          ) : (
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(Number(e.target.value))}
+            >
+              {categories.map((cat) => (
                 <option value={cat.id} key={cat.id}>
                   {cat.name}
                 </option>
-              ))
-            )}
-          </select>
+              ))}
+            </select>
+          )}
         </div>
         <div className={styles.modalBtnRow}>
           <button

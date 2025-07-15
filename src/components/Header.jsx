@@ -290,6 +290,7 @@ const Header = ({ showChatbot }) => {
       eventSourceRef.current.close();
     }
     sessionStorage.clear();
+    localStorage.clear(); // localStorage도 모두 삭제
     window.location.href = '/';
   };
 

@@ -1309,4 +1309,5 @@ const Message = () => {
   );
 };
 
+export { MessageWriteModal };
 export default Message;
