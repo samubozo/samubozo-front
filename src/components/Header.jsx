@@ -156,6 +156,9 @@ const Header = ({ showChatbot }) => {
     }
   }
 
+  let sseRetryDelay = 3000; // 3초부터 시작
+  const SSE_MAX_RETRY_DELAY = 60000; // 최대 1분
+
   // SSE 구독 설정
   const setupSSE = () => {
     if (eventSourceRef.current) {
@@ -189,12 +192,51 @@ const Header = ({ showChatbot }) => {
       }
     };
 
-    eventSource.onerror = (error) => {
+    eventSource.onerror = async (error) => {
       console.error('SSE 연결 오류:', error);
-      // 연결이 끊어지면 3초 후 재연결 시도
+      // 401 등 인증 실패 시 직접 토큰 갱신 시도
+      if (eventSource.readyState === EventSource.CLOSED) {
+        const refreshToken = localStorage.getItem('REFRESH_TOKEN');
+        if (refreshToken) {
+          try {
+            const res = await axiosInstance.post(
+              `${API_BASE_URL}/auth-service/auth/refresh`,
+              { refreshToken },
+              { headers: { 'Content-Type': 'application/json' } },
+            );
+            const newAccessToken =
+              res.data.accessToken || res.data.result?.accessToken;
+            if (newAccessToken) {
+              sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
+              // 새 토큰으로 SSE 재연결
+              setupSSE();
+              return;
+            }
+          } catch (e) {
+            // 리프레시 실패 시 로그아웃 처리
+            sessionStorage.clear();
+            localStorage.removeItem('REFRESH_TOKEN');
+            window.location.href = '/login';
+            return;
+          }
+        } else {
+          // 리프레시 토큰 없음: 로그아웃
+          sessionStorage.clear();
+          localStorage.removeItem('REFRESH_TOKEN');
+          window.location.href = '/login';
+          return;
+        }
+      }
+      // 실패 시 재연결 딜레이 적용 (점진적 backoff)
       setTimeout(() => {
         setupSSE();
-      }, 3000);
+        sseRetryDelay = Math.min(sseRetryDelay * 2, SSE_MAX_RETRY_DELAY);
+      }, sseRetryDelay);
+    };
+
+    eventSource.onopen = () => {
+      // 연결 성공 시 딜레이 초기화
+      sseRetryDelay = 3000;
     };
 
     return () => {
