@@ -59,7 +59,13 @@ export const AuthContextProvider = (props) => {
         sessionStorage.setItem('USER_POSITION', userInfo.positionName || '');
         sessionStorage.setItem('USER_EMPLOYEE_NO', userInfo.employeeNo || '');
 
-        sessionStorage.setItem('USER_ROLE', userInfo.hrRole || '');
+        sessionStorage.setItem('USER_ROLE', userInfo.hrRole || 'N');
+        // 추가: 프로필 이미지와 입사일자
+        sessionStorage.setItem(
+          'USER_PROFILE_IMAGE',
+          userInfo.profileImage || '',
+        );
+        sessionStorage.setItem('USER_HIRE_DATE', userInfo.hireDate || '');
       }
     } catch (e) {
       console.error('유저 상세정보 조회 실패:', e);
@@ -111,6 +117,13 @@ export const AuthContextProvider = (props) => {
           email: sessionStorage.getItem('USER_EMAIL'),
           employeeNo: sessionStorage.getItem('USER_EMPLOYEE_NO'),
           hrRole: sessionStorage.getItem('USER_ROLE'),
+          userName: sessionStorage.getItem('USER_NAME'),
+          department: sessionStorage.getItem('USER_DEPARTMENT'),
+          departmentId: sessionStorage.getItem('USER_DEPARTMENT_ID'),
+          positionName: sessionStorage.getItem('USER_POSITION'),
+          // 추가: 프로필 이미지와 입사일자
+          profileImage: sessionStorage.getItem('USER_PROFILE_IMAGE'),
+          hireDate: sessionStorage.getItem('USER_HIRE_DATE'),
         },
       }}
     >

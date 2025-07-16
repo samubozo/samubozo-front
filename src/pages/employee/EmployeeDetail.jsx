@@ -70,7 +70,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         setDeptName(data.department?.departmentName || '');
         setPosition(data.positionId || '');
         setPositionName(data.positionName || '');
-        setStatus(data.activate === 'N' ? '퇴직' : '재직');
+        setStatus(data.activate || 'Y');
         setRole(data.hrRole === 'Y' ? 'Y' : 'N');
         setJoinDate(data.hireDate || '');
         setLeaveDate(data.retireDate || '');
@@ -314,7 +314,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       if (birthDate) formData.append('birthDate', birthDate);
       if (joinDate) formData.append('hireDate', joinDate);
       if (leaveDate) formData.append('retireDate', leaveDate);
-      formData.append('activate', status === '퇴직' ? 'N' : 'Y');
+      formData.append('activate', status); // status는 'Y' 또는 'N'이어야 함
       // 계좌 정보 등 추가 필요시 여기에
       formData.append('bankName', bankName);
       formData.append('accountNumber', accountNumber);
@@ -348,7 +348,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         setDeptName(data.department?.departmentName || '');
         setPosition(data.positionId || '');
         setPositionName(data.positionName || '');
-        setStatus(data.activate === 'N' ? '퇴직' : '재직');
+        setStatus(data.activate || 'Y');
         setRole(data.hrRole === 'Y' ? 'Y' : 'N');
         setJoinDate(data.hireDate || '');
         setLeaveDate(data.retireDate || '');
@@ -489,7 +489,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
       );
       const data = res.data.result;
-      setStatus('퇴직'); // 재직구분을 명시적으로 '퇴직'으로
+      setStatus(data.activate || 'N');
       setLeaveDate(data.retireDate || '');
       // 필요시 다른 상태도 갱신
       // 퇴사자 등록 후 증명서 리스트도 새로고침
@@ -498,11 +498,14 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       );
       setCertList(certRes.data.result?.content || []);
       // 퇴사자 등록 후 리스트 새로고침
-      if (typeof onRetireSuccess === 'function') onRetireSuccess();
+      if (typeof onRetireSuccess === 'function')
+        onRetireSuccess(selectedEmployee.id); // id 명시적 전달
     } catch (e) {
       alert('퇴사자 등록에 실패했습니다.');
     }
   };
+
+  const isRetired = status === 'N'; // activate === 'N'이면 true
 
   return (
     <div className={styles.employeeDetailWrap}>
@@ -1055,9 +1058,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
+                    disabled={status === 'N'}
                   >
-                    <option>재직</option>
-                    <option>퇴직</option>
+                    <option value='Y'>재직</option>
+                    <option value='N'>퇴직</option>
                   </select>
                 </td>
                 <td className={styles.tableLabel}>역할</td>
@@ -1106,11 +1110,17 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
             <button className={styles.excel} onClick={handlePrint}>
               상세 정보 출력
             </button>
-            <button className={styles.leave} onClick={handleRetire}>
-              퇴사자 등록
+            <button
+              className={styles.leave}
+              onClick={handleRetire}
+              disabled={isRetired}
+              style={
+                isRetired ? { background: '#ccc', cursor: 'not-allowed' } : {}
+              }
+            >
+              {isRetired ? '퇴사처리 완료' : '퇴사자 등록'}
             </button>
             <div className={styles.rightBtns}>
-              <button className={styles.delete}>삭제</button>
               <button
                 className={styles.save}
                 onClick={handleSave}
