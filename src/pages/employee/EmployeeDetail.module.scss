@@ -502,6 +502,45 @@
   }
 }
 
+// ---- 수정모드 셀렉트/인풋 공통 스타일 ----
+.editRowSelect,
+.editRowInput,
+.editRowInput.purpose {
+  height: 40px !important;
+  border: 1.5px solid #ccc !important; // 더 연하게
+  border-radius: 7px;
+  font-size: 15px;
+  background: #fff;
+  box-shadow: none;
+  outline: none;
+  padding: 4px 12px;
+  // 폰트나 패딩은 필요에 따라 맞춰줘
+}
+
+// 용도(인풋)만 추가로 너비 넓힘
+.editRowInput.purpose {
+  min-width: 100px !important;
+  width: 260px !important;
+}
+
+// ---- 저장/취소 버튼 ----
+.editRowBtn {
+  min-width: 58px;
+  height: 38px;
+  border: none !important; // 테두리 완전 제거
+  background: #f5f5f5;
+  color: #222;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 500;
+  margin-right: 0; // gap 사용하니까 margin은 의미 없음
+  box-shadow: none;
+  transition: background 0.14s;
+  &:hover {
+    background: #e0e0e0;
+  }
+}
+
 /* --- 인쇄 전용 스타일 --- */
 @media print {
   body * {
@@ -572,8 +611,9 @@
   margin-bottom: 24px;
   overflow-x: auto;
   box-shadow: 0 2px 12px rgba(30, 80, 80, 0.07);
-  max-height: 200px;
+  max-height: 350px;
   overflow-y: auto;
+  position: relative; // sticky header를 위해 추가
 }
 .certListTable {
   width: 100%;
@@ -590,15 +630,13 @@
   text-align: center;
   font-size: 15px;
   background: #fff;
+  height: 30px;
 }
 .certListTable th {
+  position: sticky;
+  top: 0;
   background: #f5f5f5;
-  font-weight: 700;
-  color: #222;
-  font-size: 16px;
-  letter-spacing: 0.02em;
-  border-bottom: 2px solid #d0d0d0;
-  height: 40px;
+  z-index: 2;
 }
 .certListTable td {
   height: 32px;
@@ -727,4 +765,90 @@
   background: #48b96c;
   color: #fff;
   border: none;
+}
+.certListTable .editRowBtn {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  min-width: 48px;
+  margin-right: 4px;
+  height: 28px;
+}
+.certListTable .editRowBtn:last-child {
+  margin-right: 0;
+}
+.certListTable .editRowSelect {
+  font-size: 15px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  min-width: 120px;
+  height: 34px;
+}
+.certListTable .editRowInput {
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 5px;
+  min-width: 120px;
+  height: 34px;
+}
+.certListTable .editRowInput.date {
+  height: 44px;
+  width: 180px;
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 5px;
+}
+.certListTable .editRowInput.purpose {
+  height: 44px;
+  width: 260px;
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 5px;
+}
+.certListTable .editRowSelect,
+.certListTable .editRowInput,
+.certListTable .editRowInput.date,
+.certListTable .editRowInput.purpose {
+  height: 44px;
+  width: 260px;
+  min-width: 0;
+  font-size: 15px;
+  padding: 4px 34px 4px 12px;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+.certListTable .editRowSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #fff
+    url('data:image/svg+xml;utf8,<svg fill="%23444" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')
+    no-repeat right 12px center/18px 18px;
+  padding-right: 34px;
+  cursor: pointer;
+}
+
+.editCertCell {
+  height: 40px;
+  width: 100%;
+  min-width: 0;
+  font-size: 15px;
+  padding: 4px 34px 4px 12px;
+  border-radius: 5px;
+  box-sizing: border-box;
+  border: 1.5px solid #cfd8dc;
+  background: #fff;
+}
+.editCertCell.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #fff
+    url('data:image/svg+xml;utf8,<svg fill="%23444" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')
+    no-repeat right 12px center/18px 18px;
+  padding-right: 34px;
+  cursor: pointer;
+}
+.editCertCellDate {
+  width: 200px;
 }
