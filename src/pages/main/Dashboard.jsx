@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import styles from './Dashboard.module.scss'; // styles import
 import { attendanceService } from '../../services/attendanceService';
+import AuthContext from '../../context/UserContext';
 
 import {
   PieChart,
@@ -199,8 +200,9 @@ function DashboardStats({ refresh }) {
 }
 
 // 대시보드 오른쪽 영역: 사용자 프로필 및 출근표를 보여주는 컴포넌트
+// 1. 안전한 초기값
 function DashboardProfile({ onAttendanceChange }) {
-  // 1. 안전한 초기값
+  const { user } = useContext(AuthContext);
   const [attendanceData, setAttendanceData] = useState({
     checkInTime: null,
     checkOutTime: null,
@@ -333,30 +335,48 @@ function DashboardProfile({ onAttendanceChange }) {
       <div className={styles.profileUpper}>
         {/* 프로필 이미지 영역 */}
         <div className={styles.profileImgbox}>
-          <div className={styles.profileImgLabel}>Profile</div>
-          <div className={styles.profileImg}></div>{' '}
-          {/* 실제 이미지 삽입 가능 */}
+          {user?.profileImage ? (
+            <img
+              className={styles.profileImg}
+              src={user.profileImage}
+              alt='프로필'
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '10px',
+                display: 'block',
+              }}
+            />
+          ) : (
+            <div className={styles.profileImg}></div>
+          )}
         </div>
         {/* 프로필 정보 영역 */}
         <div className={styles.profileInfo}>
           <div className={styles.profileTitle}>
-            신현국 팀장<span className={styles.profileTeam}>(경영지원)</span>
+            {user?.userName || '-'} {user?.positionName || ''}
+            <span className={styles.profileTeam}>
+              ({user?.department || ''})
+            </span>
           </div>
           <hr /> {/* 구분선 */}
           <ul>
             <li>
               <span className={styles.profilePin} />
               입사일
-              <span className={styles.profileValue}>2025-06-20</span>
+              <span className={styles.profileValue}>
+                {user?.hireDate || '-'}
+              </span>
             </li>
             <li>
               <span className={styles.profilePin} />
-              연차 수<span className={styles.profileValue}>10개</span>
+              연차 수<span className={styles.profileValue}>0개</span>
             </li>
             <li>
               <span className={styles.profilePin} />
               연차 요청수
-              <span className={styles.profileValue}>1개</span>
+              <span className={styles.profileValue}>0개</span>
             </li>
           </ul>
         </div>

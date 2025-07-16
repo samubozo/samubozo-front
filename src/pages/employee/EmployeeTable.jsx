@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './EmployeeTable.module.scss';
 import EmployeeDetail from './EmployeeDetail';
 import * as XLSX from 'xlsx';
@@ -39,47 +39,67 @@ const EmployeeTable = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
+  const tableWrapRef = useRef(null);
 
-  // 직원 리스트 불러오기
+  // 직원 리스트 불러오기 (페이지네이션)
   const fetchEmployees = async (
+    pageNum = 0,
     search = '',
     searchType = '성명',
     includeRetiredOpt = false,
+    append = false,
   ) => {
     setLoading(true);
     setError(null);
     try {
       let url = `${API_BASE_URL}${HR}/user/list`;
-      let params = {};
+      let params = { page: pageNum, size: 10 };
       if (search) {
         url = `${API_BASE_URL}${HR}/users/search`;
-        params =
-          searchType === '성명'
+        params = {
+          ...(searchType === '성명'
             ? { userName: search }
-            : { departmentName: search };
-      }
-      // 퇴직자 포함 옵션 처리 (isRetired: 'Y' or 'N' or 전체)
-      if (!includeRetiredOpt) {
-        params.activate = 'Y';
+            : { departmentName: search }),
+          page: pageNum,
+          size: 10,
+        };
+        if (!includeRetiredOpt) {
+          params.activate = 'Y';
+        }
       }
       const res = await axiosInstance.get(url, { params });
       // /user/list는 페이징, /users/search는 전체 리스트 반환
       const list = res.data.result?.content || res.data.result || [];
-      setEmployees(
-        list.map((emp) => ({
-          id: emp.employeeNo,
-          name: emp.userName,
-          position: emp.positionName,
-          department:
-            emp.department?.name || emp.department?.departmentName || '',
-          joinDate: emp.hireDate,
-          phone: emp.phone,
-          email: emp.email,
-          address: emp.address,
-          isRetired: emp.activate === 'N' ? 'Y' : 'N',
-        })),
-      );
+      let filtered = list;
+      if (search) {
+        if (!includeRetiredOpt) {
+          filtered = list.filter((emp) => emp.activate === 'Y');
+        }
+      }
+      const mapped = filtered.map((emp) => ({
+        id: emp.employeeNo,
+        name: emp.userName,
+        position: emp.positionName,
+        department:
+          emp.department?.name || emp.department?.departmentName || '',
+        joinDate: emp.hireDate,
+        phone: emp.phone,
+        email: emp.email,
+        address: emp.address,
+        isRetired: emp.activate === 'Y' ? 'Y' : 'N',
+      }));
+      setEmployees((prev) => (append ? [...prev, ...mapped] : mapped));
+      // hasMore 계산 (페이지네이션 정보가 있으면 활용)
+      const totalPages = res.data.result?.totalPages;
+      if (typeof totalPages === 'number') {
+        setHasMore(pageNum + 1 < totalPages);
+      } else {
+        setHasMore(mapped.length === 10); // fallback
+      }
     } catch (err) {
       setError('직원 정보를 불러오지 못했습니다.');
     } finally {
@@ -87,19 +107,46 @@ const EmployeeTable = () => {
     }
   };
 
+  // 최초 마운트 시 전체 리스트만 불러오기
   useEffect(() => {
-    fetchEmployees();
+    setEmployees([]);
+    setPage(0);
+    setHasMore(true);
+    fetchEmployees(0);
+    // eslint-disable-next-line
   }, []);
 
-  // 검색/필터 변경 시 서버에서 다시 불러오기
-  useEffect(() => {
-    fetchEmployees(searchTerm, dropdownValue, includeRetired);
-    setSelectedRow(null);
-  }, [searchTerm, dropdownValue, includeRetired]);
-
+  // 검색/필터 변경 시 employees 초기화 및 첫 페이지부터 다시 로드
   const handleSearch = () => {
-    fetchEmployees(searchTerm, dropdownValue, includeRetired);
+    setIsSearching(true);
+    setEmployees([]);
+    setPage(0);
+    setHasMore(true);
+    fetchEmployees(0, searchTerm, dropdownValue, includeRetired, false);
+    setSelectedRow(null);
+    setIsSearching(false);
   };
+
+  // 무한스크롤: 스크롤 하단 도달 시 다음 페이지 불러오기
+  const handleScroll = () => {
+    if (!hasMore || loading || isSearching) return;
+    const el = tableWrapRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+      // 다음 페이지 불러오기
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchEmployees(nextPage, searchTerm, dropdownValue, includeRetired, true);
+    }
+  };
+
+  useEffect(() => {
+    const el = tableWrapRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line
+  }, [employees, hasMore, loading, isSearching]);
 
   const handleExcelDownload = () => {
     const mappedData = employees.map((emp) => {
@@ -114,6 +161,17 @@ const EmployeeTable = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '직원정보');
     XLSX.writeFile(workbook, '직원정보.xlsx');
+  };
+
+  const handleRetireSuccess = async (retiredId) => {
+    setEmployees([]);
+    setPage(0);
+    setHasMore(true);
+    await fetchEmployees(0, searchTerm, dropdownValue, includeRetired, false);
+    const idx = employees.findIndex(
+      (emp) => String(emp.id) === String(retiredId),
+    );
+    setSelectedRow(idx >= 0 ? idx : null);
   };
 
   return (
@@ -208,7 +266,7 @@ const EmployeeTable = () => {
           Excel 다운로드
         </button>
       </div>
-      <div className={styles.tableWrap}>
+      <div className={styles.tableWrap} ref={tableWrapRef}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -220,7 +278,7 @@ const EmployeeTable = () => {
               <th>핸드폰</th>
               <th>회사이메일</th>
               <th>주소</th>
-              <th>퇴사</th>
+              <th>재직</th>
             </tr>
           </thead>
           <tbody>
@@ -264,7 +322,10 @@ const EmployeeTable = () => {
       </div>
       {/* 직원 상세정보: 행 클릭 시에만 노출 */}
       {selectedRow !== null && (
-        <EmployeeDetail selectedEmployee={employees[selectedRow]} />
+        <EmployeeDetail
+          selectedEmployee={employees[selectedRow]}
+          onRetireSuccess={handleRetireSuccess}
+        />
       )}
     </div>
   );
