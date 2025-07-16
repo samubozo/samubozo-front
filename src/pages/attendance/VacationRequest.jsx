@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import styles from './VacationRequest.module.scss';
-import { attendanceService } from '../../services/attendanceService';
+import { approvalService } from '../../services/approvalService';
+import AuthContext from '../../context/UserContext';
 
 const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -25,43 +26,49 @@ function toInputDate(str) {
 
 const VacationRequest = ({ onClose }) => {
   const [requestDate, setRequestDate] = useState(todayStr);
-  const [type, setType] = useState('연차');
-  const [halfType, setHalfType] = useState('AM'); // 반차일 때 오전/오후
+  // 휴가 유형을 Enum 값으로 관리
+  const [vacationType, setVacationType] = useState('ANNUAL_LEAVE');
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(todayStr);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 휴가 유형 매핑
-  const getVacationType = () => {
-    if (type === '연차') return 'ANNUAL_LEAVE';
-    if (type === '반차')
-      return halfType === 'AM' ? 'AM_HALF_DAY' : 'PM_HALF_DAY';
-    return 'ANNUAL_LEAVE';
-  };
+  const authCtx = useContext(AuthContext);
+  const applicantId = authCtx?.user?.employeeNo || null;
 
   // 신청 일수 계산
-  const days =
-    type === '반차'
-      ? 0.5
-      : startDate && endDate
-        ? getDateDiff(startDate, endDate)
-        : 0;
+  let days = 0;
+  if (vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY') {
+    days = 0.5;
+  } else if (startDate && endDate) {
+    days = getDateDiff(startDate, endDate);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const vacationType = getVacationType();
       // 반차는 startDate, endDate 동일하게
-      const reqStart = type === '반차' ? startDate : startDate;
-      const reqEnd = type === '반차' ? startDate : endDate;
-      await attendanceService.requestVacation({
+      const reqStart =
+        vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
+          ? startDate
+          : startDate;
+      const reqEnd =
+        vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
+          ? startDate
+          : endDate;
+      const payload = {
+        requestType: 'VACATION',
+        applicantId: applicantId ? Number(applicantId) : null,
+        reason,
+        vacationsId: null,
         vacationType,
+        certificatesId: null,
         startDate: reqStart,
         endDate: reqEnd,
-        reason,
-      });
+      };
+      console.log('휴가신청 payload', payload);
+      await approvalService.requestVacation(payload);
       alert('휴가 신청이 완료되었습니다.');
       if (onClose) onClose();
     } catch (err) {
@@ -80,6 +87,7 @@ const VacationRequest = ({ onClose }) => {
           <label>휴가 신청일</label>
           <input
             type='date'
+            min={todayStr}
             value={requestDate}
             onChange={(e) => setRequestDate(e.target.value)}
             required
@@ -88,19 +96,14 @@ const VacationRequest = ({ onClose }) => {
         {/* 휴가 유형 */}
         <div className={styles.row}>
           <label>휴가 유형</label>
-          <select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value='연차'>연차</option>
-            <option value='반차'>반차</option>
+          <select
+            value={vacationType}
+            onChange={(e) => setVacationType(e.target.value)}
+          >
+            <option value='ANNUAL_LEAVE'>연차</option>
+            <option value='AM_HALF_DAY'>반차(오전)</option>
+            <option value='PM_HALF_DAY'>반차(오후)</option>
           </select>
-          {type === '반차' && (
-            <select
-              value={halfType}
-              onChange={(e) => setHalfType(e.target.value)}
-            >
-              <option value='AM'>오전</option>
-              <option value='PM'>오후</option>
-            </select>
-          )}
         </div>
         {/* 휴가 기간 */}
         <div className={styles.row}>
@@ -108,16 +111,18 @@ const VacationRequest = ({ onClose }) => {
           <input
             type='date'
             className={styles.periodInput}
+            min={todayStr}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             required
           />
-          {type === '연차' && (
+          {vacationType === 'ANNUAL_LEAVE' && (
             <>
               <span className={styles.periodTilde}>~</span>
               <input
                 type='date'
                 className={styles.periodInput}
+                min={startDate}
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 required

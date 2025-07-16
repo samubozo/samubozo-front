@@ -533,6 +533,101 @@ export default function AttendanceDashboard() {
                 </div>
               </div>
             )}
+            {/* 연차 사용법 안내 */}
+            <div
+              style={{
+                marginTop: '10px',
+                paddingTop: '10px',
+                borderTop: '1px solid #e9ecef',
+                fontSize: '0.8em',
+                color: '#666',
+                lineHeight: '1.4',
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: '600',
+                  marginBottom: '6px',
+                  color: '#388e3c',
+                  fontSize: '0.9em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span style={{ fontSize: '0.8em' }}>📋</span>
+                연차 사용법
+              </div>
+              <ul
+                style={{
+                  margin: '0',
+                  padding: '0',
+                  fontSize: '0.85em',
+                  listStyle: 'none',
+                }}
+              >
+                <li
+                  style={{
+                    marginBottom: '3px',
+                    paddingLeft: '16px',
+                    position: 'relative',
+                    color: '#5a5a5a',
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '0',
+                      color: '#4caf50',
+                      fontSize: '0.7em',
+                    }}
+                  >
+                    ●
+                  </span>
+                  연차는 1일 단위로 사용 가능합니다.
+                </li>
+                <li
+                  style={{
+                    marginBottom: '3px',
+                    paddingLeft: '16px',
+                    position: 'relative',
+                    color: '#5a5a5a',
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '0',
+                      color: '#4caf50',
+                      fontSize: '0.7em',
+                    }}
+                  >
+                    ●
+                  </span>
+                  반차는 오전/오후로 나누어 사용 가능합니다.
+                </li>
+                <li
+                  style={{
+                    marginBottom: '3px',
+                    paddingLeft: '16px',
+                    position: 'relative',
+                    color: '#5a5a5a',
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '0',
+                      color: '#4caf50',
+                      fontSize: '0.7em',
+                    }}
+                  >
+                    ●
+                  </span>
+                  연차 신청은 최소 1일 전에 해주세요.
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className={`${styles.card} ${styles.requestCard}`}>
@@ -672,9 +767,16 @@ export default function AttendanceDashboard() {
       </div>
 
       {/* 휴가신청 모달 */}
-      <Modal open={showVacation} onClose={closeModal}>
-        <VacationRequest onClose={closeModal} />
-      </Modal>
+      {showVacation && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <button className={styles.modalClose} onClick={closeModal}>
+              ×
+            </button>
+            <VacationRequest onClose={closeModal} />
+          </div>
+        </div>
+      )}
       {/* 부재등록 모달 */}
       <AbsenceRegistrationModal
         open={showAbsence}

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styles from './AbsenceRegistrationModal.module.scss';
 
+const todayStr = new Date().toISOString().slice(0, 10);
+
 const absenceTypes = [
   { value: '출장', label: '출장' },
   { value: '연수', label: '연수' },
@@ -12,8 +14,8 @@ const absenceTypes = [
 
 const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   const [type, setType] = useState('출장');
-  const [startDate, setStartDate] = useState('2025-06-20');
-  const [endDate, setEndDate] = useState('2025-06-20');
+  const [startDate, setStartDate] = useState(todayStr);
+  const [endDate, setEndDate] = useState(todayStr);
   const [time, setTime] = useState('09:00');
   const [reason, setReason] = useState('');
 
@@ -44,12 +46,14 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
             <label>날짜 선택</label>
             <input
               type='date'
+              min={todayStr}
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
             <span>~</span>
             <input
               type='date'
+              min={startDate}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
