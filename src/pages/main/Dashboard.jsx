@@ -15,19 +15,100 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// 통계 데이터를 정의합니다. 실제 애플리케이션에서는 API를 통해 가져올 수 있습니다.
-const stats = [
-  { label: '출근', count: 70, percent: 58.3, total: 261, color: '#66be80' },
-  { label: '지각', count: 5, percent: 12, total: 261, color: '#f7b731' },
-  { label: '외출', count: 12, percent: 30.6, total: 261, color: '#eb3b5a' },
-  { label: '반차', count: 4, percent: 42, total: 261, color: '#4b7bec' },
-  { label: '연차', count: 2, percent: 3, total: 261, color: '#8854d0' },
-];
-
 // 대시보드 왼쪽 영역: 통계 현황을 보여주는 컴포넌트
-function DashboardStats() {
+function DashboardStats({ refresh }) {
   const barRefs = useRef([]);
   const countRefs = useRef([]);
+  const [stats, setStats] = useState([
+    { label: '출근', count: 0, percent: 0, total: 0, color: '#66be80' },
+    { label: '지각', count: 0, percent: 0, total: 0, color: '#f7b731' },
+    { label: '외출', count: 0, percent: 0, total: 0, color: '#eb3b5a' },
+    { label: '반차', count: 0, percent: 0, total: 0, color: '#4b7bec' },
+    { label: '연차', count: 0, percent: 0, total: 0, color: '#8854d0' },
+  ]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      try {
+        const res = await attendanceService.getPersonalStats(year, month);
+        const d = res.result;
+        console.log('API result:', d); // ← 실제 값 확인
+        // total은 모든 카운트의 합
+        const total =
+          (d.attendanceCount || 0) +
+          (d.lateCount || 0) +
+          (d.goOutCount || 0) +
+          (d.halfDayVacationCount || 0) +
+          (d.fullDayVacationCount || 0);
+        setStats([
+          {
+            label: '출근',
+            count: d.attendanceCount || 0,
+            percent: total
+              ? (((d.attendanceCount || 0) / total) * 100).toFixed(1)
+              : 0,
+            total,
+            color: '#66be80',
+          },
+          {
+            label: '지각',
+            count: d.lateCount || 0,
+            percent: total
+              ? (((d.lateCount || 0) / total) * 100).toFixed(1)
+              : 0,
+            total,
+            color: '#f7b731',
+          },
+          {
+            label: '외출',
+            count: d.goOutCount || 0,
+            percent: total
+              ? (((d.goOutCount || 0) / total) * 100).toFixed(1)
+              : 0,
+            total,
+            color: '#eb3b5a',
+          },
+          {
+            label: '반차',
+            count: d.halfDayVacationCount || 0,
+            percent: total
+              ? (((d.halfDayVacationCount || 0) / total) * 100).toFixed(1)
+              : 0,
+            total,
+            color: '#4b7bec',
+          },
+          {
+            label: '연차',
+            count: d.fullDayVacationCount || 0,
+            percent: total
+              ? (((d.fullDayVacationCount || 0) / total) * 100).toFixed(1)
+              : 0,
+            total,
+            color: '#8854d0',
+          },
+        ]);
+        console.log('setStats:', [
+          d.attendanceCount || 0,
+          d.lateCount || 0,
+          d.goOutCount || 0,
+          d.halfDayVacationCount || 0,
+          d.fullDayVacationCount || 0,
+        ]);
+      } catch (e) {
+        setStats([
+          { label: '출근', count: 0, percent: 0, total: 0, color: '#66be80' },
+          { label: '지각', count: 0, percent: 0, total: 0, color: '#f7b731' },
+          { label: '외출', count: 0, percent: 0, total: 0, color: '#eb3b5a' },
+          { label: '반차', count: 0, percent: 0, total: 0, color: '#4b7bec' },
+          { label: '연차', count: 0, percent: 0, total: 0, color: '#8854d0' },
+        ]);
+      }
+    };
+    fetchStats();
+  }, [refresh]);
 
   useEffect(() => {
     // 게이지 애니메이션
@@ -77,7 +158,7 @@ function DashboardStats() {
         requestAnimationFrame(animateCount);
       }
     });
-  }, []);
+  }, [stats]);
 
   return (
     <div className={styles.dashboardStats}>
@@ -119,7 +200,8 @@ function DashboardStats() {
 }
 
 // 대시보드 오른쪽 영역: 사용자 프로필 및 출근표를 보여주는 컴포넌트
-function DashboardProfile() {
+// 1. 안전한 초기값
+function DashboardProfile({ onAttendanceChange }) {
   const { user } = useContext(AuthContext);
   const [attendanceData, setAttendanceData] = useState({
     checkInTime: null,
@@ -153,78 +235,78 @@ function DashboardProfile() {
     return () => clearInterval(timer);
   }, []);
 
-  // 오늘의 출근 데이터 가져오기
+  // 2. useEffect에서 오늘 근태 기록만으로 상태 갱신
   useEffect(() => {
     const fetchTodayAttendance = async () => {
-      setIsLoading(true);
-      try {
-        // 백엔드에서 오늘의 출근 데이터 가져오기
-        const response = await attendanceService.getTodayAttendance();
-
-        if (response.success && response.result) {
-          setAttendanceData({
-            checkInTime: response.result.checkInTime,
-            checkOutTime: response.result.checkOutTime,
-            goOutTime: response.result.goOutTime,
-            returnTime: response.result.returnTime,
-          });
-        }
-      } catch (error) {
-        console.error('오늘의 출근 데이터 조회 실패:', error);
-        // 에러 시 sessionStorage에서 가져오기 (fallback)
-        const todayCheckIn = sessionStorage.getItem('TODAY_CHECK_IN');
-        const todayCheckOut = sessionStorage.getItem('TODAY_CHECK_OUT');
-        const todayGoOut = sessionStorage.getItem('TODAY_GO_OUT');
-        const todayReturn = sessionStorage.getItem('TODAY_RETURN');
-
-        setAttendanceData({
-          checkInTime: todayCheckIn,
-          checkOutTime: todayCheckOut,
-          goOutTime: todayGoOut,
-          returnTime: todayReturn,
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      const response = await attendanceService.getTodayAttendance();
+      setAttendanceData({
+        checkInTime: response.checkInTime,
+        checkOutTime: response.checkOutTime,
+        goOutTime: response.goOutTime,
+        returnTime: response.returnTime,
+      });
     };
-
     fetchTodayAttendance();
   }, []);
+
+  // 3. 근태 관련 버튼 클릭 시 핸들러 예시 (실제 버튼에 연결 필요)
+  const handleCheckIn = async () => {
+    await attendanceService.checkIn();
+    await fetchTodayAttendance();
+    if (onAttendanceChange) onAttendanceChange();
+  };
+  const handleGoOut = async () => {
+    await attendanceService.goOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+    if (onAttendanceChange) onAttendanceChange();
+  };
+  const handleReturn = async () => {
+    await attendanceService.returnFromOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+    if (onAttendanceChange) onAttendanceChange();
+  };
+  const handleCheckOut = async () => {
+    await attendanceService.checkOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+    if (onAttendanceChange) onAttendanceChange();
+  };
 
   // 시간 포맷팅 함수
   const formatTime = (time) => {
     if (!time) return '00:00';
-
-    // Date 객체인 경우
-    if (time instanceof Date) {
-      return time.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-    }
-
-    // 문자열인 경우 (ISO 형식 등)
-    if (typeof time === 'string') {
-      try {
-        const date = new Date(time);
-        if (!isNaN(date.getTime())) {
-          return date.toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          });
-        }
-        // 이미 HH:mm 형식인 경우
-        if (time.match(/^\d{2}:\d{2}$/)) {
-          return time;
-        }
-      } catch (e) {
-        // 파싱 실패 시 원본 반환
-        return time;
+    // ISO 문자열(2025-07-15T00:25:53.616548 등) → 'HH:mm'으로 변환
+    if (typeof time === 'string' && time.includes('T')) {
+      const date = new Date(time);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
       }
     }
-
+    // 이미 HH:mm 형식이면 그대로 반환
+    if (typeof time === 'string' && time.match(/^\d{2}:\d{2}$/)) {
+      return time;
+    }
     return '00:00';
   };
 
@@ -244,6 +326,9 @@ function DashboardProfile() {
   };
 
   const statusInfo = getAttendanceStatus();
+
+  // 렌더링 직전 attendanceData 값 로그
+  console.log('attendanceData:', attendanceData);
 
   return (
     <div className={styles.dashboardProfile}>
@@ -379,10 +464,13 @@ function DashboardProfile() {
 
 // 메인 대시보드 컨테이너: DashboardStats와 DashboardProfile을 나란히 배치
 export default function Dashboard() {
+  const [refreshStats, setRefreshStats] = useState(0);
   return (
     <div className={styles.dashboardMain}>
-      <DashboardStats />
-      <DashboardProfile />
+      <DashboardStats refresh={refreshStats} />
+      <DashboardProfile
+        onAttendanceChange={() => setRefreshStats((v) => v + 1)}
+      />
     </div>
   );
 }

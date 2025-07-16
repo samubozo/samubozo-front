@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Approval.module.scss';
 import { useLocation } from 'react-router-dom';
+import { approvalService } from '../../services/approvalService';
+import ToastNotification from '../../components/ToastNotification';
 
 // 독립 컴포넌트: Tab
 function ApprovalTabs({ tab, setTab }) {
@@ -92,8 +94,8 @@ function ApprovalTable({ columns, data, selected, setSelected }) {
         </tr>
       </thead>
       <tbody>
-        {data.map((row) => (
-          <tr key={row.id}>
+        {data.map((row, idx) => (
+          <tr key={row.id ?? idx}>
             <td>
               <input
                 type='checkbox'
@@ -130,6 +132,7 @@ function Approval() {
   const [selected, setSelected] = useState([]);
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const [toast, setToast] = useState(null);
 
   // 필터/탭 변경 시 page를 1로 리셋
   useEffect(() => {
@@ -208,410 +211,54 @@ function Approval() {
     { key: 'processer', label: '처리일자' },
     { key: 'status', label: '상태' },
   ];
-  const leaveData = [
-    {
-      id: 1,
-      type: '연차',
-      reason: '개인사유',
-      applicant: '신현국',
-      applyDate: '2025.06.20',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 2,
-      type: '반차',
-      reason: '병원',
-      applicant: '홍길동',
-      applyDate: '2025.06.19',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 3,
-      type: '연차',
-      reason: '가족여행',
-      applicant: '김철수',
-      applyDate: '2025.06.18',
-      approver: '인사담당자',
-      processer: '2025.06.18',
-      status: '승인',
-    },
-    {
-      id: 4,
-      type: '반차',
-      reason: '치과',
-      applicant: '이영희',
-      applyDate: '2025.06.17',
-      approver: '인사담당자',
-      processer: '2025.06.17',
-      status: '승인',
-    },
-    {
-      id: 5,
-      type: '연차',
-      reason: '개인휴식',
-      applicant: '박민수',
-      applyDate: '2025.06.16',
-      approver: '인사담당자',
-      processer: '2025.06.16',
-      status: '반려',
-    },
-    {
-      id: 6,
-      type: '반차',
-      reason: '약속',
-      applicant: '최지영',
-      applyDate: '2025.06.15',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 7,
-      type: '연차',
-      reason: '가족행사',
-      applicant: '정수진',
-      applyDate: '2025.06.14',
-      approver: '인사담당자',
-      processer: '2025.06.14',
-      status: '승인',
-    },
-    {
-      id: 8,
-      type: '반차',
-      reason: '병원진료',
-      applicant: '한미영',
-      applyDate: '2025.06.13',
-      approver: '인사담당자',
-      processer: '2025.06.13',
-      status: '승인',
-    },
-    {
-      id: 9,
-      type: '연차',
-      reason: '개인휴식',
-      applicant: '송태호',
-      applyDate: '2025.06.12',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 10,
-      type: '반차',
-      reason: '약속',
-      applicant: '윤서연',
-      applyDate: '2025.06.11',
-      approver: '인사담당자',
-      processer: '2025.06.11',
-      status: '승인',
-    },
-    {
-      id: 11,
-      type: '연차',
-      reason: '가족여행',
-      applicant: '임동현',
-      applyDate: '2025.06.10',
-      approver: '인사담당자',
-      processer: '2025.06.10',
-      status: '승인',
-    },
-    {
-      id: 12,
-      type: '반차',
-      reason: '치과',
-      applicant: '강지은',
-      applyDate: '2025.06.09',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 13,
-      type: '연차',
-      reason: '개인사유',
-      applicant: '조현우',
-      applyDate: '2025.06.08',
-      approver: '인사담당자',
-      processer: '2025.06.08',
-      status: '반려',
-    },
-    {
-      id: 14,
-      type: '반차',
-      reason: '병원',
-      applicant: '백서진',
-      applyDate: '2025.06.07',
-      approver: '인사담당자',
-      processer: '2025.06.07',
-      status: '승인',
-    },
-    {
-      id: 15,
-      type: '연차',
-      reason: '가족행사',
-      applicant: '남궁민',
-      applyDate: '2025.06.06',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 16,
-      type: '반차',
-      reason: '약속',
-      applicant: '차은우',
-      applyDate: '2025.06.05',
-      approver: '인사담당자',
-      processer: '2025.06.05',
-      status: '승인',
-    },
-    {
-      id: 17,
-      type: '연차',
-      reason: '개인휴식',
-      applicant: '오승우',
-      applyDate: '2025.06.04',
-      approver: '인사담당자',
-      processer: '2025.06.04',
-      status: '승인',
-    },
-    {
-      id: 18,
-      type: '반차',
-      reason: '치과',
-      applicant: '전지현',
-      applyDate: '2025.06.03',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 19,
-      type: '연차',
-      reason: '가족여행',
-      applicant: '김태희',
-      applyDate: '2025.06.02',
-      approver: '인사담당자',
-      processer: '2025.06.02',
-      status: '승인',
-    },
-    {
-      id: 20,
-      type: '반차',
-      reason: '병원진료',
-      applicant: '원빈',
-      applyDate: '2025.06.01',
-      approver: '인사담당자',
-      processer: '2025.06.01',
-      status: '승인',
-    },
-  ];
-  const certData = [
-    {
-      id: 1,
-      type: '재직',
-      purpose: '은행제출',
-      applicant: '신현국',
-      applyDate: '2025.06.20',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 2,
-      type: '경력',
-      purpose: '이직',
-      applicant: '홍길동',
-      applyDate: '2025.06.19',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 3,
-      type: '재직',
-      purpose: '대출신청',
-      applicant: '김철수',
-      applyDate: '2025.06.18',
-      approver: '인사담당자',
-      processer: '2025.06.18',
-      status: '승인',
-    },
-    {
-      id: 4,
-      type: '퇴직',
-      purpose: '퇴직금',
-      applicant: '이영희',
-      applyDate: '2025.06.17',
-      approver: '인사담당자',
-      processer: '2025.06.17',
-      status: '승인',
-    },
-    {
-      id: 5,
-      type: '경력',
-      purpose: '이직',
-      applicant: '박민수',
-      applyDate: '2025.06.16',
-      approver: '인사담당자',
-      processer: '2025.06.16',
-      status: '반려',
-    },
-    {
-      id: 6,
-      type: '재직',
-      purpose: '아파트분양',
-      applicant: '최지영',
-      applyDate: '2025.06.15',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 7,
-      type: '경력',
-      purpose: '이직',
-      applicant: '정수진',
-      applyDate: '2025.06.14',
-      approver: '인사담당자',
-      processer: '2025.06.14',
-      status: '승인',
-    },
-    {
-      id: 8,
-      type: '재직',
-      purpose: '대출신청',
-      applicant: '한미영',
-      applyDate: '2025.06.13',
-      approver: '인사담당자',
-      processer: '2025.06.13',
-      status: '승인',
-    },
-    {
-      id: 9,
-      type: '퇴직',
-      purpose: '퇴직금',
-      applicant: '송태호',
-      applyDate: '2025.06.12',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 10,
-      type: '경력',
-      purpose: '이직',
-      applicant: '윤서연',
-      applyDate: '2025.06.11',
-      approver: '인사담당자',
-      processer: '2025.06.11',
-      status: '승인',
-    },
-    {
-      id: 11,
-      type: '재직',
-      purpose: '은행제출',
-      applicant: '임동현',
-      applyDate: '2025.06.10',
-      approver: '인사담당자',
-      processer: '2025.06.10',
-      status: '승인',
-    },
-    {
-      id: 12,
-      type: '경력',
-      purpose: '이직',
-      applicant: '강지은',
-      applyDate: '2025.06.09',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 13,
-      type: '재직',
-      purpose: '대출신청',
-      applicant: '조현우',
-      applyDate: '2025.06.08',
-      approver: '인사담당자',
-      processer: '2025.06.08',
-      status: '반려',
-    },
-    {
-      id: 14,
-      type: '퇴직',
-      purpose: '퇴직금',
-      applicant: '백서진',
-      applyDate: '2025.06.07',
-      approver: '인사담당자',
-      processer: '2025.06.07',
-      status: '승인',
-    },
-    {
-      id: 15,
-      type: '경력',
-      purpose: '이직',
-      applicant: '남궁민',
-      applyDate: '2025.06.06',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 16,
-      type: '재직',
-      purpose: '아파트분양',
-      applicant: '차은우',
-      applyDate: '2025.06.05',
-      approver: '인사담당자',
-      processer: '2025.06.05',
-      status: '승인',
-    },
-    {
-      id: 17,
-      type: '경력',
-      purpose: '이직',
-      applicant: '오승우',
-      applyDate: '2025.06.04',
-      approver: '인사담당자',
-      processer: '2025.06.04',
-      status: '승인',
-    },
-    {
-      id: 18,
-      type: '재직',
-      purpose: '은행제출',
-      applicant: '전지현',
-      applyDate: '2025.06.03',
-      approver: '인사담당자',
-      processer: '-',
-      status: '요청',
-    },
-    {
-      id: 19,
-      type: '경력',
-      purpose: '이직',
-      applicant: '김태희',
-      applyDate: '2025.06.02',
-      approver: '인사담당자',
-      processer: '2025.06.02',
-      status: '승인',
-    },
-    {
-      id: 20,
-      type: '퇴직',
-      purpose: '퇴직금',
-      applicant: '원빈',
-      applyDate: '2025.06.01',
-      approver: '인사담당자',
-      processer: '2025.06.01',
-      status: '승인',
-    },
-  ];
+  const [leaveData, setLeaveData] = useState([]);
+  const [certData, setCertData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // 영어 -> 한글 매핑 객체 추가
+  const vacationTypeMap = {
+    ANNUAL_LEAVE: '연차',
+    AM_HALF_DAY: '반차(오전)',
+    PM_HALF_DAY: '반차(오후)',
+  };
+  const statusMap = {
+    PENDING: '대기',
+    APPROVED: '승인',
+    REJECTED: '반려',
+  };
+
+  // 실제 API 연동: 휴가/증명서 목록 불러오기
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        if (tab === 'leave') {
+          const res = await approvalService.getPendingApprovals();
+          const arr = Array.isArray(res) ? res : res?.result || [];
+          setLeaveData(
+            arr.map((row) => ({
+              id: row.vacationId,
+              type: vacationTypeMap[row.vacationType] || row.vacationType, // 한글 변환
+              reason: row.reason,
+              applicant: row.applicantName,
+              department: row.department,
+              applyDate: row.startDate,
+              endDate: row.endDate,
+              status: statusMap[row.status] || '대기', // 한글 변환
+            })),
+          );
+        } else {
+          setCertData([]); // 임시
+        }
+      } catch (e) {
+        setLeaveData([]);
+        setCertData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [tab]);
 
   // 필터링 (간단 예시)
   const filteredLeave = leaveData.filter((row) => {
@@ -646,9 +293,60 @@ function Approval() {
   });
 
   // 버튼 핸들러 (삭제/반려/승인)
-  const handleDelete = () => setSelected([]);
-  const handleReject = () => setSelected([]);
-  const handleApprove = () => setSelected([]);
+  const handleDelete = async () => {
+    setSelected([]);
+    // TODO: 실제 삭제 API 연동 필요
+    // 삭제 후 목록 새로고침
+    if (tab === 'leave') {
+      const res = await approvalService.getPendingApprovals();
+      setLeaveData(res || []);
+    }
+  };
+  const handleReject = async () => {
+    if (tab !== 'leave' || selected.length === 0) return;
+    for (const id of selected) {
+      try {
+        await approvalService.rejectVacation(id, '사유 입력 필요');
+      } catch (err) {
+        setToast({
+          message: err.message || '반려 처리 중 오류가 발생했습니다.',
+          type: 'error',
+        });
+      }
+    }
+    setToast({ message: '반려 처리 완료', type: 'success' });
+    setSelected([]);
+    // 반려 후 목록 새로고침
+    const res = await approvalService.getPendingApprovals();
+    setLeaveData(res || []);
+  };
+  const handleApprove = async () => {
+    if (tab !== 'leave' || selected.length === 0) return;
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of selected) {
+      try {
+        await approvalService.approveVacation(id);
+        successCount++;
+      } catch (err) {
+        failCount++;
+        setToast({
+          message: err.message || '승인 처리 중 오류가 발생했습니다.',
+          type: 'error',
+        });
+      }
+    }
+    if (successCount > 0) {
+      setToast({
+        message: `연차 차감 완료! (${successCount}건 승인됨)`,
+        type: 'success',
+      });
+    }
+    setSelected([]);
+    // 승인 후 목록 새로고침
+    const res = await approvalService.getPendingApprovals();
+    setLeaveData(res || []);
+  };
 
   // 페이징 처리
   const totalRows =
@@ -725,6 +423,13 @@ function Approval() {
           승인
         </button>
       </div>
+      {toast && (
+        <ToastNotification
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

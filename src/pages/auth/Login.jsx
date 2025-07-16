@@ -92,16 +92,16 @@ const Login = () => {
         const id = res.data.result.id;
         const role = res.data.result.role;
         const provider = res.data.result.provider;
-        console.log('onLogin 호출', {
-          accessToken,
-          refreshToken,
-          id,
-          role,
-          provider,
-        });
+        console.log('로그인 응답 accessToken:', accessToken);
+        console.log('로그인 응답 refreshToken:', refreshToken);
+        console.log('로그인 응답 id:', id);
+        console.log('로그인 응답 role:', role);
+        console.log('로그인 응답 provider:', provider);
         if (typeof onLogin === 'function') {
           await onLogin({ accessToken, refreshToken, id, role, provider });
         }
+        // 실제 저장되는 토큰 값도 출력
+        console.log('sessionStorage에 저장할 ACCESS_TOKEN:', accessToken);
         sessionStorage.setItem('ACCESS_TOKEN', accessToken);
         localStorage.setItem('REFRESH_TOKEN', refreshToken);
       } else {
