@@ -250,3 +250,68 @@
     }
   }
 }
+
+.payroll-detail-table {
+  width: 100%;
+  max-width: 480px;
+  border-collapse: collapse;
+  margin-top: 24px;
+  background: #fff;
+  border: 1.5px solid #b6e2b6;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(60, 120, 60, 0.04);
+  th,
+  td {
+    border: 1px solid #d8d8d8;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 15px;
+  }
+  th {
+    background: #eafaf1;
+    color: #30512e;
+    width: 120px;
+    font-weight: 500;
+  }
+  input[type='number'] {
+    width: 140px;
+    height: 32px;
+    border: 1px solid #bcbcbc;
+    border-radius: 5px;
+    font-size: 15px;
+    padding: 0 10px;
+    background: #f8f8f8;
+  }
+}
+
+.payroll-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #30512e;
+  }
+  button {
+    font-size: 16px;
+    background: #eee;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    &:hover {
+      background: #d8f5e0;
+    }
+  }
+}
+
+.employee-list table tr {
+  transition: background 0.18s;
+}
+.employee-list table tr:hover {
+  background: #eafaf1;
+}
