@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './Header.module.scss';
 import Logo from '../assets/samubozo-logo2.png';
+import sunflowerImg from '../assets/Gemini_Generated_Image_8m3t3l8m3t3l8m3t2.png';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import AuthContext from '../context/UserContext';
 import Chatbot from './Chatbot';
 import ToastNotification from './ToastNotification';
 import axiosInstance from '../configs/axios-config';
@@ -11,14 +14,17 @@ import {
   MESSAGE,
   NOTIFICATION,
 } from '../configs/host-config';
+import WeatherWidget from './WeatherWidget';
 console.log(styles);
 
 const Header = ({ showChatbot }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isLoggedIn } = useContext(AuthContext);
   const [userName, setUserName] = useState('');
   const [userPosition, setUserPosition] = useState('');
   const [userDepartment, setUserDepartment] = useState('');
+  const [todayWeatherState, setTodayWeatherState] = useState(null);
 
   // 알림 관련 상태
   const [showNotificationDropdown, setShowNotificationDropdown] =
@@ -156,8 +162,11 @@ const Header = ({ showChatbot }) => {
     }
   }
 
-  let sseRetryDelay = 3000; // 3초부터 시작
+  const sseRetryDelayRef = useRef(10000); // 최초 10초 (더 길게)
   const SSE_MAX_RETRY_DELAY = 60000; // 최대 1분
+  const sseRetryCountRef = useRef(0); // 재연결 횟수 추적
+  const SSE_MAX_RETRY_COUNT = 5; // 최대 재연결 횟수 줄임
+  const isRefreshingTokenRef = useRef(false); // 토큰 갱신 중 플래그
 
   // SSE 구독 설정
   const setupSSE = () => {
@@ -171,6 +180,66 @@ const Header = ({ showChatbot }) => {
     const employeeNo = payload.employeeNo;
     const userEmail = payload.userEmail;
     const userRole = payload.userRole;
+
+    // 디버깅: SSE 연결 파라미터 로그
+    console.log('=== SSE 연결 시도 ===');
+    console.log('accessToken:', accessToken ? '존재함' : '없음');
+    console.log('employeeNo:', employeeNo);
+    console.log('userEmail:', userEmail);
+    console.log('userRole:', userRole);
+    console.log('토큰 만료시간:', new Date(payload.exp * 1000));
+    console.log('현재시간:', new Date());
+    console.log('토큰 만료됨:', payload.exp * 1000 < Date.now());
+
+    // 토큰이 만료되었으면 갱신 시도
+    if (payload.exp * 1000 < Date.now()) {
+      console.log('토큰 만료됨 - 갱신 시도');
+
+      // 이미 갱신 중이면 중복 시도 방지
+      if (isRefreshingTokenRef.current) {
+        console.log('토큰 갱신 중 - 중복 시도 방지');
+        return;
+      }
+
+      isRefreshingTokenRef.current = true;
+      const refreshToken = localStorage.getItem('REFRESH_TOKEN');
+      if (refreshToken) {
+        axiosInstance
+          .post(
+            `${API_BASE_URL}/auth-service/auth/refresh`,
+            { refreshToken },
+            { headers: { 'Content-Type': 'application/json' } },
+          )
+          .then((res) => {
+            const newAccessToken =
+              res.data.accessToken || res.data.result?.accessToken;
+            if (newAccessToken) {
+              sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
+              console.log('토큰 갱신 성공');
+              isRefreshingTokenRef.current = false;
+              // 무한 재귀 방지: 1초 후에 재연결
+              setTimeout(() => {
+                setupSSE();
+              }, 1000);
+              return;
+            }
+          })
+          .catch((e) => {
+            console.error('토큰 갱신 실패:', e);
+            isRefreshingTokenRef.current = false;
+            sessionStorage.clear();
+            localStorage.removeItem('REFRESH_TOKEN');
+            window.location.href = '/login';
+            return;
+          });
+      } else {
+        console.error('리프레시 토큰 없음 - 로그인 페이지로 이동');
+        isRefreshingTokenRef.current = false;
+        sessionStorage.clear();
+        window.location.href = '/login';
+        return;
+      }
+    }
 
     // 쿼리 파라미터로 토큰과 사용자 정보 전달
     const eventSource = new EventSource(
@@ -194,8 +263,18 @@ const Header = ({ showChatbot }) => {
 
     eventSource.onerror = async (error) => {
       console.error('SSE 연결 오류:', error);
-      // 401 등 인증 실패 시 직접 토큰 갱신 시도
+
+      // 500 에러나 서버 오류일 때는 재연결 중단
       if (eventSource.readyState === EventSource.CLOSED) {
+        console.log('SSE 연결 종료됨 - 메세지 서버 상태 확인 필요');
+
+        // 최대 재연결 횟수 초과 시 중단
+        if (sseRetryCountRef.current >= SSE_MAX_RETRY_COUNT) {
+          console.error('SSE 최대 재연결 횟수 초과 - 재연결 중단');
+          setSseConnectionStatus('error');
+          return;
+        }
+
         const refreshToken = localStorage.getItem('REFRESH_TOKEN');
         if (refreshToken) {
           try {
@@ -208,35 +287,43 @@ const Header = ({ showChatbot }) => {
               res.data.accessToken || res.data.result?.accessToken;
             if (newAccessToken) {
               sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
-              // 새 토큰으로 SSE 재연결
-              setupSSE();
+              // 토큰 갱신 성공해도 서버가 꺼져있으면 의미없으므로 더 긴 간격으로 재연결
+              setTimeout(() => {
+                setupSSE();
+                sseRetryDelayRef.current = Math.min(
+                  sseRetryDelayRef.current * 2,
+                  SSE_MAX_RETRY_DELAY,
+                );
+              }, sseRetryDelayRef.current);
               return;
             }
           } catch (e) {
-            // 리프레시 실패 시 로그아웃 처리
+            console.error('토큰 갱신 실패 - 재연결 중단');
             sessionStorage.clear();
             localStorage.removeItem('REFRESH_TOKEN');
             window.location.href = '/login';
             return;
           }
         } else {
-          // 리프레시 토큰 없음: 로그아웃
+          console.error('리프레시 토큰 없음 - 재연결 중단');
           sessionStorage.clear();
           localStorage.removeItem('REFRESH_TOKEN');
           window.location.href = '/login';
           return;
         }
       }
-      // 실패 시 재연결 딜레이 적용 (점진적 backoff)
-      setTimeout(() => {
-        setupSSE();
-        sseRetryDelay = Math.min(sseRetryDelay * 2, SSE_MAX_RETRY_DELAY);
-      }, sseRetryDelay);
+
+      // 일반적인 네트워크 오류가 아닌 경우 재연결 중단
+      setSseConnectionStatus('disconnected');
+      console.log('SSE 일반 오류 - 재연결 시도하지 않음');
     };
 
     eventSource.onopen = () => {
       // 연결 성공 시 딜레이 초기화
-      sseRetryDelay = 3000;
+      sseRetryDelayRef.current = 10000; // 10초로 초기화
+      sseRetryCountRef.current = 0; // 재연결 횟수 초기화
+      setSseConnectionStatus('connected');
+      console.log('SSE 연결 성공 - 재연결 딜레이 초기화됨');
     };
 
     return () => {
@@ -291,11 +378,26 @@ const Header = ({ showChatbot }) => {
     fetchUserInfo();
   }, []);
 
+  // 랜덤 인사말 생성 함수
+  const getRandomGreeting = () => {
+    const greetings = [
+      '어서오세요!',
+      '안녕하세요!',
+      '반갑습니다!',
+      '환영합니다!',
+      '좋은 하루 되세요!',
+      '오늘도 화이팅!',
+      '수고하세요!',
+      '건강하세요!',
+    ];
+    return greetings[Math.floor(Math.random() * greetings.length)];
+  };
+
   const userInfoText =
     userName && userPosition && userDepartment
-      ? `${userName} ${userPosition}(${userDepartment})`
+      ? `${getRandomGreeting()} ${userName} ${userPosition}(${userDepartment}) 님`
       : sessionStorage.getItem('USER_NAME')
-        ? `${sessionStorage.getItem('USER_NAME')} ${sessionStorage.getItem('USER_POSITION') || ''}(${sessionStorage.getItem('USER_DEPARTMENT') || ''})`
+        ? `${getRandomGreeting()} ${sessionStorage.getItem('USER_NAME')} ${sessionStorage.getItem('USER_POSITION') || ''}(${sessionStorage.getItem('USER_DEPARTMENT') || ''}) 님`
         : '로그인 정보 없음';
 
   // 드롭다운(모달) 상태
@@ -473,29 +575,89 @@ const Header = ({ showChatbot }) => {
     </div>
   );
 
+  // 날씨 아이콘 결정 함수
+  function getWeatherIcon(sky, pty) {
+    if (pty === '1' || pty === 1) return '🌧️'; // 비
+    if (pty === '2' || pty === 2) return '🌨️'; // 비/눈
+    if (pty === '3' || pty === 3) return '❄️'; // 눈
+    if (pty === '4' || pty === 4) return '🌦️'; // 소나기
+    if (sky === '1' || sky === 1) return '☀️'; // 맑음
+    if (sky === '3' || sky === 3) return '⛅'; // 구름많음
+    if (sky === '4' || sky === 4) return '☁️'; // 흐림
+    return '🌈'; // 기타/알수없음
+  }
+
+  // 날씨 테스트용 상태 (dev only)
+  const [testWeather, setTestWeather] = useState(null); // {sky, pty} or null
+
+  // SSE 연결 상태 관리
+  const [sseConnectionStatus, setSseConnectionStatus] = useState('connecting'); // 'connecting', 'connected', 'disconnected', 'error'
+
+  // 수동 SSE 재연결 함수
+  const manualReconnectSSE = () => {
+    console.log('수동 SSE 재연결 시도');
+    sseRetryCountRef.current = 0; // 카운터 초기화
+    sseRetryDelayRef.current = 10000; // 딜레이 초기화
+    setSseConnectionStatus('connecting');
+    setupSSE();
+  };
+
   return (
     <>
       <header className={styles.headerWrap}>
         <div className={styles.headerFixedLeft}>
-          <span className={styles.gmt}>GMT+09:00</span>
-          <span className={styles.userInfo}>{userInfoText}</span>
-          <span className={styles.adminCheckbox}>
-            <input type='checkbox' />
-            <span>관리자</span>
-          </span>
+          {/* 날씨 테스트 버튼: 유저정보 위로 이동 */}
+          <WeatherWidget
+            testWeather={testWeather}
+            setTestWeather={setTestWeather}
+            onlyButtons
+          />
         </div>
-
         <div className={styles.headerMainRow}>
           <div className={styles.headerMainLeft}></div>
           <div className={styles.headerLogoRow}>
-            <NavLink to='/dashboard'>
+            <div
+              className={styles.logoWeatherWrap}
+              style={{ position: 'relative', display: 'inline-block' }}
+            >
+              <WeatherWidget
+                testWeather={testWeather}
+                setTestWeather={setTestWeather}
+                onlyAnimation
+              />
               <img
                 src={Logo}
                 alt='로고'
                 className={styles.headerLogo}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', position: 'relative', zIndex: 1 }}
               />
-            </NavLink>
+              {/* 맑음일 때만 해바라기 표시 (로고에 겹치게) */}
+              {((testWeather &&
+                testWeather.sky === '1' &&
+                testWeather.pty === '0') ||
+                (!testWeather &&
+                  todayWeatherState &&
+                  todayWeatherState.SKY === '1' &&
+                  todayWeatherState.PTY === '0')) && (
+                <img
+                  src={sunflowerImg}
+                  alt='해바라기'
+                  className={styles.sunflowerAppear}
+                  style={{
+                    width: '100px',
+                    height: '100px',
+                    position: 'absolute',
+                    left: '210px', // 오른쪽으로 30px 더 이동
+                    top: '10px', // 아래로 10px 내림
+                    margin: 0,
+                    padding: 0,
+                    background: 'none',
+                    objectFit: 'contain',
+                    zIndex: 2,
+                  }}
+                />
+              )}
+            </div>
           </div>
           {showChatbot && (
             <div className={styles.headerMainRight}>
@@ -503,9 +665,25 @@ const Header = ({ showChatbot }) => {
             </div>
           )}
           <div className={styles.headerRight}>
-            <NavLink to='/' className={styles.headerLink}>
+            {/* 홈 버튼: 로그인 상태면 /dashboard, 아니면 / */}
+            <button
+              className={styles.headerLink}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                if (isLoggedIn || sessionStorage.getItem('ACCESS_TOKEN')) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/');
+                }
+              }}
+            >
               홈
-            </NavLink>
+            </button>
             <span className={styles.headerDivider}>|</span>
             <NavLink to='/orgchart' className={styles.headerLink}>
               조직도
@@ -514,52 +692,6 @@ const Header = ({ showChatbot }) => {
             <NavLink to='/approval' className={styles.headerLink}>
               전자결재
             </NavLink>
-
-            {/* 테스트 버튼들 */}
-            <div style={{ display: 'flex', gap: '8px', marginLeft: '15px' }}>
-              <button
-                onClick={() => addTestToast(testNotifications[0])}
-                style={{
-                  background: '#2196f3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                쪽지 테스트
-              </button>
-              <button
-                onClick={() => addTestToast(testNotifications[1])}
-                style={{
-                  background: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                근태 테스트
-              </button>
-              <button
-                onClick={() => addTestToast(testNotifications[2])}
-                style={{
-                  background: '#ff9800',
-                  color: 'white',
-                  border: 'none',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                전자결재 테스트
-              </button>
-            </div>
 
             {/* 알림함 버튼 */}
             <div
@@ -636,6 +768,9 @@ const Header = ({ showChatbot }) => {
               )}
             </div>
           </div>
+          <span className={styles.userInfo + ' ' + styles.userInfoBottomLeft}>
+            {userInfoText}
+          </span>
         </div>
 
         <nav className={styles.headerNav}>

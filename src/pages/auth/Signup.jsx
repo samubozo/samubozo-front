@@ -225,11 +225,11 @@ const Signup = () => {
     setIsSubmitting(true);
     try {
       await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
-      alert('회원가입이 완료되었습니다!');
+      alert('직원 등록이 완료되었습니다!');
       navigate('/employee');
     } catch (error) {
       alert(
-        '회원가입 실패: ' + (error.response?.data?.message || error.message),
+        '직원 등록 실패: ' + (error.response?.data?.message || error.message),
       );
     }
     setIsSubmitting(false);
@@ -270,28 +270,20 @@ const Signup = () => {
 
   return (
     <div className={styles.outerBg}>
-      <div className={styles.registerNav}>
-        <Link to={'/'}>로그인</Link> |{' '}
-        <span
-          style={{ cursor: 'pointer', color: '#1785f2' }}
-          onClick={() =>
-            window.alert(
-              `가입 이메일은 인사팀에게 문의하세요.\n\n(연락처: 02-0000-1111)`,
-            )
-          }
-        >
-          ID 찾기
-        </span>{' '}
-        | <Link to={'/passwordFind'}>PW 찾기</Link>
-        <span className={styles.icon}>👤</span>
-      </div>
-
       <img src={Logo} alt='로고' className={styles.registerLogo} />
 
       <div className={styles.registerWrap}>
         <div className={styles.registerContainer}>
+          <button
+            type='button'
+            className={styles.registerCloseBtn}
+            aria-label='닫기'
+            onClick={() => navigate(-1)}
+          >
+            ×
+          </button>
           <div className={styles.registerHeader}></div>
-          <h2 className={styles.registerMainTitle}>회원가입</h2>
+          <h2 className={styles.registerMainTitle}>직원 등록</h2>
           <form className={styles.registerForm} onSubmit={handleSubmit}>
             <div className={styles.registerGrid}>
               <div className={styles.registerLeft}>
@@ -422,15 +414,8 @@ const Signup = () => {
                   />
                   <button
                     type='button'
+                    className={styles.addressSearchBtn}
                     onClick={handleAddressSearch}
-                    style={{
-                      padding: '0 16px',
-                      background: '#66be80',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: 'pointer',
-                    }}
                   >
                     주소찾기
                   </button>
@@ -494,9 +479,15 @@ const Signup = () => {
               </div>
             </div>
 
-            <button className={styles.registerSubmit} type='submit'>
-              {isSubmitting ? '가입 중...' : '회원가입'}
-            </button>
+            <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
+              <button
+                className={styles.registerSubmit}
+                type='submit'
+                disabled={isSubmitting || isLoading}
+              >
+                {isSubmitting ? '가입 중...' : '직원 등록'}
+              </button>
+            </div>
           </form>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import axiosInstance from '../configs/axios-config';
-import { API_BASE_URL, ATTENDANCE } from '../configs/host-config';
+import { API_BASE_URL, ATTENDANCE, VACATION } from '../configs/host-config';
 
 export const attendanceService = {
   // 출근 기록
@@ -74,47 +74,53 @@ export const attendanceService = {
     }
   },
 
-  // 오늘의 출근 상태 조회 (백엔드에 해당 API가 없으므로 프론트엔드에서 sessionStorage 기반으로 구현)
+  // 오늘의 출근 상태 조회
   getTodayAttendance: async () => {
     try {
-      const todayCheckIn = sessionStorage.getItem('TODAY_CHECK_IN');
-      const todayCheckOut = sessionStorage.getItem('TODAY_CHECK_OUT');
-      const todayGoOut = sessionStorage.getItem('TODAY_GO_OUT');
-      const todayReturn = sessionStorage.getItem('TODAY_RETURN');
-
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${ATTENDANCE}/today`,
+      );
+      if (response.status === 200 && response.data.result) {
+        return response.data.result;
+      }
       return {
-        success: true,
-        result: {
-          checkInTime: todayCheckIn,
-          checkOutTime: todayCheckOut,
-          goOutTime: todayGoOut,
-          returnTime: todayReturn,
-        },
+        checkInTime: null,
+        checkOutTime: null,
+        goOutTime: null,
+        returnTime: null,
       };
     } catch (error) {
-      throw error;
+      return {
+        checkInTime: null,
+        checkOutTime: null,
+        goOutTime: null,
+        returnTime: null,
+      };
     }
   },
 
-  // 휴가 신청 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)
-  requestVacation: async (vacationData) => {
-    try {
-      // 실제로는 백엔드 API를 호출해야 하지만, 현재 백엔드에 해당 API가 없으므로
-      // 프론트엔드에서 임시로 처리
-      console.log('휴가 신청 데이터:', vacationData);
-
-      return {
-        success: true,
-        message: '휴가 신청이 완료되었습니다.',
-        result: {
-          vacationId: Date.now(), // 임시 ID
-          ...vacationData,
-        },
-      };
-    } catch (error) {
-      throw error;
-    }
-  },
+  /**
+   * 휴가 신청 (연차/반차)
+   * @param {Object} params
+   * @param {'ANNUAL_LEAVE'|'AM_HALF_DAY'|'PM_HALF_DAY'} params.vacationType
+   * @param {string} params.startDate - YYYY-MM-DD
+   * @param {string} params.endDate - YYYY-MM-DD
+   * @param {string} params.reason
+   * @returns {Promise}
+   */
+  // async requestVacation({ vacationType, startDate, endDate, reason }) {
+  //   try {
+  //     const response = await axiosInstance.post(
+  //       `${API_BASE_URL}${ATTENDANCE}/half-day`,
+  //       { vacationType, startDate, endDate, reason },
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     // axios 에러 메시지 통일
+  //     const msg = error.response?.data?.message || '휴가 신청 실패';
+  //     throw new Error(msg);
+  //   }
+  // },
 
   // 부재 등록 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)
   registerAbsence: async (absenceData) => {
@@ -129,29 +135,6 @@ export const attendanceService = {
         result: {
           absenceId: Date.now(), // 임시 ID
           ...absenceData,
-        },
-      };
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // 근태 통계 조회 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)
-  getAttendanceStats: async (year, month) => {
-    try {
-      // 실제로는 백엔드 API를 호출해야 하지만, 현재 백엔드에 해당 API가 없으므로
-      // 프론트엔드에서 임시로 처리
-      return {
-        success: true,
-        result: {
-          totalWorkDays: 22,
-          presentDays: 20,
-          absentDays: 2,
-          lateDays: 1,
-          earlyLeaveDays: 0,
-          overtimeHours: 8.5,
-          vacationDays: 3,
-          remainingVacationDays: 9,
         },
       };
     } catch (error) {
@@ -202,9 +185,21 @@ export const attendanceService = {
   getVacationBalance: async () => {
     try {
       const response = await axiosInstance.get(
-        `${API_BASE_URL}${ATTENDANCE}/balance`,
+        `${API_BASE_URL}${VACATION}/balance`,
       );
       return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 월별 개인 근태 통계 조회 (실제 백엔드 API)
+  getPersonalStats: async (year, month) => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${ATTENDANCE}/personal-stats/${year}/${month}`,
+      );
+      return response.data; // 실제 백엔드 응답 구조에 맞게 반환
     } catch (error) {
       throw error;
     }

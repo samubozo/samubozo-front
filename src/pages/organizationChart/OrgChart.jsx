@@ -67,8 +67,11 @@ const OrgChart = () => {
   const [loading, setLoading] = useState(false); // 로딩 상태
 
   // UI 상태
+  // 탭 상태: localStorage → 쿼리스트링 → 'team' 순으로 초기값 결정
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'all';
+  const urlTab = searchParams.get('tab');
+  const storageTab = localStorage.getItem('orgchartTab');
+  const initialTab = storageTab || urlTab || 'team';
   const [tab, setTab] = useState(initialTab);
   const [search, setSearch] = useState('');
   const [deptView, setDeptView] = useState(null); // 부서 상세 뷰 상태
@@ -107,15 +110,19 @@ const OrgChart = () => {
     { value: 'desc', label: '이름 내림차순' },
   ];
 
-  // 탭 변경 시 쿼리스트링도 같이 변경
+  // 탭 변경 시 쿼리스트링과 localStorage 모두에 저장
   const handleTabChange = (newTab) => {
     setTab(newTab);
     setSearchParams({ ...Object.fromEntries(searchParams), tab: newTab });
+    localStorage.setItem('orgchartTab', newTab);
   };
-  // 쿼리스트링이 바뀌면 상태도 동기화
+  // 쿼리스트링이 바뀌면 상태와 localStorage도 동기화
   useEffect(() => {
     const urlTab = searchParams.get('tab');
-    if (urlTab && urlTab !== tab) setTab(urlTab);
+    if (urlTab && urlTab !== tab) {
+      setTab(urlTab);
+      localStorage.setItem('orgchartTab', urlTab);
+    }
   }, [searchParams]);
 
   // 실제 API 데이터 로드 함수 - host-config.js의 HR 상수 사용

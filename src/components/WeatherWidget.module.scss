@@ -1,0 +1,21 @@
+@keyframes cloudMoveFloat {
+  0% {
+    transform: translateX(0px) translateY(0px);
+  }
+  25% {
+    transform: translateX(10px) translateY(4px);
+  }
+  50% {
+    transform: translateX(20px) translateY(0px);
+  }
+  75% {
+    transform: translateX(10px) translateY(-4px);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px);
+  }
+}
+
+.cloud-move-float {
+  animation: cloudMoveFloat 8s ease-in-out infinite;
+}

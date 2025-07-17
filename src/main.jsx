@@ -1,8 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import './index.css';
 import App from './App.jsx';
 import { BrowserRouter } from 'react-router-dom';
-import './index.css';
 
 // Prism.js 언어 모듈 에러 숨기기
 const originalError = console.error;
