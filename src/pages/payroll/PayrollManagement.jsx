@@ -1,15 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import axiosInstance from '../../configs/axios-config';
 import styles from './PayrollManagement.module.scss';
 import AuthContext from '../../context/UserContext';
-
-const employeeData = [
-  { id: 1, name: '신한국', position: '팀장', department: '경영지원' },
-  { id: 2, name: '이호영', position: '부팀장', department: '영업부' },
-  { id: 3, name: '김예은', position: '사원', department: '기획부' },
-  { id: 4, name: '주영찬', position: '사원', department: '마케팅' },
-  { id: 5, name: '구현희', position: '사원', department: '디자인' },
-];
+import { API_BASE_URL, PAYROLL, HR } from '../../configs/host-config';
 
 const departmentOptions = [
   '전체',
@@ -20,15 +14,122 @@ const departmentOptions = [
   '디자인',
 ];
 
+const PayrollDetail = ({ employee, onClose }) => {
+  const [form, setForm] = useState({
+    basePayroll: '',
+    positionAllowance: '',
+    mealAllowance: '',
+    bonus: '',
+  });
+
+  // 숫자만 추출 후 콤마 포맷
+  const formatNumber = (value) => {
+    const num = value.replace(/[^\d]/g, '');
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: formatNumber(value) }));
+  };
+
+  return (
+    <div style={{ marginTop: '32px' }}>
+      <div className={styles['payroll-detail-header']}>
+        <h3>
+          {employee.name} ({employee.position}) 급여 등록/수정
+        </h3>
+        <button onClick={onClose}>닫기</button>
+      </div>
+      <table className={styles['payroll-detail-table']}>
+        <tbody>
+          <tr>
+            <th>기본급</th>
+            <td>
+              <input
+                type='text'
+                name='basePayroll'
+                value={form.basePayroll}
+                onChange={handleChange}
+                autoComplete='off'
+              />
+            </td>
+          </tr>
+          <tr>
+            <th>직급수당</th>
+            <td>
+              <input
+                type='text'
+                name='positionAllowance'
+                value={form.positionAllowance}
+                onChange={handleChange}
+                autoComplete='off'
+              />
+            </td>
+          </tr>
+          <tr>
+            <th>식대</th>
+            <td>
+              <input
+                type='text'
+                name='mealAllowance'
+                value={form.mealAllowance}
+                onChange={handleChange}
+                autoComplete='off'
+              />
+            </td>
+          </tr>
+          <tr>
+            <th>성과급</th>
+            <td>
+              <input
+                type='text'
+                name='bonus'
+                value={form.bonus}
+                onChange={handleChange}
+                autoComplete='off'
+              />
+            </td>
+          </tr>
+          <tr>
+            <td colSpan={2} style={{ textAlign: 'center', paddingTop: '18px' }}>
+              <button
+                type='submit'
+                style={{
+                  background: '#45bd74',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 0',
+                  fontWeight: 500,
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                저장
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 const PayrollManagement = () => {
+  const [employeeData, setEmployeeData] = useState([]);
   const [checkedList, setCheckedList] = useState([]);
   const [payrollData, setPayrollData] = useState({
     basePayroll: '',
     positionAllowance: '',
     mealAllowance: '',
+    bonus: '',
   });
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('전체');
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [searchName, setSearchName] = useState('');
 
   const { user } = useContext(AuthContext);
 
@@ -41,14 +142,11 @@ const PayrollManagement = () => {
 
     const headers = {
       Authorization: `Bearer ${accessToken}`,
-      'X-User-Email': userEmail,
-      'X-User-Role': userRole,
-      'X-User-Employee-No': userEmployeeNo,
     };
 
     if (year && month) {
-      axios
-        .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me/monthly`, {
+      axiosInstance
+        .get(`${API_BASE_URL}${PAYROLL}/me/monthly`, {
           headers,
           params: { year, month },
         })
@@ -58,6 +156,7 @@ const PayrollManagement = () => {
             basePayroll: Number(result?.basePayroll ?? 0),
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
+            bonus: Number(result?.bonus ?? 0),
           });
         })
         .catch((err) => {
@@ -65,17 +164,19 @@ const PayrollManagement = () => {
             basePayroll: '',
             positionAllowance: '',
             mealAllowance: '',
+            bonus: '',
           });
         });
     } else {
-      axios
-        .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me`, { headers })
+      axiosInstance
+        .get(`${API_BASE_URL}${PAYROLL}/me`, { headers })
         .then((res) => {
           const result = res.data.result;
           setPayrollData({
             basePayroll: Number(result?.basePayroll ?? 0),
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
+            bonus: Number(result?.bonus ?? 0),
           });
         })
         .catch((err) => {
@@ -83,10 +184,39 @@ const PayrollManagement = () => {
             basePayroll: '',
             positionAllowance: '',
             mealAllowance: '',
+            bonus: '',
           });
         });
     }
   };
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await axiosInstance.get(`${API_BASE_URL}${HR}/user/list`, {
+          params: { page: 1, size: 100 },
+        });
+
+        const rawList = res.data.result?.content || res.data.result || [];
+
+        // 👉 필요한 필드만 포함 (사원명과 직급만)
+        const processedList = rawList.map((emp) => ({
+          id: emp.employeeNo,
+          name: emp.userName,
+          position: emp.positionName,
+        }));
+
+        console.log('employeeData:', processedList);
+
+        setEmployeeData(processedList);
+      } catch (err) {
+        console.error('직원 데이터 불러오기 실패:', err);
+        setEmployeeData([]);
+      }
+    };
+
+    fetchEmployees(); // 호출
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -128,9 +258,10 @@ const PayrollManagement = () => {
   const base = payrollData.basePayroll || 0;
   const allowance = payrollData.positionAllowance || 0;
   const meal = payrollData.mealAllowance || 0;
+  const bonus = payrollData.bonus || 0;
   const nonTaxableMeal = Math.min(meal, 100000);
   const taxableMeal = Math.max(meal - 100000, 0);
-  const taxable = base + allowance + taxableMeal;
+  const taxable = base + allowance + taxableMeal + bonus;
   const nonTaxable = nonTaxableMeal;
   const total = taxable + nonTaxable;
 
@@ -197,12 +328,17 @@ const PayrollManagement = () => {
             </thead>
             <tbody>
               {filteredEmployees.map((emp, idx) => (
-                <tr key={emp.id}>
+                <tr
+                  key={emp.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setSelectedEmployee(emp)}
+                >
                   <td>
                     <input
                       type='checkbox'
                       checked={checkedList.includes(emp.id)}
                       onChange={() => handleCheck(emp.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </td>
                   <td>{idx + 1}</td>
@@ -242,6 +378,10 @@ const PayrollManagement = () => {
                 <tr>
                   <td>식대</td>
                   <td>{meal ? meal.toLocaleString() : ''}</td>
+                </tr>
+                <tr>
+                  <td>성과급</td>
+                  <td>{bonus ? bonus.toLocaleString() : ''}</td>
                 </tr>
               </tbody>
             </table>
@@ -345,6 +485,13 @@ const PayrollManagement = () => {
           </div>
         </div>
       </div>
+      {/* 하단에 급여 등록/수정 화면 (hrRole이 'Y'일 때만) */}
+      {user?.hrRole === 'Y' && selectedEmployee && (
+        <PayrollDetail
+          employee={selectedEmployee}
+          onClose={() => setSelectedEmployee(null)}
+        />
+      )}
     </div>
   );
 };
