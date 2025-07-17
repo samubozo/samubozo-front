@@ -433,8 +433,19 @@ const Header = ({ showChatbot }) => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
+
+    // 저장된 이메일 배열 보존
+    const rememberedEmails = localStorage.getItem('rememberedEmails');
+
+    // 모든 스토리지 클리어
     sessionStorage.clear();
-    localStorage.clear(); // localStorage도 모두 삭제
+    localStorage.clear();
+
+    // 저장된 이메일 배열 복원
+    if (rememberedEmails) {
+      localStorage.setItem('rememberedEmails', rememberedEmails);
+    }
+
     window.location.href = '/';
   };
 
