@@ -280,4 +280,22 @@
       }
     }
   }
+
+  .weatherInfoBox {
+    width: 100%;
+    background: linear-gradient(90deg, #e3f0ff 0%, #f5f8fa 100%);
+    border-radius: 14px;
+    margin-bottom: 18px;
+    padding: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #25663b;
+    letter-spacing: 0.5px;
+    border: 1.5px solid #b3d0e6;
+    box-shadow: 0 2px 12px rgba(80, 150, 200, 0.08);
+  }
 }
