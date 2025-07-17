@@ -643,13 +643,50 @@ const Header = ({ showChatbot }) => {
                 style={{ cursor: 'pointer', position: 'relative', zIndex: 1 }}
               />
               {/* 맑음일 때만 해바라기 표시 (로고에 겹치게) */}
-              {((testWeather &&
-                testWeather.sky === '1' &&
-                testWeather.pty === '0') ||
-                (!testWeather &&
-                  todayWeatherState &&
-                  todayWeatherState.SKY === '1' &&
-                  todayWeatherState.PTY === '0')) && (
+              {(() => {
+                // 디버깅을 위한 로그
+                console.log('해바라기 조건 체크:', {
+                  testWeather,
+                  todayWeatherState,
+                  testWeatherSky: testWeather?.sky,
+                  testWeatherPty: testWeather?.pty,
+                  actualSky: todayWeatherState?.SKY,
+                  actualPty: todayWeatherState?.PTY,
+                  actualSkyKR: todayWeatherState?.SKY_KR,
+                  actualPtyKR: todayWeatherState?.PTY_KR,
+                });
+
+                // 테스트 날씨인 경우
+                if (
+                  testWeather &&
+                  testWeather.sky === '1' &&
+                  testWeather.pty === '0'
+                ) {
+                  return true;
+                }
+
+                // 실제 날씨인 경우 - 더 정확한 조건 체크
+                if (!testWeather && todayWeatherState) {
+                  // SKY가 1이거나 SKY_KR이 '맑음'인 경우
+                  const isSunny =
+                    todayWeatherState.SKY === '1' ||
+                    todayWeatherState.SKY === 1 ||
+                    todayWeatherState.SKY_KR === '맑음';
+                  // PTY가 0이거나 PTY_KR이 '없음'인 경우
+                  const noPrecipitation =
+                    todayWeatherState.PTY === '0' ||
+                    todayWeatherState.PTY === 0 ||
+                    todayWeatherState.PTY_KR === '없음';
+
+                  console.log('실제 날씨 해바라기 조건:', {
+                    isSunny,
+                    noPrecipitation,
+                  });
+                  return isSunny && noPrecipitation;
+                }
+
+                return false;
+              })() && (
                 <img
                   src={sunflowerImg}
                   alt='해바라기'

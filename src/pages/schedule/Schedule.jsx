@@ -96,10 +96,30 @@ function Schedule() {
 
   // 카테고리 데이터 처리 함수 (checked 필드 기본값 설정)
   const processCategoriesData = (categoriesData) => {
+    // localStorage에서 저장된 체크 상태 불러오기
+    const savedCheckStates = JSON.parse(
+      localStorage.getItem('scheduleCategoryCheckStates') || '{}',
+    );
+
     return (categoriesData || []).map((cat) => ({
       ...cat,
-      checked: !!cat.checked, // undefined나 null이면 false
+      checked:
+        savedCheckStates[cat.id] !== undefined
+          ? savedCheckStates[cat.id]
+          : true, // 저장된 상태가 있으면 사용, 없으면 기본값 true
     }));
+  };
+
+  // 카테고리 체크 상태를 localStorage에 저장하는 함수
+  const saveCategoryCheckStates = (categories) => {
+    const checkStates = {};
+    categories.forEach((cat) => {
+      checkStates[cat.id] = cat.checked;
+    });
+    localStorage.setItem(
+      'scheduleCategoryCheckStates',
+      JSON.stringify(checkStates),
+    );
   };
 
   // 달력 날짜 배열 및 첫 요일
@@ -111,12 +131,11 @@ function Schedule() {
     axiosInstance
       .get(`${API_BASE_URL}${SCHEDULE}/categories`)
       .then((res) => {
-        // 최초 진입 시 모두 true로 체크
-        const categoriesWithChecked = (res.data || []).map((cat) => ({
-          ...cat,
-          checked: true,
-        }));
+        // 저장된 체크 상태를 유지하면서 카테고리 목록 설정
+        const categoriesWithChecked = processCategoriesData(res.data || []);
         setCategories(categoriesWithChecked);
+        // 초기 로드 시에도 체크 상태 저장
+        saveCategoryCheckStates(categoriesWithChecked);
       })
       .catch((err) => {
         console.error('카테고리 조회 에러:', err);
@@ -215,11 +234,14 @@ function Schedule() {
   };
   // 카테고리 체크박스 토글 (프론트 상태만 변경)
   const handleCategoryCheck = (id) => {
-    setCategories((prev) =>
-      prev.map((cat) =>
+    setCategories((prev) => {
+      const updated = prev.map((cat) =>
         cat.id === id ? { ...cat, checked: !cat.checked } : cat,
-      ),
-    );
+      );
+      // 체크 상태 변경 시 localStorage에 저장
+      saveCategoryCheckStates(updated);
+      return updated;
+    });
   };
 
   // 일정 추가
