@@ -223,7 +223,7 @@
 
 .bottomBar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center; // 가운데 정렬로 변경
   align-items: center;
   margin-bottom: 24px;
 }
@@ -231,6 +231,7 @@
 .pagination {
   display: flex;
   gap: 4px;
+  justify-content: center; // 가운데 정렬 추가
 }
 
 .pageBtn {
