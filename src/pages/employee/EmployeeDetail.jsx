@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, HR, CERTIFICATE } from '../../configs/host-config';
 // certificateEnums.js import 제거
+import AuthContext from '../../context/UserContext';
 
 const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [dept, setDept] = useState(''); // departmentId
@@ -35,6 +36,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
+  const { user } = React.useContext(AuthContext);
 
   // 부서/직책 목록 불러오기
   useEffect(() => {
@@ -282,10 +284,24 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     formData.append('employeeNo', selectedEmployee.id);
     formData.append('profileImage', profileFile);
     try {
-      await axiosInstance.post(`${API_BASE_URL}${HR}/user/profile`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await axiosInstance.post(
+        `${API_BASE_URL}${HR}/user/profile`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        },
+      );
       alert('프로필 이미지가 업로드되었습니다.');
+      // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
+      if (
+        user?.employeeNo &&
+        String(user.employeeNo) === String(selectedEmployee.id)
+      ) {
+        // 서버 응답에서 최신 프로필 이미지 URL을 받아서 저장 (예시: res.data.result.profileImage)
+        const newProfileImage = res.data?.result?.profileImage || profileImage;
+        sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
+        window.location.reload();
+      }
     } catch {
       alert('프로필 이미지 업로드 실패');
     }
@@ -334,35 +350,23 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         },
       );
       alert('저장되었습니다.');
-      // 저장 후 상세정보를 즉시 다시 불러오기
-      try {
-        const res = await axiosInstance.get(
-          `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
-        );
-        const data = res.data.result;
-        setEmployeeName(data.userName || '');
-        setEmployeePhone(data.phone || '');
-        setEmployeeOutEmail(data.externalEmail || '');
-        setEmployeeEmail(data.email || '');
-        setDept(data.department?.departmentId || '');
-        setDeptName(data.department?.departmentName || '');
-        setPosition(data.positionId || '');
-        setPositionName(data.positionName || '');
-        setStatus(data.activate || 'Y');
-        setRole(data.hrRole === 'Y' ? 'Y' : 'N');
-        setJoinDate(data.hireDate || '');
-        setLeaveDate(data.retireDate || '');
-        setMemo(data.remarks || '');
-        setGender(data.gender || '');
-        setEmployeeAddress(data.address || '');
-        setResidentRegNo(data.residentRegNo || '');
-        setBirthDate(data.birthDate || '');
-        setBankName(data.bankName || '');
-        setAccountNumber(data.accountNumber || '');
-        setAccountHolder(data.accountHolder || '');
-        setProfileImage(data.profileImage);
-      } catch (err) {
-        alert('저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.');
+      // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
+      if (
+        user?.employeeNo &&
+        String(user.employeeNo) === String(selectedEmployee.id)
+      ) {
+        // 저장 후 상세정보를 즉시 다시 불러오기
+        try {
+          const res = await axiosInstance.get(
+            `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
+          );
+          const data = res.data.result;
+          const newProfileImage = data.profileImage || profileImage;
+          sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
+          window.location.reload();
+        } catch (err) {
+          alert('저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.');
+        }
       }
     } catch {
       setError('저장에 실패했습니다.');
