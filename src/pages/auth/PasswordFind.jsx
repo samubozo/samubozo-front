@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import styles from './PasswordFind.module.scss';
 import Logo from '../../assets/samubozo-logo.png';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, AUTH } from '../../configs/host-config';
 
 export default function PasswordFind() {
   const [name, setName] = useState('');
@@ -9,6 +11,39 @@ export default function PasswordFind() {
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const navigate = useNavigate();
+
+  const handleSendCode = async () => {
+    if (!email) {
+      alert('이메일을 입력하세요.');
+      return;
+    }
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/find-password`, {
+        email,
+      });
+      alert('인증번호가 발송되었습니다.');
+      setCodeSent(true);
+    } catch (e) {
+      alert(e.response?.data?.message || '인증번호 발송 실패');
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!email || !code) {
+      alert('이메일과 인증번호를 입력하세요.');
+      return;
+    }
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/verify-code`, {
+        email,
+        code,
+      });
+      alert('인증 성공! 비밀번호 변경 페이지로 이동합니다.');
+      navigate('/passwordUpdate', { state: { email, code } });
+    } catch (e) {
+      alert(e.response?.data?.message || '인증 실패');
+    }
+  };
 
   return (
     <div className={styles.loginWrapper}>
@@ -51,7 +86,8 @@ export default function PasswordFind() {
             />
             <button
               className={styles.codeBtn}
-              onClick={() => setCodeSent(true)}
+              onClick={handleSendCode}
+              disabled={!email}
             >
               인증번호 받기
             </button>
@@ -73,7 +109,8 @@ export default function PasswordFind() {
           <div className={styles.nextBtnRow}>
             <button
               className={styles.nextBtn}
-              onClick={() => navigate('/passwordUpdate')}
+              onClick={handleVerifyCode}
+              disabled={!codeSent || !code}
             >
               다음
             </button>

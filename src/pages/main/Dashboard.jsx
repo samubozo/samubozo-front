@@ -349,7 +349,15 @@ function DashboardProfile({ onAttendanceChange }) {
               }}
             />
           ) : (
-            <div className={styles.profileImg}></div>
+            <div
+              className={styles.profileImg}
+              style={{
+                background: '#ededed',
+                width: '100%',
+                height: '100%',
+                borderRadius: '10px',
+              }}
+            ></div>
           )}
         </div>
         {/* 프로필 정보 영역 */}
