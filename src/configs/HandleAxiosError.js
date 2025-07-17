@@ -9,6 +9,9 @@ export const handleAxiosError = (error, onLogout, navigate) => {
   if (error.response?.data?.statusMessage === 'EXPIRED_RT') {
     console.log('리프레시 토큰이 만료되었습니다.');
     alert('시간이 경과하여 재 로그인이 필요합니다.');
+
+    // 저장된 이메일 배열 보존
+    const rememberedEmails = localStorage.getItem('rememberedEmails');
     if (onLogout) onLogout();
     if (navigate) navigate('/login');
     return;

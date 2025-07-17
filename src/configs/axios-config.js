@@ -90,8 +90,13 @@ axiosInstance.interceptors.response.use(
           console.log(
             '리프레시 토큰 또는 employeeNo가 없습니다. 재로그인이 필요합니다.',
           );
+          // 저장된 이메일 배열 보존
+          const rememberedEmails = localStorage.getItem('rememberedEmails');
           sessionStorage.clear();
-          localStorage.removeItem('REFRESH_TOKEN');
+          localStorage.clear();
+          if (rememberedEmails) {
+            localStorage.setItem('rememberedEmails', rememberedEmails);
+          }
           window.location.href = '/login';
           return Promise.reject(error);
         }
@@ -115,8 +120,13 @@ axiosInstance.interceptors.response.use(
           res?.data?.accessToken || res?.data?.result?.accessToken;
         if (!newAccessToken) {
           console.error('리프레시 응답에 accessToken 없음:', res.data);
+          // 저장된 이메일 배열 보존
+          const rememberedEmails = localStorage.getItem('rememberedEmails');
           sessionStorage.clear();
-          localStorage.removeItem('REFRESH_TOKEN');
+          localStorage.clear();
+          if (rememberedEmails) {
+            localStorage.setItem('rememberedEmails', rememberedEmails);
+          }
           window.location.href = '/login';
           return Promise.reject(new Error('리프레시 응답에 accessToken 없음'));
         }
@@ -137,8 +147,13 @@ axiosInstance.interceptors.response.use(
         console.error('리프레시 토큰 갱신 실패:', refreshError);
 
         // 리프레시 토큰 갱신 실패 시 로그아웃 처리
+        // 저장된 이메일 배열 보존
+        const rememberedEmails = localStorage.getItem('rememberedEmails');
         sessionStorage.clear();
-        localStorage.removeItem('REFRESH_TOKEN');
+        localStorage.clear();
+        if (rememberedEmails) {
+          localStorage.setItem('rememberedEmails', rememberedEmails);
+        }
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
