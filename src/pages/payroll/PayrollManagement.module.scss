@@ -72,13 +72,42 @@
       table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed; // 추가: 열 너비 고정
         th,
         td {
           border: 1px solid #d8d8d8;
           padding: 9px 10px;
-          text-align: center;
+          text-align: center; // 모든 글씨 가운데 정렬
           height: 1.2rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
+        th:nth-child(1),
+        td:nth-child(1) {
+          width: 36px;
+          min-width: 36px;
+          max-width: 36px;
+        }
+        th:nth-child(2),
+        td:nth-child(2) {
+          width: 56px;
+          min-width: 56px;
+          max-width: 56px;
+        }
+        th:nth-child(3),
+        td:nth-child(3) {
+          width: 90px;
+          min-width: 70px;
+          max-width: 120px;
+        }
+        th:nth-child(4),
+        td:nth-child(4) {
+          width: 80px;
+          min-width: 60px;
+          max-width: 100px;
+        }
+        // 필요시 열 개수에 맞게 추가
         th {
           background: #7ac083;
           color: #fff;
@@ -265,7 +294,7 @@
   td {
     border: 1px solid #d8d8d8;
     padding: 12px 16px;
-    text-align: left;
+    text-align: center;
     font-size: 15px;
   }
   th {
@@ -314,4 +343,173 @@
 }
 .employee-list table tr:hover {
   background: #eafaf1;
+}
+
+.payroll-detail-layout {
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(60, 120, 60, 0.04);
+  padding: 32px 32px 24px 32px;
+  margin-top: 32px;
+  align-items: flex-start;
+}
+.profile-section {
+  min-width: 180px;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  img {
+    width: 140px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1.5px solid #b6e2b6;
+    background: #f5f5f5;
+  }
+}
+.info-section {
+  flex: 1.2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    th,
+    td {
+      border: 1px solid #e3e3e3;
+      padding: 10px 14px;
+      font-size: 15px;
+      background: #fafafa;
+    }
+    th {
+      background: #eafaf1;
+      color: #30512e;
+      font-weight: 500;
+      width: 110px;
+      text-align: center;
+    }
+    td {
+      background: #fff;
+      color: #222;
+      text-align: left;
+    }
+  }
+}
+.form-section {
+  flex: 1.1;
+  min-width: 320px;
+  max-width: 420px;
+}
+
+.payroll-detail-flex-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 36px;
+  width: 100%;
+  margin-top: 32px;
+}
+.payroll-profile-outer {
+  flex: 1 1 0;
+  min-width: 190px;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.payroll-profile-img {
+  width: 200px;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1.5px solid #e6e6e6;
+  background: #f5f5f5;
+  display: block;
+}
+.payroll-detail-table-merged {
+  flex: 2.1 1 0;
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1.5px solid #d8d8d8;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(60, 60, 60, 0.04);
+  table-layout: fixed;
+  th,
+  td {
+    border: 1px solid #d8d8d8;
+    padding: 14px 10px;
+    font-size: 16px;
+    background: #fafafa;
+    vertical-align: middle;
+    min-height: 54px;
+  }
+  th {
+    background: #f5f6fa;
+    color: #444;
+    font-weight: 500;
+    text-align: center;
+    min-width: 90px;
+    width: 110px;
+  }
+  td {
+    background: #fff;
+    color: #222;
+    text-align: left;
+    min-width: 90px;
+    max-width: 180px;
+    word-break: break-all;
+  }
+  input[type='text'],
+  input[type='month'] {
+    height: 40px;
+    border: 1px solid #bcbcbc;
+    border-radius: 5px;
+    background: #fff;
+    font-size: 16px;
+    margin: 0;
+    width: 80%;
+    box-sizing: border-box;
+    outline: none;
+    box-shadow: none;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  button[type='submit'] {
+    background: #888;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 0;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: background 0.2s;
+  }
+  button[type='submit']:hover {
+    background: #aaa;
+  }
+}
+
+.save-button {
+  background: #45bd74;
+  color: #fff;
+  border: none;
+  min-width: 100px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 7px;
+  height: 34px;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: #1fa366;
+  }
 }
