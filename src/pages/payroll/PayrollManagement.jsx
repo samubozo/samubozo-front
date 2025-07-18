@@ -5,6 +5,45 @@ import styles from './PayrollManagement.module.scss';
 import AuthContext from '../../context/UserContext';
 import { API_BASE_URL, PAYROLL, HR } from '../../configs/host-config';
 
+// 직원 목록 불러오는 함수
+const fetchEmployees = async ({
+  page = 0,
+  size = 100,
+  searchName = '',
+  includeRetired = false,
+} = {}) => {
+  try {
+    let url = `${API_BASE_URL}${HR}/user/list`;
+    let params = { page, size };
+
+    if (searchName) {
+      url = `${API_BASE_URL}${HR}/users/search`;
+      params = {
+        userName: searchName,
+        activate: includeRetired ? undefined : 'Y',
+        page,
+        size,
+      };
+    }
+
+    const res = await axiosInstance.get(url, { params });
+    const rawList = res.data.result?.content || res.data.result || [];
+
+    const processedList = rawList.map((emp) => ({
+      id: emp.employeeNo,
+      name: emp.userName,
+      position: emp.positionName,
+      department: emp.department?.name || '',
+      imageUrl: emp.profileImage || '', // 프로필 이미지
+    }));
+
+    return processedList;
+  } catch (err) {
+    console.error('직원 불러오기 실패:', err);
+    return [];
+  }
+};
+
 const departmentOptions = [
   '전체',
   '경영지원',
@@ -14,13 +53,18 @@ const departmentOptions = [
   '디자인',
 ];
 
+const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
+
 const PayrollDetail = ({ employee, onClose }) => {
   const [form, setForm] = useState({
+    payMonthStr: '',
     basePayroll: '',
     positionAllowance: '',
     mealAllowance: '',
     bonus: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
   // 숫자만 추출 후 콤마 포맷
   const formatNumber = (value) => {
@@ -30,89 +74,179 @@ const PayrollDetail = ({ employee, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: formatNumber(value) }));
+    if (name === 'payMonthStr') {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: formatNumber(value) }));
+    }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const [yearStr, monthStr] = form.payMonthStr.split('-');
+      const year = parseInt(yearStr);
+      const month = parseInt(monthStr);
+      // 숫자 필드는 콤마 제거 후 숫자로 변환
+      const payload = {
+        userId: employee.id,
+        payYear: year,
+        payMonth: month,
+        basePayroll: Number(form.basePayroll.replace(/,/g, '')),
+        positionAllowance: Number(form.positionAllowance.replace(/,/g, '')),
+        mealAllowance: Number(form.mealAllowance.replace(/,/g, '')),
+        bonus: Number(form.bonus.replace(/,/g, '')),
+      };
+
+      console.log('🚀 급여 저장 요청 payload:', payload);
+
+      await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
+      setMessage('저장되었습니다.');
+      setForm({
+        payMonthStr: '',
+        basePayroll: '',
+        positionAllowance: '',
+        mealAllowance: '',
+        bonus: '',
+      });
+    } catch (err) {
+      console.error('급여 저장 요청 실패:', err); // 저장 실패 로그
+      setMessage('저장 실패: ' + (err?.response?.data?.message || '오류'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 예시: employee에 계좌, 이미지 등 추가 정보가 있다고 가정
+  const bankName = employee.bankName || '국민은행';
+  const accountNumber = employee.accountNumber || '123-456-7890';
+  const accountHolder = employee.accountHolder || employee.name;
+  const employeeNo = employee.id;
+  const imageUrl = employee.imageUrl || defaultImg;
+  const department = employee.department || '경영지원';
+  const position = employee.position || '사원';
+
   return (
-    <div style={{ marginTop: '32px' }}>
-      <div className={styles['payroll-detail-header']}>
-        <h3>
-          {employee.name} ({employee.position}) 급여 등록/수정
-        </h3>
-        <button onClick={onClose}>닫기</button>
+    <div className={styles['payroll-detail-flex-wrap']}>
+      <div className={styles['payroll-profile-outer']}>
+        <img
+          src={imageUrl}
+          alt='profile'
+          className={styles['payroll-profile-img']}
+        />
       </div>
-      <table className={styles['payroll-detail-table']}>
-        <tbody>
-          <tr>
-            <th>기본급</th>
-            <td>
-              <input
-                type='text'
-                name='basePayroll'
-                value={form.basePayroll}
-                onChange={handleChange}
-                autoComplete='off'
-              />
-            </td>
-          </tr>
-          <tr>
-            <th>직급수당</th>
-            <td>
-              <input
-                type='text'
-                name='positionAllowance'
-                value={form.positionAllowance}
-                onChange={handleChange}
-                autoComplete='off'
-              />
-            </td>
-          </tr>
-          <tr>
-            <th>식대</th>
-            <td>
-              <input
-                type='text'
-                name='mealAllowance'
-                value={form.mealAllowance}
-                onChange={handleChange}
-                autoComplete='off'
-              />
-            </td>
-          </tr>
-          <tr>
-            <th>성과급</th>
-            <td>
-              <input
-                type='text'
-                name='bonus'
-                value={form.bonus}
-                onChange={handleChange}
-                autoComplete='off'
-              />
-            </td>
-          </tr>
-          <tr>
-            <td colSpan={2} style={{ textAlign: 'center', paddingTop: '18px' }}>
-              <button
-                type='submit'
-                style={{
-                  background: '#45bd74',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '8px 0',
-                  fontWeight: 500,
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  width: '100%',
-                }}
-              >
-                저장
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <form onSubmit={handleSubmit} style={{ flex: 2.1 }}>
+        <table className={styles['payroll-detail-table-merged']}>
+          <tbody>
+            <tr>
+              <th>사원번호</th>
+              <td>{employeeNo}</td>
+              <th>급여월</th>
+              <td>
+                <input
+                  type='month'
+                  name='payMonthStr'
+                  value={form.payMonthStr}
+                  onChange={handleChange}
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>성명</th>
+              <td>{employee.name}</td>
+              <th>기본급</th>
+              <td>
+                <input
+                  type='text'
+                  name='basePayroll'
+                  value={form.basePayroll}
+                  onChange={handleChange}
+                  autoComplete='off'
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>계좌</th>
+              <td>
+                {bankName} {accountNumber} ({accountHolder})
+              </td>
+              <th>직급수당</th>
+              <td>
+                <input
+                  type='text'
+                  name='positionAllowance'
+                  value={form.positionAllowance}
+                  onChange={handleChange}
+                  autoComplete='off'
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>부서</th>
+              <td>{department}</td>
+              <th>식대</th>
+              <td>
+                <input
+                  type='text'
+                  name='mealAllowance'
+                  value={form.mealAllowance}
+                  onChange={handleChange}
+                  autoComplete='off'
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>직책</th>
+              <td>{position}</td>
+              <th>성과급</th>
+              <td>
+                <input
+                  type='text'
+                  name='bonus'
+                  value={form.bonus}
+                  onChange={handleChange}
+                  autoComplete='off'
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            marginTop: 18,
+          }}
+        >
+          <button
+            type='submit'
+            disabled={loading}
+            style={{ minWidth: 180 }}
+            className={styles['save-button']}
+          >
+            {loading ? '저장 중...' : '저장'}
+          </button>
+          {message && (
+            <div
+              style={{
+                textAlign: 'center',
+                color: message.includes('실패') ? 'red' : 'green',
+                paddingTop: 8,
+                fontWeight: 500,
+              }}
+            >
+              {message}
+            </div>
+          )}
+        </div>
+      </form>
     </div>
   );
 };
@@ -152,6 +286,8 @@ const PayrollManagement = () => {
         })
         .then((res) => {
           const result = res.data.result;
+          console.log('monthly data: ', result);
+
           setPayrollData({
             basePayroll: Number(result?.basePayroll ?? 0),
             positionAllowance: Number(result?.positionAllowance ?? 0),
@@ -191,31 +327,11 @@ const PayrollManagement = () => {
   };
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const res = await axiosInstance.get(`${API_BASE_URL}${HR}/user/list`, {
-          params: { page: 1, size: 100 },
-        });
-
-        const rawList = res.data.result?.content || res.data.result || [];
-
-        // 👉 필요한 필드만 포함 (사원명과 직급만)
-        const processedList = rawList.map((emp) => ({
-          id: emp.employeeNo,
-          name: emp.userName,
-          position: emp.positionName,
-        }));
-
-        console.log('employeeData:', processedList);
-
-        setEmployeeData(processedList);
-      } catch (err) {
-        console.error('직원 데이터 불러오기 실패:', err);
-        setEmployeeData([]);
-      }
+    const loadEmployees = async () => {
+      const employees = await fetchEmployees(); // ← 여기서 호출
+      setEmployeeData(employees);
     };
-
-    fetchEmployees(); // 호출
+    loadEmployees();
   }, []);
 
   useEffect(() => {
