@@ -1,8 +1,5 @@
 import axiosInstance from '../configs/axios-config';
-import { API_BASE_URL, VACATION } from '../configs/host-config';
-
-// 임시로 하드코딩 (스테이징 완료 후 host-config.js에서 import로 변경 예정)
-const APPROVAL = '/approval-service/approvals';
+import { API_BASE_URL, VACATION, APPROVAL } from '../configs/host-config';
 
 export const approvalService = {
   // 1. 휴가 신청
