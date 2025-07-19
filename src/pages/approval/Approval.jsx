@@ -1,121 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styles from './Approval.module.scss';
 import { useLocation } from 'react-router-dom';
 import { approvalService } from '../../services/approvalService';
 import ToastNotification from '../../components/ToastNotification';
+import VacationRequest from '../attendance/VacationRequest';
+import AuthContext from '../../context/UserContext';
 
-// 독립 컴포넌트: Tab
-function ApprovalTabs({ tab, setTab }) {
-  return (
-    <div className={styles.tabs}>
-      <button
-        className={`${styles.tabBtn} ${tab === 'certificate' ? styles.activeTab : ''}`}
-        onClick={() => setTab('certificate')}
-      >
-        증명서 내역
-      </button>
-      <button
-        className={`${styles.tabBtn} ${tab === 'leave' ? styles.activeTab : ''}`}
-        onClick={() => setTab('leave')}
-      >
-        연차/반차 내역
-      </button>
-    </div>
-  );
-}
+// 분리된 컴포넌트들
+import ApprovalTabs from './ApprovalTabs';
+import Dropdown from './Dropdown';
+import DatePicker from './DatePicker';
+import RejectModal from './RejectModal';
+import ApprovalTable from './ApprovalTable';
 
-// 독립 컴포넌트: Dropdown
-function Dropdown({ options, value, onChange }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className={styles.dropdown} tabIndex={0} onBlur={() => setOpen(false)}>
-      <div
-        className={styles.dropdownSelected}
-        onClick={() => setOpen((v) => !v)}
-      >
-        {options.find((o) => o.value === value)?.label || options[0].label}
-        <span className={styles.dropdownArrow}>▼</span>
-      </div>
-      {open && (
-        <div className={styles.dropdownList}>
-          {options.map((o) => (
-            <div
-              key={o.value}
-              className={styles.dropdownItem}
-              onClick={() => {
-                onChange(o.value);
-                setOpen(false);
-              }}
-            >
-              {o.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// 상수들
+import {
+  leaveOptions,
+  certOptions,
+  statusOptions,
+  leaveFilterTypes,
+  certFilterTypes,
+  leaveColumns,
+  certColumns,
+  vacationTypeMap,
+  statusMap,
+  hrApprovalStatusOptions,
+} from './constants';
 
-// 독립 컴포넌트: DatePicker (간단한 input type=date)
-function DatePicker({ value, onChange }) {
-  return (
-    <input
-      type='date'
-      className={styles.datePicker}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
-}
+// Hooks
+import { useApprovalData } from './hooks/useApprovalData';
 
-// 독립 컴포넌트: Table
-function ApprovalTable({ columns, data, selected, setSelected }) {
-  const toggle = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id],
-    );
-  };
-  return (
-    <table className={styles.table}>
-      <thead>
-        <tr>
-          <th>
-            <input
-              type='checkbox'
-              checked={selected.length === data.length && data.length > 0}
-              onChange={(e) =>
-                setSelected(e.target.checked ? data.map((d) => d.id) : [])
-              }
-            />
-          </th>
-          {columns.map((col) => (
-            <th key={col.key}>{col.label}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, idx) => (
-          <tr key={row.id ?? idx}>
-            <td>
-              <input
-                type='checkbox'
-                checked={selected.includes(row.id)}
-                onChange={() => toggle(row.id)}
-              />
-            </td>
-            {columns.map((col) => (
-              <td key={col.key}>{row[col.key]}</td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
+// 메인 Approval 컴포넌트
 
 // 메인 Approval 컴포넌트
 function Approval() {
   const location = useLocation();
+  const { user } = useContext(AuthContext);
+  const isHR = user?.hrRole === 'Y';
+
   // 쿼리 파라미터에서 tab 값을 읽어옴
   const params = new URLSearchParams(location.search);
   const initialTab =
@@ -134,10 +56,41 @@ function Approval() {
   const pageSize = 10;
   const [toast, setToast] = useState(null);
 
+  // HR용 결재 상태 필터
+  const [approvalStatus, setApprovalStatus] = useState('pending');
+
+  // 휴가 수정 모달 상태
+  const [showVacationEdit, setShowVacationEdit] = useState(false);
+  const [editVacationData, setEditVacationData] = useState(null);
+
+  // 반려 모달 상태
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTargetId, setRejectTargetId] = useState(null);
+  const [rejectLoading, setRejectLoading] = useState(false);
+
+  // hooks 사용
+  const {
+    leaveData,
+    setLeaveData,
+    certData,
+    loading,
+    fetchData,
+    mapLeaveData,
+  } = useApprovalData(tab, isHR, user, approvalStatus);
+
   // 필터/탭 변경 시 page를 1로 리셋
   useEffect(() => {
     setPage(1);
-  }, [item, status, dateFrom, dateTo, filterType, filterValue, tab]);
+  }, [
+    item,
+    status,
+    dateFrom,
+    dateTo,
+    filterType,
+    filterValue,
+    tab,
+    approvalStatus,
+  ]);
 
   // 탭 변경 시 필터값 모두 초기화
   useEffect(() => {
@@ -161,104 +114,72 @@ function Approval() {
     }
   }, [location.search]);
 
-  // 더미 데이터
-  const leaveOptions = [
-    { value: 'all', label: '전체' },
-    { value: '연차', label: '연차' },
-    { value: '반차', label: '반차' },
-  ];
-  const certOptions = [
-    { value: 'all', label: '전체' },
-    { value: '재직', label: '재직' },
-    { value: '경력', label: '경력' },
-    { value: '퇴직', label: '퇴직' },
-  ];
-  const statusOptions = [
-    { value: 'all', label: '전체' },
-    { value: '요청', label: '요청' },
-    { value: '승인', label: '승인' },
-    { value: '반려', label: '반려' },
-  ];
-  const leaveFilterTypes = [
-    { value: 'all', label: '전체' },
-    { value: 'applicant', label: '신청자' },
-    { value: 'approver', label: '결재자' },
-    { value: 'reason', label: '사유' },
-  ];
-  const certFilterTypes = [
-    { value: 'all', label: '전체' },
-    { value: 'applicant', label: '신청자' },
-    { value: 'approver', label: '결재자' },
-    { value: 'purpose', label: '용도' },
-  ];
+  // 휴가 수정 핸들러
 
-  // 더미 테이블 데이터
-  const leaveColumns = [
-    { key: 'type', label: '항목' },
-    { key: 'reason', label: '사유' },
-    { key: 'applicant', label: '신청자' },
-    { key: 'applyDate', label: '신청일자' },
-    { key: 'approver', label: '결재자' },
-    { key: 'processer', label: '처리일자' },
-    { key: 'status', label: '상태' },
-  ];
-  const certColumns = [
-    { key: 'type', label: '항목' },
-    { key: 'purpose', label: '용도' },
-    { key: 'applicant', label: '신청자' },
-    { key: 'applyDate', label: '신청일자' },
-    { key: 'approver', label: '결재자' },
-    { key: 'processer', label: '처리일자' },
-    { key: 'status', label: '상태' },
-  ];
-  const [leaveData, setLeaveData] = useState([]);
-  const [certData, setCertData] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // 영어 -> 한글 매핑 객체 추가
-  const vacationTypeMap = {
-    ANNUAL_LEAVE: '연차',
-    AM_HALF_DAY: '반차(오전)',
-    PM_HALF_DAY: '반차(오후)',
-  };
-  const statusMap = {
-    PENDING: '대기',
-    APPROVED: '승인',
-    REJECTED: '반려',
+  // 휴가 수정 핸들러
+  const handleEditVacation = (row) => {
+    if (isHR) {
+      return; // HR이면 수정 불가
+    }
+    const originalData = row.originalData;
+    setEditVacationData({
+      id: row.id,
+      vacationType: originalData.vacationType,
+      startDate: originalData.startDate,
+      endDate: originalData.endDate,
+      reason: originalData.reason,
+      period: row.period, // 기간 정보 추가
+    });
+    setShowVacationEdit(true);
   };
 
-  // 실제 API 연동: 휴가/증명서 목록 불러오기
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        if (tab === 'leave') {
-          const res = await approvalService.getPendingApprovals();
-          const arr = Array.isArray(res) ? res : res?.result || [];
-          setLeaveData(
-            arr.map((row) => ({
-              id: row.vacationId,
-              type: vacationTypeMap[row.vacationType] || row.vacationType, // 한글 변환
-              reason: row.reason,
-              applicant: row.applicantName,
-              department: row.department,
-              applyDate: row.startDate,
-              endDate: row.endDate,
-              status: statusMap[row.status] || '대기', // 한글 변환
-            })),
-          );
-        } else {
-          setCertData([]); // 임시
-        }
-      } catch (e) {
-        setLeaveData([]);
-        setCertData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [tab]);
+  const closeVacationEdit = () => {
+    setShowVacationEdit(false);
+    setEditVacationData(null);
+  };
+
+  const handleVacationEditComplete = () => {
+    closeVacationEdit();
+    fetchData(); // hooks의 fetchData 사용
+  };
+
+  // HR 담당자용 승인 핸들러
+  const handleHRApprove = async (approvalId) => {
+    try {
+      await approvalService.approveHRVacation(approvalId);
+      setToast({ message: '승인 처리 완료', type: 'success' });
+      fetchData(); // hooks의 fetchData 사용
+    } catch (err) {
+      setToast({
+        message: err.message || '승인 처리 중 오류가 발생했습니다.',
+        type: 'error',
+      });
+    }
+  };
+
+  // HR 담당자용 반려 핸들러
+  const handleHRReject = (approvalId) => {
+    setRejectTargetId(approvalId);
+    setShowRejectModal(true);
+  };
+
+  const handleRejectConfirm = async (comment) => {
+    setRejectLoading(true);
+    try {
+      await approvalService.rejectHRVacation(rejectTargetId, comment);
+      setToast({ message: '반려 처리 완료', type: 'success' });
+      setShowRejectModal(false);
+      setRejectTargetId(null);
+      fetchData(); // hooks의 fetchData 사용
+    } catch (err) {
+      setToast({
+        message: err.message || '반려 처리 중 오류가 발생했습니다.',
+        type: 'error',
+      });
+    } finally {
+      setRejectLoading(false);
+    }
+  };
 
   // 필터링 (간단 예시)
   const filteredLeave = leaveData.filter((row) => {
@@ -272,6 +193,13 @@ function Approval() {
       if (filterType === 'approver' && !row.approver.includes(filterValue))
         return false;
       if (filterType === 'reason' && !row.reason.includes(filterValue))
+        return false;
+      if (filterType === 'period' && !row.period.includes(filterValue))
+        return false;
+      if (
+        filterType === 'applicantDepartment' &&
+        !row.applicantDepartment.includes(filterValue)
+      )
         return false;
     }
     return true;
@@ -288,6 +216,11 @@ function Approval() {
         return false;
       if (filterType === 'purpose' && !row.purpose.includes(filterValue))
         return false;
+      if (
+        filterType === 'applicantDepartment' &&
+        !row.applicantDepartment.includes(filterValue)
+      )
+        return false;
     }
     return true;
   });
@@ -296,17 +229,17 @@ function Approval() {
   const handleDelete = async () => {
     setSelected([]);
     // TODO: 실제 삭제 API 연동 필요
-    // 삭제 후 목록 새로고침
-    if (tab === 'leave') {
-      const res = await approvalService.getPendingApprovals();
-      setLeaveData(res || []);
-    }
+    fetchData(); // hooks의 fetchData 사용
   };
   const handleReject = async () => {
     if (tab !== 'leave' || selected.length === 0) return;
     for (const id of selected) {
       try {
-        await approvalService.rejectVacation(id, '사유 입력 필요');
+        if (isHR) {
+          await approvalService.rejectHRVacation(id, '사유 입력 필요');
+        } else {
+          await approvalService.rejectVacation(id, '사유 입력 필요');
+        }
       } catch (err) {
         setToast({
           message: err.message || '반려 처리 중 오류가 발생했습니다.',
@@ -316,9 +249,7 @@ function Approval() {
     }
     setToast({ message: '반려 처리 완료', type: 'success' });
     setSelected([]);
-    // 반려 후 목록 새로고침
-    const res = await approvalService.getPendingApprovals();
-    setLeaveData(res || []);
+    fetchData(); // hooks의 fetchData 사용
   };
   const handleApprove = async () => {
     if (tab !== 'leave' || selected.length === 0) return;
@@ -326,7 +257,11 @@ function Approval() {
     let failCount = 0;
     for (const id of selected) {
       try {
-        await approvalService.approveVacation(id);
+        if (isHR) {
+          await approvalService.approveHRVacation(id);
+        } else {
+          await approvalService.approveVacation(id);
+        }
         successCount++;
       } catch (err) {
         failCount++;
@@ -343,9 +278,7 @@ function Approval() {
       });
     }
     setSelected([]);
-    // 승인 후 목록 새로고침
-    const res = await approvalService.getPendingApprovals();
-    setLeaveData(res || []);
+    fetchData(); // hooks의 fetchData 사용
   };
 
   // 페이징 처리
@@ -360,6 +293,19 @@ function Approval() {
 
   return (
     <div className={styles.approvalWrap}>
+      {/* HR 권한 안내 */}
+      {isHR && (
+        <div className={styles.hrNotice}>
+          <div className={styles.hrNoticeContent}>
+            <span className={styles.hrBadge}>HR 담당자</span>
+            <span className={styles.hrMessage}>
+              휴가 요청을 승인하거나 반려할 수 있습니다. 승인 시 연차가 자동으로
+              차감되고, 반려 시 연차가 복구됩니다.
+            </span>
+          </div>
+        </div>
+      )}
+
       <ApprovalTabs tab={tab} setTab={setTab} />
       <div className={styles.filterRow}>
         <label className={styles.filterLabel}>항목</label>
@@ -370,6 +316,16 @@ function Approval() {
         />
         <label className={styles.filterLabel}>상태</label>
         <Dropdown options={statusOptions} value={status} onChange={setStatus} />
+        {isHR && tab === 'leave' && (
+          <>
+            <label className={styles.filterLabel}>결재 상태</label>
+            <Dropdown
+              options={hrApprovalStatusOptions}
+              value={approvalStatus}
+              onChange={setApprovalStatus}
+            />
+          </>
+        )}
         <DatePicker value={dateFrom} onChange={setDateFrom} />
         <span>~</span>
         <DatePicker value={dateTo} onChange={setDateTo} />
@@ -395,6 +351,18 @@ function Approval() {
           data={tab === 'leave' ? pagedLeave : pagedCert}
           selected={selected}
           setSelected={setSelected}
+          onEditVacation={tab === 'leave' && !isHR ? handleEditVacation : null}
+          onApprove={
+            tab === 'leave' && isHR && approvalStatus === 'pending'
+              ? handleHRApprove
+              : null
+          }
+          onReject={
+            tab === 'leave' && isHR && approvalStatus === 'pending'
+              ? handleHRReject
+              : null
+          }
+          isHR={isHR}
         />
       </div>
       <div className={styles.pagination}>
@@ -413,16 +381,59 @@ function Approval() {
         ))}
       </div>
       <div className={styles.actionRow}>
-        <button className={styles.deleteBtn} onClick={handleDelete}>
-          삭제
-        </button>
-        <button className={styles.rejectBtn} onClick={handleReject}>
-          반려
-        </button>
-        <button className={styles.approveBtn} onClick={handleApprove}>
-          승인
-        </button>
+        {isHR && approvalStatus === 'pending' && (
+          <>
+            <button
+              className={styles.deleteBtn}
+              onClick={handleDelete}
+              disabled={selected.length === 0}
+            >
+              삭제
+            </button>
+            <button
+              className={styles.rejectBtn}
+              onClick={handleReject}
+              disabled={selected.length === 0}
+            >
+              반려
+            </button>
+            <button
+              className={styles.approveBtn}
+              onClick={handleApprove}
+              disabled={selected.length === 0}
+            >
+              승인
+            </button>
+          </>
+        )}
       </div>
+
+      {/* 휴가 수정 모달 */}
+      {showVacationEdit && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <button className={styles.modalClose} onClick={closeVacationEdit}>
+              ×
+            </button>
+            <VacationRequest
+              onClose={handleVacationEditComplete}
+              editData={editVacationData}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 반려 사유 입력 모달 */}
+      <RejectModal
+        open={showRejectModal}
+        onClose={() => {
+          setShowRejectModal(false);
+          setRejectTargetId(null);
+        }}
+        onConfirm={handleRejectConfirm}
+        loading={rejectLoading}
+      />
+
       {toast && (
         <ToastNotification
           message={toast.message}

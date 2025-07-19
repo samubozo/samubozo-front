@@ -99,29 +99,6 @@ export const attendanceService = {
     }
   },
 
-  /**
-   * 휴가 신청 (연차/반차)
-   * @param {Object} params
-   * @param {'ANNUAL_LEAVE'|'AM_HALF_DAY'|'PM_HALF_DAY'} params.vacationType
-   * @param {string} params.startDate - YYYY-MM-DD
-   * @param {string} params.endDate - YYYY-MM-DD
-   * @param {string} params.reason
-   * @returns {Promise}
-   */
-  // async requestVacation({ vacationType, startDate, endDate, reason }) {
-  //   try {
-  //     const response = await axiosInstance.post(
-  //       `${API_BASE_URL}${ATTENDANCE}/half-day`,
-  //       { vacationType, startDate, endDate, reason },
-  //     );
-  //     return response.data;
-  //   } catch (error) {
-  //     // axios 에러 메시지 통일
-  //     const msg = error.response?.data?.message || '휴가 신청 실패';
-  //     throw new Error(msg);
-  //   }
-  // },
-
   // 부재 등록 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)
   registerAbsence: async (absenceData) => {
     try {

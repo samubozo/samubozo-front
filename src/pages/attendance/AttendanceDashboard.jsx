@@ -340,455 +340,468 @@ export default function AttendanceDashboard() {
     };
   }, []);
 
-  return (
-    <div className={styles.attendanceDashboard}>
-      {/* 에러 메시지 표시 */}
-      {error && <div className={styles.errorMessage}>{error}</div>}
+  // renderAttendanceDashboard 함수로 분리
+  function renderAttendanceDashboard() {
+    return (
+      <div className={styles.attendanceDashboard}>
+        {/* 에러 메시지 표시 */}
+        {error && <div className={styles.errorMessage}>{error}</div>}
 
-      {/* 상단 대시보드 그리드 */}
-      <div className={styles.dashboardGrid}>
-        {/* 메인 컨텐츠 */}
-        <main className={styles.mainContent}>
-          <div className={`${styles.card} ${styles.actionsCard}`}>
-            <div className={styles.actionsGrid}>
-              <div className={styles.actionItem}>
-                <div className={styles.cardLabel}>
-                  {step === '출근' || step === '외출'
-                    ? '출근'
-                    : step === '복귀'
-                      ? '외출'
-                      : '복귀'}
-                </div>
-                <div className={styles.cardValue}>
-                  {step === '출근' && '00:00'}
-                  {step === '외출' && getTimeStr(attendanceData.checkInTime)}
-                  {step === '복귀' && getTimeStr(attendanceData.goOutTime)}
-                  {step === '복귀완료' && getTimeStr(attendanceData.returnTime)}
-                </div>
-                <button
-                  className={styles.cardButton}
-                  onClick={handleAttendanceAction}
-                  disabled={
-                    loading ||
-                    attendanceData.checkOutTime ||
-                    step === '복귀완료'
-                  }
-                >
-                  {loading
-                    ? '처리중...'
-                    : step === '출근'
-                      ? '출근하기'
-                      : step === '외출'
-                        ? '외출하기'
-                        : step === '복귀'
-                          ? '복귀하기'
-                          : '복귀완료'}
-                </button>
-              </div>
-              <div className={styles.actionItem}>
-                <div className={styles.cardLabel}>퇴근</div>
-                <div className={styles.cardValue}>
-                  {getTimeStr(attendanceData.checkOutTime)}
-                </div>
-                <button
-                  className={styles.cardButton}
-                  onClick={handleCheckOut}
-                  disabled={
-                    loading ||
-                    !attendanceData.checkInTime ||
-                    attendanceData.checkOutTime
-                  }
-                >
-                  {loading
-                    ? '처리중...'
-                    : attendanceData.checkOutTime
-                      ? '퇴근완료'
-                      : '퇴근하기'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.horizontalCardContainer}>
-            <div className={styles.verticalCardContainer}>
-              <div className={`${styles.card} ${styles.workTimeCard}`}>
-                <div className={styles.cardLabel}>내 근무 시간</div>
-                <div className={styles.workTimeBody}>
-                  <div className={styles.workTimeItem}>
-                    <span>남은 근무 시간</span>
-                    <span className={styles.timeValue}>
-                      {remainingWorkTime}
-                    </span>
+        {/* 상단 대시보드 그리드 */}
+        <div className={styles.dashboardGrid}>
+          {/* 메인 컨텐츠 */}
+          <main className={styles.mainContent}>
+            <div className={`${styles.card} ${styles.actionsCard}`}>
+              <div className={styles.actionsGrid}>
+                <div className={styles.actionItem}>
+                  <div className={styles.cardLabel}>
+                    {step === '출근' || step === '외출'
+                      ? '출근'
+                      : step === '복귀'
+                        ? '외출'
+                        : '복귀'}
                   </div>
-                  <div className={styles.workTimeItem}>
-                    <span>근무한 시간</span>
-                    <span className={styles.timeValue}>{workedHours}</span>
+                  <div className={styles.cardValue}>
+                    {step === '출근' && '00:00'}
+                    {step === '외출' && getTimeStr(attendanceData.checkInTime)}
+                    {step === '복귀' && getTimeStr(attendanceData.goOutTime)}
+                    {step === '복귀완료' &&
+                      getTimeStr(attendanceData.returnTime)}
                   </div>
-                </div>
-              </div>
-
-              <div className={`${styles.card} ${styles.todayMessageCard}`}>
-                <div className={styles.cardLabel}>오늘의 한마디</div>
-                <div className={styles.mainMessage}>{getDayMessage()}</div>
-                <div className={styles.cardSub}>
-                  {getHealthTip().tip}
-                  <br />
-                  {getHealthTip().detail}
-                </div>
-              </div>
-            </div>
-            {/* New card for the graph */}
-            <div className={`${styles.card} ${styles.graphCard}`}>
-              <div className={styles.cardLabel}>연차 사용률</div>
-              {vacationLoading && <div>연차 정보 불러오는 중...</div>}
-              {vacationError && (
-                <div style={{ color: 'red' }}>{vacationError}</div>
-              )}
-              <div className={styles.circleGraphBox}>
-                <svg width='160' height='160' className={styles.circleGraph}>
-                  <circle
-                    cx='80'
-                    cy='80'
-                    r='70'
-                    fill='none'
-                    stroke='#e0e0e0'
-                    strokeWidth='12'
-                  />
-                  <circle
-                    cx='80'
-                    cy='80'
-                    r='70'
-                    fill='none'
-                    stroke='#4caf50'
-                    strokeWidth='12'
-                    strokeDasharray={2 * Math.PI * 70}
-                    strokeDashoffset={
-                      2 *
-                      Math.PI *
-                      70 *
-                      (1 -
-                        (vacationBalance.totalGranted > 0
-                          ? vacationBalance.usedDays /
-                            vacationBalance.totalGranted
-                          : 0))
+                  <button
+                    className={styles.cardButton}
+                    onClick={handleAttendanceAction}
+                    disabled={
+                      loading ||
+                      attendanceData.checkOutTime ||
+                      step === '복귀완료'
                     }
-                    style={{ transition: 'stroke-dashoffset 0.6s' }}
-                  />
-                </svg>
-                <div className={styles.graphCenter}>
-                  <div className={styles.percentText}>
-                    {vacationBalance.totalGranted > 0
-                      ? `${Math.round(
-                          (vacationBalance.usedDays /
-                            vacationBalance.totalGranted) *
-                            100,
-                        )}%`
-                      : '0%'}
+                  >
+                    {loading
+                      ? '처리중...'
+                      : step === '출근'
+                        ? '출근하기'
+                        : step === '외출'
+                          ? '외출하기'
+                          : step === '복귀'
+                            ? '복귀하기'
+                            : '복귀완료'}
+                  </button>
+                </div>
+                <div className={styles.actionItem}>
+                  <div className={styles.cardLabel}>퇴근</div>
+                  <div className={styles.cardValue}>
+                    {getTimeStr(attendanceData.checkOutTime)}
                   </div>
-                  <div className={styles.usageLabel}>사용률</div>
+                  <button
+                    className={styles.cardButton}
+                    onClick={handleCheckOut}
+                    disabled={
+                      loading ||
+                      !attendanceData.checkInTime ||
+                      attendanceData.checkOutTime
+                    }
+                  >
+                    {loading
+                      ? '처리중...'
+                      : attendanceData.checkOutTime
+                        ? '퇴근완료'
+                        : '퇴근하기'}
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        </main>
 
-        {/* 사이드바 */}
-        <aside className={styles.sidebar}>
-          <div className={styles.dashboardDateTimeInfo}>
-            {`${today.getFullYear()}.${String(today.getMonth() + 1).padStart(
-              2,
-              '0',
-            )}.${String(today.getDate()).padStart(2, '0')} ${getDayName(
-              today,
-            )} / ${getTimeStrWithSec(currentTime)}`}
-          </div>
+            <div className={styles.horizontalCardContainer}>
+              <div className={styles.verticalCardContainer}>
+                <div className={`${styles.card} ${styles.workTimeCard}`}>
+                  <div className={styles.cardLabel}>내 근무 시간</div>
+                  <div className={styles.workTimeBody}>
+                    <div className={styles.workTimeItem}>
+                      <span>남은 근무 시간</span>
+                      <span className={styles.timeValue}>
+                        {remainingWorkTime}
+                      </span>
+                    </div>
+                    <div className={styles.workTimeItem}>
+                      <span>근무한 시간</span>
+                      <span className={styles.timeValue}>{workedHours}</span>
+                    </div>
+                  </div>
+                </div>
 
-          <div className={`${styles.card} ${styles.vacationCard}`}>
-            <div className={styles.cardLabel}>연차 현황</div>
-            {vacationLoading ? (
-              <div>연차 정보 불러오는 중...</div>
-            ) : vacationError ? (
-              <div style={{ color: 'red' }}>{vacationError}</div>
-            ) : (
-              <div className={styles.vacationContent}>
-                <div className={styles.leaveDetails}>
-                  <div className={styles.leaveRow}>
-                    <span className={styles.leaveLabel}>남은 연차</span>
-                    <span className={styles.leaveValue}>
-                      {vacationBalance.remainingDays}
-                    </span>
-                  </div>
-                  <div className={styles.leaveRow}>
-                    <span className={styles.leaveLabel}>사용 연차</span>
-                    <span className={styles.leaveValue}>
-                      {vacationBalance.usedDays}
-                    </span>
-                  </div>
-                  <div className={styles.leaveRow}>
-                    <span className={styles.leaveLabel}>총 연차</span>
-                    <span className={styles.leaveValue}>
-                      {vacationBalance.totalGranted}
-                    </span>
+                <div className={`${styles.card} ${styles.todayMessageCard}`}>
+                  <div className={styles.cardLabel}>오늘의 한마디</div>
+                  <div className={styles.mainMessage}>{getDayMessage()}</div>
+                  <div className={styles.cardSub}>
+                    {getHealthTip().tip}
+                    <br />
+                    {getHealthTip().detail}
                   </div>
                 </div>
               </div>
-            )}
-            {/* 연차 사용법 안내 */}
-            <div
-              style={{
-                marginTop: '10px',
-                paddingTop: '10px',
-                borderTop: '1px solid #e9ecef',
-                fontSize: '0.8em',
-                color: '#666',
-                lineHeight: '1.4',
-              }}
-            >
+              {/* New card for the graph */}
+              <div className={`${styles.card} ${styles.graphCard}`}>
+                <div className={styles.cardLabel}>연차 사용률</div>
+                {vacationLoading && <div>연차 정보 불러오는 중...</div>}
+                {vacationError && (
+                  <div style={{ color: 'red' }}>{vacationError}</div>
+                )}
+                <div className={styles.circleGraphBox}>
+                  <svg width='160' height='160' className={styles.circleGraph}>
+                    <circle
+                      cx='80'
+                      cy='80'
+                      r='70'
+                      fill='none'
+                      stroke='#e0e0e0'
+                      strokeWidth='12'
+                    />
+                    <circle
+                      cx='80'
+                      cy='80'
+                      r='70'
+                      fill='none'
+                      stroke='#4caf50'
+                      strokeWidth='12'
+                      strokeDasharray={2 * Math.PI * 70}
+                      strokeDashoffset={
+                        2 *
+                        Math.PI *
+                        70 *
+                        (1 -
+                          (vacationBalance.totalGranted > 0
+                            ? vacationBalance.usedDays /
+                              vacationBalance.totalGranted
+                            : 0))
+                      }
+                      style={{ transition: 'stroke-dashoffset 0.6s' }}
+                    />
+                  </svg>
+                  <div className={styles.graphCenter}>
+                    <div className={styles.percentText}>
+                      {vacationBalance.totalGranted > 0
+                        ? `${Math.round(
+                            (vacationBalance.usedDays /
+                              vacationBalance.totalGranted) *
+                              100,
+                          )}%`
+                        : '0%'}
+                    </div>
+                    <div className={styles.usageLabel}>사용률</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          {/* 사이드바 */}
+          <aside className={styles.sidebar}>
+            <div className={styles.dashboardDateTimeInfo}>
+              {`${today.getFullYear()}.${String(today.getMonth() + 1).padStart(
+                2,
+                '0',
+              )}.${String(today.getDate()).padStart(2, '0')} ${getDayName(
+                today,
+              )} / ${getTimeStrWithSec(currentTime)}`}
+            </div>
+
+            <div className={`${styles.card} ${styles.vacationCard}`}>
+              <div className={styles.cardLabel}>연차 현황</div>
+              {vacationLoading ? (
+                <div>연차 정보 불러오는 중...</div>
+              ) : vacationError ? (
+                <div style={{ color: 'red' }}>{vacationError}</div>
+              ) : (
+                <div className={styles.vacationContent}>
+                  <div className={styles.leaveDetails}>
+                    <div className={styles.leaveRow}>
+                      <span className={styles.leaveLabel}>남은 연차</span>
+                      <span className={styles.leaveValue}>
+                        {vacationBalance.remainingDays}
+                      </span>
+                    </div>
+                    <div className={styles.leaveRow}>
+                      <span className={styles.leaveLabel}>사용 연차</span>
+                      <span className={styles.leaveValue}>
+                        {vacationBalance.usedDays}
+                      </span>
+                    </div>
+                    <div className={styles.leaveRow}>
+                      <span className={styles.leaveLabel}>총 연차</span>
+                      <span className={styles.leaveValue}>
+                        {vacationBalance.totalGranted}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* 연차 사용법 안내 */}
               <div
                 style={{
-                  fontWeight: '600',
-                  marginBottom: '6px',
-                  color: '#388e3c',
-                  fontSize: '0.9em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
+                  marginTop: '10px',
+                  paddingTop: '10px',
+                  borderTop: '1px solid #e9ecef',
+                  fontSize: '0.8em',
+                  color: '#666',
+                  lineHeight: '1.4',
                 }}
               >
-                <span style={{ fontSize: '0.8em' }}>📋</span>
-                연차 사용법
+                <div
+                  style={{
+                    fontWeight: '600',
+                    marginBottom: '6px',
+                    color: '#388e3c',
+                    fontSize: '0.9em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <span style={{ fontSize: '0.8em' }}>📋</span>
+                  연차 사용법
+                </div>
+                <ul
+                  style={{
+                    margin: '0',
+                    padding: '0',
+                    fontSize: '0.85em',
+                    listStyle: 'none',
+                  }}
+                >
+                  <li
+                    style={{
+                      marginBottom: '3px',
+                      paddingLeft: '16px',
+                      position: 'relative',
+                      color: '#5a5a5a',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        left: '0',
+                        color: '#4caf50',
+                        fontSize: '0.7em',
+                      }}
+                    >
+                      ●
+                    </span>
+                    연차는 1일 단위로 사용 가능합니다.
+                  </li>
+                  <li
+                    style={{
+                      marginBottom: '3px',
+                      paddingLeft: '16px',
+                      position: 'relative',
+                      color: '#5a5a5a',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        left: '0',
+                        color: '#4caf50',
+                        fontSize: '0.7em',
+                      }}
+                    >
+                      ●
+                    </span>
+                    반차는 오전/오후로 나누어 사용 가능합니다.
+                  </li>
+                  <li
+                    style={{
+                      marginBottom: '3px',
+                      paddingLeft: '16px',
+                      position: 'relative',
+                      color: '#5a5a5a',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        left: '0',
+                        color: '#4caf50',
+                        fontSize: '0.7em',
+                      }}
+                    >
+                      ●
+                    </span>
+                    연차 신청은 최소 1일 전에 해주세요.
+                  </li>
+                </ul>
               </div>
-              <ul
-                style={{
-                  margin: '0',
-                  padding: '0',
-                  fontSize: '0.85em',
-                  listStyle: 'none',
-                }}
-              >
-                <li
-                  style={{
-                    marginBottom: '3px',
-                    paddingLeft: '16px',
-                    position: 'relative',
-                    color: '#5a5a5a',
-                  }}
-                >
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: '0',
-                      color: '#4caf50',
-                      fontSize: '0.7em',
-                    }}
-                  >
-                    ●
-                  </span>
-                  연차는 1일 단위로 사용 가능합니다.
-                </li>
-                <li
-                  style={{
-                    marginBottom: '3px',
-                    paddingLeft: '16px',
-                    position: 'relative',
-                    color: '#5a5a5a',
-                  }}
-                >
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: '0',
-                      color: '#4caf50',
-                      fontSize: '0.7em',
-                    }}
-                  >
-                    ●
-                  </span>
-                  반차는 오전/오후로 나누어 사용 가능합니다.
-                </li>
-                <li
-                  style={{
-                    marginBottom: '3px',
-                    paddingLeft: '16px',
-                    position: 'relative',
-                    color: '#5a5a5a',
-                  }}
-                >
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: '0',
-                      color: '#4caf50',
-                      fontSize: '0.7em',
-                    }}
-                  >
-                    ●
-                  </span>
-                  연차 신청은 최소 1일 전에 해주세요.
-                </li>
-              </ul>
             </div>
-          </div>
 
-          <div className={`${styles.card} ${styles.requestCard}`}>
-            <div className={styles.cardLabel}>부재/휴가</div>
-            <div className={styles.cardButtonRow}>
-              <button className={styles.cardButtonSub} onClick={handleAbsence}>
-                부재 등록
-              </button>
-              <button className={styles.cardButtonSub} onClick={handleVacation}>
-                휴가 신청
-              </button>
+            <div className={`${styles.card} ${styles.requestCard}`}>
+              <div className={styles.cardLabel}>부재/휴가</div>
+              <div className={styles.cardButtonRow}>
+                <button
+                  className={styles.cardButtonSub}
+                  onClick={handleAbsence}
+                >
+                  부재 등록
+                </button>
+                <button
+                  className={styles.cardButtonSub}
+                  onClick={handleVacation}
+                >
+                  휴가 신청
+                </button>
+              </div>
             </div>
-          </div>
-        </aside>
-      </div>
-
-      {/* 하단 근태 테이블 */}
-      <div className={styles.tableSection}>
-        <div className={styles.tableHeader}>
-          <button className={styles.btnNav} onClick={handlePrevMonth}>
-            {'<'}
-          </button>
-          <span className={styles.monthTitle}>
-            {year}년 {month}월
-          </span>
-          <button className={styles.btnNav} onClick={handleNextMonth}>
-            {'>'}
-          </button>
-          <button className={styles.btnToday} onClick={handleToday}>
-            오늘
-          </button>
+          </aside>
         </div>
-        <table className={styles.attendanceTable}>
-          <thead>
-            <tr>
-              <th rowSpan={2}>날짜</th>
-              <th rowSpan={2}>출근</th>
-              <th rowSpan={2}>퇴근</th>
-              <th rowSpan={2}>부재</th>
-              <th colSpan={4}>근무시간</th>
-              <th rowSpan={2}>날짜</th>
-              <th rowSpan={2}>출근</th>
-              <th rowSpan={2}>퇴근</th>
-              <th rowSpan={2}>부재</th>
-              <th colSpan={4}>근무시간</th>
-            </tr>
-            <tr>
-              <th>합계</th>
-              <th>정상</th>
-              <th>연장</th>
-              <th>심야</th>
-              <th>합계</th>
-              <th>정상</th>
-              <th>연장</th>
-              <th>심야</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 15 }).map((_, i) => {
-              const d1 = new Date(year, month - 1, i + 1);
-              const d2 = new Date(year, month - 1, i + 16);
-              const d1str = d1.toISOString().slice(0, 10);
-              const d2str = d2.toISOString().slice(0, 10);
-              const absence1 = absences.find(
-                (a) => a.startDate <= d1str && a.endDate >= d1str,
-              );
-              const absence2 = absences.find(
-                (a) => a.startDate <= d2str && a.endDate >= d2str,
-              );
-              return (
-                <tr key={i}>
-                  <td
-                    className={
-                      year === today.getFullYear() &&
-                      month === today.getMonth() + 1 &&
-                      todayRowIdx === i &&
-                      today.getDate() <= 15
-                        ? styles.todayRow
-                        : getDayColor(d1.getDay())
-                    }
-                  >
-                    {i + 1}({getDayName(d1)})
-                  </td>
-                  <td></td>
-                  <td></td>
-                  <td>
-                    {absence1 && (
-                      <span
-                        className={styles.absenceBtn}
-                        style={{ cursor: 'pointer', display: 'inline-block' }}
-                        onClick={() => handleEditAbsence(absence1)}
-                        title='수정'
-                      >
-                        {absence1.type}
-                      </span>
-                    )}
-                  </td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td
-                    className={
-                      year === today.getFullYear() &&
-                      month === today.getMonth() + 1 &&
-                      todayRowIdx === i &&
-                      today.getDate() > 15
-                        ? styles.todayRow
-                        : getDayColor(d2.getDay())
-                    }
-                  >
-                    {i + 16}({getDayName(d2)})
-                  </td>
-                  <td></td>
-                  <td></td>
-                  <td>
-                    {absence2 && (
-                      <span
-                        className={styles.absenceBtn}
-                        style={{ cursor: 'pointer', display: 'inline-block' }}
-                        onClick={() => handleEditAbsence(absence2)}
-                        title='수정'
-                      >
-                        {absence2.type}
-                      </span>
-                    )}
-                  </td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
 
-      {/* 휴가신청 모달 */}
-      {showVacation && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <button className={styles.modalClose} onClick={closeModal}>
-              ×
+        {/* 하단 근태 테이블 */}
+        <div className={styles.tableSection}>
+          <div className={styles.tableHeader}>
+            <button className={styles.btnNav} onClick={handlePrevMonth}>
+              {'<'}
             </button>
-            <VacationRequest onClose={closeModal} />
+            <span className={styles.monthTitle}>
+              {year}년 {month}월
+            </span>
+            <button className={styles.btnNav} onClick={handleNextMonth}>
+              {'>'}
+            </button>
+            <button className={styles.btnToday} onClick={handleToday}>
+              오늘
+            </button>
           </div>
+          <table className={styles.attendanceTable}>
+            <thead>
+              <tr>
+                <th rowSpan={2}>날짜</th>
+                <th rowSpan={2}>출근</th>
+                <th rowSpan={2}>퇴근</th>
+                <th rowSpan={2}>부재</th>
+                <th colSpan={4}>근무시간</th>
+                <th rowSpan={2}>날짜</th>
+                <th rowSpan={2}>출근</th>
+                <th rowSpan={2}>퇴근</th>
+                <th rowSpan={2}>부재</th>
+                <th colSpan={4}>근무시간</th>
+              </tr>
+              <tr>
+                <th>합계</th>
+                <th>정상</th>
+                <th>연장</th>
+                <th>심야</th>
+                <th>합계</th>
+                <th>정상</th>
+                <th>연장</th>
+                <th>심야</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 15 }).map((_, i) => {
+                const d1 = new Date(year, month - 1, i + 1);
+                const d2 = new Date(year, month - 1, i + 16);
+                const d1str = d1.toISOString().slice(0, 10);
+                const d2str = d2.toISOString().slice(0, 10);
+                const absence1 = absences.find(
+                  (a) => a.startDate <= d1str && a.endDate >= d1str,
+                );
+                const absence2 = absences.find(
+                  (a) => a.startDate <= d2str && a.endDate >= d2str,
+                );
+                return (
+                  <tr key={i}>
+                    <td
+                      className={
+                        year === today.getFullYear() &&
+                        month === today.getMonth() + 1 &&
+                        todayRowIdx === i &&
+                        today.getDate() <= 15
+                          ? styles.todayRow
+                          : getDayColor(d1.getDay())
+                      }
+                    >
+                      {i + 1}({getDayName(d1)})
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td>
+                      {absence1 && (
+                        <span
+                          className={styles.absenceBtn}
+                          style={{ cursor: 'pointer', display: 'inline-block' }}
+                          onClick={() => handleEditAbsence(absence1)}
+                          title='수정'
+                        >
+                          {absence1.type}
+                        </span>
+                      )}
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td
+                      className={
+                        year === today.getFullYear() &&
+                        month === today.getMonth() + 1 &&
+                        todayRowIdx === i &&
+                        today.getDate() > 15
+                          ? styles.todayRow
+                          : getDayColor(d2.getDay())
+                      }
+                    >
+                      {i + 16}({getDayName(d2)})
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td>
+                      {absence2 && (
+                        <span
+                          className={styles.absenceBtn}
+                          style={{ cursor: 'pointer', display: 'inline-block' }}
+                          onClick={() => handleEditAbsence(absence2)}
+                          title='수정'
+                        >
+                          {absence2.type}
+                        </span>
+                      )}
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
-      {/* 부재등록 모달 */}
-      <AbsenceRegistrationModal
-        open={showAbsence}
-        onClose={closeAbsenceModal}
-        onSubmit={handleAbsenceSubmit}
-      />
-      <AbsenceEditModal
-        open={!!editAbsence}
-        onClose={closeEditAbsence}
-        absence={editAbsence}
-        onSubmit={handleUpdateAbsence}
-      />
-    </div>
-  );
+
+        {/* 휴가신청 모달 */}
+        {showVacation && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <button className={styles.modalClose} onClick={closeModal}>
+                ×
+              </button>
+              <VacationRequest onClose={closeModal} />
+            </div>
+          </div>
+        )}
+        {/* 부재등록 모달 */}
+        <AbsenceRegistrationModal
+          open={showAbsence}
+          onClose={closeAbsenceModal}
+          onSubmit={handleAbsenceSubmit}
+        />
+        <AbsenceEditModal
+          open={!!editAbsence}
+          onClose={closeEditAbsence}
+          absence={editAbsence}
+          onSubmit={handleUpdateAbsence}
+        />
+      </div>
+    );
+  }
+
+  // 기존 return을 renderAttendanceDashboard 함수 호출로 변경
+  return renderAttendanceDashboard();
 }

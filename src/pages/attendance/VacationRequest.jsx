@@ -24,13 +24,15 @@ function toInputDate(str) {
   return str.replace(/\./g, '-');
 }
 
-const VacationRequest = ({ onClose }) => {
+const VacationRequest = ({ onClose, editData = null }) => {
   const [requestDate, setRequestDate] = useState(todayStr);
   // 휴가 유형을 Enum 값으로 관리
-  const [vacationType, setVacationType] = useState('ANNUAL_LEAVE');
-  const [startDate, setStartDate] = useState(todayStr);
-  const [endDate, setEndDate] = useState(todayStr);
-  const [reason, setReason] = useState('');
+  const [vacationType, setVacationType] = useState(
+    editData?.vacationType || 'ANNUAL_LEAVE',
+  );
+  const [startDate, setStartDate] = useState(editData?.startDate || todayStr);
+  const [endDate, setEndDate] = useState(editData?.endDate || todayStr);
+  const [reason, setReason] = useState(editData?.reason || '');
   const [loading, setLoading] = useState(false);
 
   const authCtx = useContext(AuthContext);
@@ -57,22 +59,36 @@ const VacationRequest = ({ onClose }) => {
         vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
           ? startDate
           : endDate;
-      const payload = {
-        requestType: 'VACATION',
-        applicantId: applicantId ? Number(applicantId) : null,
-        reason,
-        vacationsId: null,
-        vacationType,
-        certificatesId: null,
-        startDate: reqStart,
-        endDate: reqEnd,
-      };
-      console.log('휴가신청 payload', payload);
-      await approvalService.requestVacation(payload);
-      alert('휴가 신청이 완료되었습니다.');
+
+      if (editData) {
+        // 수정 모드
+        await approvalService.updateVacation(editData.id, {
+          vacationType,
+          startDate: reqStart,
+          endDate: reqEnd,
+          reason,
+        });
+        alert('휴가 신청이 수정되었습니다.');
+      } else {
+        // 신규 신청 모드 - 백엔드 변경사항에 맞게 수정
+        await approvalService.requestVacation({
+          vacationType,
+          startDate: reqStart,
+          endDate: reqEnd,
+          reason,
+          requested_at: new Date(requestDate + 'T00:00:00').toISOString(), // 신청일자 추가
+        });
+        alert('휴가 신청이 완료되었습니다.');
+      }
+
       if (onClose) onClose();
     } catch (err) {
-      alert(err.message || '휴가 신청에 실패했습니다.');
+      alert(
+        err.message ||
+          (editData
+            ? '휴가 신청 수정에 실패했습니다.'
+            : '휴가 신청에 실패했습니다.'),
+      );
     } finally {
       setLoading(false);
     }
@@ -80,7 +96,7 @@ const VacationRequest = ({ onClose }) => {
 
   return (
     <div className={styles.vacationRequest}>
-      <h2>휴가 신청</h2>
+      <h2>{editData ? '휴가 신청 수정' : '휴가 신청'}</h2>
       <form onSubmit={handleSubmit}>
         {/* 휴가 신청일 */}
         <div className={styles.row}>
@@ -153,7 +169,13 @@ const VacationRequest = ({ onClose }) => {
             className={styles['confirm-btn']}
             disabled={loading}
           >
-            {loading ? '신청 중...' : '등록'}
+            {loading
+              ? editData
+                ? '수정 중...'
+                : '신청 중...'
+              : editData
+                ? '수정'
+                : '등록'}
           </button>
           <button
             type='button'

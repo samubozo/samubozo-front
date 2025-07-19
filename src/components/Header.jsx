@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import styles from './Header.module.scss';
 import Logo from '../assets/samubozo-logo2.png';
 import sunflowerImg from '../assets/Gemini_Generated_Image_8m3t3l8m3t3l8m3t2.png';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
 import AuthContext from '../context/UserContext';
 import Chatbot from './Chatbot';
 import ToastNotification from './ToastNotification';
@@ -20,7 +19,7 @@ console.log(styles);
 const Header = ({ showChatbot }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isLoggedIn } = useContext(AuthContext);
+  const { isLoggedIn, user } = useContext(AuthContext);
   const [userName, setUserName] = useState('');
   const [userPosition, setUserPosition] = useState('');
   const [userDepartment, setUserDepartment] = useState('');
@@ -520,6 +519,9 @@ const Header = ({ showChatbot }) => {
     return location.pathname === path;
   };
 
+  // HR 권한 확인
+  const isHR = user?.hrRole === 'Y';
+
   // 알림 클릭 처리
   const handleNotificationClick = async (notification) => {
     try {
@@ -770,6 +772,21 @@ const Header = ({ showChatbot }) => {
           </div>
           <span className={styles.userInfo + ' ' + styles.userInfoBottomLeft}>
             {userInfoText}
+            {isHR && (
+              <span
+                style={{
+                  background: '#48b96c',
+                  color: '#fff',
+                  fontSize: '12px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  marginLeft: '8px',
+                  fontWeight: '600',
+                }}
+              >
+                HR
+              </span>
+            )}
           </span>
         </div>
 
