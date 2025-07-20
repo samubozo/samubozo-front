@@ -12,20 +12,9 @@ export const useApprovalData = (
   const [certData, setCertData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 날짜 포맷 함수 - 백엔드에서 yyyy.MM.dd 형식으로 오므로 그대로 사용
+  // 날짜 포맷 함수 - 백엔드에서 온 값을 그대로 반환
   const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    // 이미 yyyy.MM.dd 형식이면 그대로 반환
-    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}\.\d{2}\.\d{2}$/)) {
-      return dateStr;
-    }
-    // 기존 Date 객체 처리
-    const d = new Date(dateStr);
-    if (isNaN(d)) return '';
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}.${m}.${day}`;
+    return dateStr || '';
   };
 
   // 데이터 매핑 함수
@@ -55,21 +44,29 @@ export const useApprovalData = (
   };
 
   // 데이터 불러오기
-  const fetchData = async () => {
+  const fetchData = async ({
+    status = approvalStatus === 'pending'
+      ? 'pending'
+      : approvalStatus === 'processed'
+        ? 'processed'
+        : 'all', // <-- 수정된 부분
+    sortBy = 'requestedAt',
+    sortOrder = 'desc',
+    requestType = 'VACATION',
+  } = {}) => {
     setLoading(true);
     try {
       let arr = [];
       if (tab === 'leave') {
         if (isHR) {
-          if (approvalStatus === 'pending') {
-            // 대기 중인 결재 조회
-            const res = await approvalService.getHRPendingApprovals();
-            arr = Array.isArray(res) ? res : res?.result || [];
-          } else {
-            // 처리한 결재 조회
-            const res = await approvalService.getProcessedVacations();
-            arr = Array.isArray(res) ? res : res?.result || [];
-          }
+          // HR 사용자는 통합 API로 전체 결재 내역을 받아옴
+          const res = await approvalService.getAllApprovals({
+            status: status === 'all' ? undefined : status,
+            sortBy,
+            sortOrder,
+            requestType,
+          });
+          arr = Array.isArray(res) ? res : res?.result || [];
         } else {
           const res = await approvalService.getMyVacationRequests();
           arr = Array.isArray(res) ? res : res?.result || [];
@@ -78,7 +75,12 @@ export const useApprovalData = (
       } else {
         // 증명서 탭의 경우 HR 사용자는 처리한 결재 요청 조회
         if (isHR) {
-          const res = await approvalService.getProcessedApprovals();
+          const res = await approvalService.getAllApprovals({
+            status: status === 'all' ? undefined : status,
+            sortBy,
+            sortOrder,
+            requestType: 'CERTIFICATE',
+          });
           arr = Array.isArray(res) ? res : res?.result || [];
         }
         // 증명서 데이터도 매핑

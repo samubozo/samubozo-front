@@ -1,5 +1,8 @@
 import axiosInstance from '../configs/axios-config';
-import { API_BASE_URL, VACATION, APPROVAL } from '../configs/host-config';
+import { API_BASE_URL, VACATION } from '../configs/host-config';
+
+// APPROVAL 상수 정의
+const APPROVAL = '/approval-service/approvals';
 
 export const approvalService = {
   // 1. 휴가 신청
@@ -158,5 +161,17 @@ export const approvalService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  async getAllApprovals({ status, requestType, sortBy, sortOrder } = {}) {
+    const params = {};
+    if (status) params.status = status;
+    if (requestType) params.requestType = requestType;
+    if (sortBy) params.sortBy = sortBy;
+    if (sortOrder) params.sortOrder = sortOrder;
+    const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`, {
+      params,
+    });
+    return response.data;
   },
 };

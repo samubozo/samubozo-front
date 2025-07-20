@@ -148,7 +148,8 @@ function Approval() {
     try {
       await approvalService.approveHRVacation(approvalId);
       setToast({ message: '승인 처리 완료', type: 'success' });
-      fetchData(); // hooks의 fetchData 사용
+      // 승인 후 데이터만 새로고침 (상태 변경 없이)
+      fetchData();
     } catch (err) {
       setToast({
         message: err.message || '승인 처리 중 오류가 발생했습니다.',
@@ -170,7 +171,8 @@ function Approval() {
       setToast({ message: '반려 처리 완료', type: 'success' });
       setShowRejectModal(false);
       setRejectTargetId(null);
-      fetchData(); // hooks의 fetchData 사용
+      // 반려 후 데이터만 새로고침 (상태 변경 없이)
+      fetchData();
     } catch (err) {
       setToast({
         message: err.message || '반려 처리 중 오류가 발생했습니다.',
@@ -182,28 +184,39 @@ function Approval() {
   };
 
   // 필터링 (간단 예시)
-  const filteredLeave = leaveData.filter((row) => {
-    if (item !== 'all' && row.type !== item) return false;
-    if (status !== 'all' && row.status !== status) return false;
-    if (dateFrom && row.applyDate < dateFrom.replace(/-/g, '.')) return false;
-    if (dateTo && row.applyDate > dateTo.replace(/-/g, '.')) return false;
-    if (filterType !== 'all' && filterValue) {
-      if (filterType === 'applicant' && !row.applicant.includes(filterValue))
-        return false;
-      if (filterType === 'approver' && !row.approver.includes(filterValue))
-        return false;
-      if (filterType === 'reason' && !row.reason.includes(filterValue))
-        return false;
-      if (filterType === 'period' && !row.period.includes(filterValue))
-        return false;
-      if (
-        filterType === 'applicantDepartment' &&
-        !row.applicantDepartment.includes(filterValue)
-      )
-        return false;
-    }
-    return true;
-  });
+  const filteredLeave = leaveData
+    .filter((row) => {
+      if (item !== 'all' && row.type !== item) return false;
+      if (status !== 'all' && row.status !== status) return false;
+      if (dateFrom && row.applyDate < dateFrom.replace(/-/g, '.')) return false;
+      if (dateTo && row.applyDate > dateTo.replace(/-/g, '.')) return false;
+      if (filterType !== 'all' && filterValue) {
+        if (filterType === 'applicant' && !row.applicant.includes(filterValue))
+          return false;
+        if (filterType === 'approver' && !row.approver.includes(filterValue))
+          return false;
+        if (filterType === 'reason' && !row.reason.includes(filterValue))
+          return false;
+        if (filterType === 'period' && !row.period.includes(filterValue))
+          return false;
+        if (
+          filterType === 'applicantDepartment' &&
+          !row.applicantDepartment.includes(filterValue)
+        )
+          return false;
+      }
+      return true;
+    })
+    // HR 담당자 결재상태별 강제 필터링
+    .filter((row) => {
+      if (isHR && approvalStatus === 'pending') {
+        return row.status === '대기';
+      }
+      if (isHR && approvalStatus === 'processed') {
+        return row.status !== '대기'; // 처리완료는 '승인' 또는 '반려'
+      }
+      return true;
+    });
   const filteredCert = certData.filter((row) => {
     if (item !== 'all' && row.type !== item) return false;
     if (status !== 'all' && row.status !== status) return false;

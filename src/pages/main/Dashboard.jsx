@@ -210,6 +210,31 @@ function DashboardProfile({ onAttendanceChange }) {
     returnTime: null,
   });
 
+  // 연차 수/요청수 상태 추가
+  const [vacationBalance, setVacationBalance] = useState({
+    totalGranted: 0,
+    usedDays: 0,
+    remainingDays: 0,
+  });
+  const [personalStats, setPersonalStats] = useState({
+    fullDayVacationCount: 0,
+    halfDayVacationCount: 0,
+  });
+
+  useEffect(() => {
+    // 연차 현황
+    attendanceService.getVacationBalance().then((res) => {
+      if (res.data && res.data.result) setVacationBalance(res.data.result);
+    });
+    // 연차 요청 현황(이번 달 기준)
+    const now = new Date();
+    attendanceService
+      .getPersonalStats(now.getFullYear(), now.getMonth() + 1)
+      .then((res) => {
+        if (res.result) setPersonalStats(res.result);
+      });
+  }, []);
+
   const [isLoading, setIsLoading] = useState(false);
 
   // 현재 시각/날짜 상태
@@ -371,12 +396,22 @@ function DashboardProfile({ onAttendanceChange }) {
             </li>
             <li>
               <span className={styles.profilePin} />
-              연차 수<span className={styles.profileValue}>0개</span>
+              연차 수
+              <span className={styles.profileValue}>
+                {vacationBalance.remainingDays}일
+              </span>
             </li>
             <li>
               <span className={styles.profilePin} />
               연차 요청수
-              <span className={styles.profileValue}>0개</span>
+              <span className={styles.profileValue}>
+                {personalStats.fullDayVacationCount +
+                  personalStats.halfDayVacationCount}
+                회 (
+                {personalStats.fullDayVacationCount +
+                  personalStats.halfDayVacationCount * 0.5}
+                일)
+              </span>
             </li>
           </ul>
         </div>

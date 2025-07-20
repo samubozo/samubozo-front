@@ -516,9 +516,9 @@ export default function AttendanceDashboard() {
                 <div className={styles.vacationContent}>
                   <div className={styles.leaveDetails}>
                     <div className={styles.leaveRow}>
-                      <span className={styles.leaveLabel}>남은 연차</span>
+                      <span className={styles.leaveLabel}>총 연차</span>
                       <span className={styles.leaveValue}>
-                        {vacationBalance.remainingDays}
+                        {vacationBalance.totalGranted}
                       </span>
                     </div>
                     <div className={styles.leaveRow}>
@@ -528,9 +528,9 @@ export default function AttendanceDashboard() {
                       </span>
                     </div>
                     <div className={styles.leaveRow}>
-                      <span className={styles.leaveLabel}>총 연차</span>
+                      <span className={styles.leaveLabel}>남은 연차</span>
                       <span className={styles.leaveValue}>
-                        {vacationBalance.totalGranted}
+                        {vacationBalance.remainingDays}
                       </span>
                     </div>
                   </div>

@@ -3,7 +3,14 @@ import styles from './VacationRequest.module.scss';
 import { approvalService } from '../../services/approvalService';
 import AuthContext from '../../context/UserContext';
 
-const todayStr = new Date().toISOString().slice(0, 10);
+// 한국 시간으로 오늘 날짜 가져오기
+const today = new Date();
+const todayStr =
+  today.getFullYear() +
+  '-' +
+  String(today.getMonth() + 1).padStart(2, '0') +
+  '-' +
+  String(today.getDate()).padStart(2, '0');
 
 // 날짜 차이 계산 함수
 function getDateDiff(start, end) {
@@ -32,8 +39,14 @@ const VacationRequest = ({ onClose, editData = null }) => {
   );
   const [startDate, setStartDate] = useState(editData?.startDate || todayStr);
   const [endDate, setEndDate] = useState(editData?.endDate || todayStr);
+
+  // 휴가 유형 변경 핸들러
+  const handleVacationTypeChange = (e) => {
+    setVacationType(e.target.value);
+  };
   const [reason, setReason] = useState(editData?.reason || '');
   const [loading, setLoading] = useState(false);
+  const [reasonError, setReasonError] = useState('');
 
   const authCtx = useContext(AuthContext);
   const applicantId = authCtx?.user?.employeeNo || null;
@@ -48,6 +61,14 @@ const VacationRequest = ({ onClose, editData = null }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 사유 유효성 검사
+    if (!reason.trim()) {
+      setReasonError('휴가 사유를 입력해주세요.');
+      return;
+    }
+
+    setReasonError('');
     setLoading(true);
     try {
       // 반차는 startDate, endDate 동일하게
@@ -83,12 +104,16 @@ const VacationRequest = ({ onClose, editData = null }) => {
 
       if (onClose) onClose();
     } catch (err) {
-      alert(
-        err.message ||
-          (editData
-            ? '휴가 신청 수정에 실패했습니다.'
-            : '휴가 신청에 실패했습니다.'),
-      );
+      if (err.response && err.response.status === 400) {
+        alert(err.response.data || '이미 해당 기간에 신청된 휴가가 있습니다.');
+      } else {
+        alert(
+          err.message ||
+            (editData
+              ? '휴가 신청 수정에 실패했습니다.'
+              : '휴가 신청에 실패했습니다.'),
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -112,10 +137,7 @@ const VacationRequest = ({ onClose, editData = null }) => {
         {/* 휴가 유형 */}
         <div className={styles.row}>
           <label>휴가 유형</label>
-          <select
-            value={vacationType}
-            onChange={(e) => setVacationType(e.target.value)}
-          >
+          <select value={vacationType} onChange={handleVacationTypeChange}>
             <option value='ANNUAL_LEAVE'>연차</option>
             <option value='AM_HALF_DAY'>반차(오전)</option>
             <option value='PM_HALF_DAY'>반차(오후)</option>
@@ -158,9 +180,18 @@ const VacationRequest = ({ onClose, editData = null }) => {
           <input
             type='text'
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => {
+              setReason(e.target.value);
+              if (e.target.value.trim()) {
+                setReasonError('');
+              }
+            }}
             required
+            className={reasonError ? styles.errorInput : ''}
           />
+          {reasonError && (
+            <span className={styles.errorMessage}>{reasonError}</span>
+          )}
         </div>
         {/* 버튼 */}
         <div className={styles['button-row']}>
