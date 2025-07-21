@@ -5,14 +5,51 @@ import styles from './PayrollManagement.module.scss';
 import AuthContext from '../../context/UserContext';
 import { API_BASE_URL, PAYROLL, HR } from '../../configs/host-config';
 
+function parseJwt(token) {
+  if (!token) return {};
+  const base64Url = token.split('.')[1];
+  if (!base64Url) return {};
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  try {
+    return JSON.parse(decodeURIComponent(escape(window.atob(base64))));
+  } catch (e) {
+    console.error('JWT 파싱 실패:', e);
+    return {};
+  }
+}
+
 // 직원 목록 불러오는 함수
 const fetchEmployees = async ({
   page = 0,
   size = 100,
   searchName = '',
   includeRetired = false,
+  isHR = false,
 } = {}) => {
   try {
+    // ✅ HR이 아니면 본인 정보만 반환
+    if (!isHR) {
+      const payload = parseJwt(sessionStorage.getItem('ACCESS_TOKEN'));
+
+      // 🔽 사용자 상세 정보 API 호출
+      const res = await axiosInstance.get(`${API_BASE_URL}${HR}/users/detail`, {
+        params: { employeeNo: payload.employeeNo },
+      });
+
+      const emp = res.data.result;
+
+      return [
+        {
+          id: emp.employeeNo,
+          name: emp.userName,
+          position: emp.positionName,
+          department: emp.department?.name || '',
+          imageUrl: emp.profileImage || '',
+        },
+      ];
+    }
+
+    // ✅ HR이면 전체 호출
     let url = `${API_BASE_URL}${HR}/user/list`;
     let params = { page, size };
 
@@ -29,15 +66,13 @@ const fetchEmployees = async ({
     const res = await axiosInstance.get(url, { params });
     const rawList = res.data.result?.content || res.data.result || [];
 
-    const processedList = rawList.map((emp) => ({
+    return rawList.map((emp) => ({
       id: emp.employeeNo,
       name: emp.userName,
       position: emp.positionName,
       department: emp.department?.name || '',
-      imageUrl: emp.profileImage || '', // 프로필 이미지
+      imageUrl: emp.profileImage || '',
     }));
-
-    return processedList;
   } catch (err) {
     console.error('직원 불러오기 실패:', err);
     return [];
@@ -252,6 +287,7 @@ const PayrollDetail = ({ employee, onClose }) => {
 };
 
 const PayrollManagement = () => {
+  const [isHR, setIsHR] = useState(false);
   const [employeeData, setEmployeeData] = useState([]);
   const [checkedList, setCheckedList] = useState([]);
   const [payrollData, setPayrollData] = useState({
@@ -267,27 +303,37 @@ const PayrollManagement = () => {
 
   const { user } = useContext(AuthContext);
 
-  const fetchPayroll = (year, month) => {
+  useEffect(() => {
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
+    const payload = parseJwt(token);
+    console.log('✅ JWT payload:', payload); // 추가
+    setIsHR(payload?.role === 'Y');
+  }, []);
+
+  const fetchPayroll = (year, month, employeeId = null) => {
     if (!user) return;
-    const userRole = user.hrRole === 'Y' ? 'Y' : 'N';
-    const userEmail = user.email;
-    const userEmployeeNo = user.employeeNo;
+
     const accessToken = sessionStorage.getItem('ACCESS_TOKEN');
 
     const headers = {
       Authorization: `Bearer ${accessToken}`,
     };
 
+    let url = '';
+    const params = { year, month };
+
+    if (employeeId && isHR) {
+      url = `${API_BASE_URL}${PAYROLL}/admin/monthly`;
+      params.userId = employeeId;
+    } else {
+      url = `${API_BASE_URL}${PAYROLL}/me/monthly`;
+    }
+
     if (year && month) {
       axiosInstance
-        .get(`${API_BASE_URL}${PAYROLL}/me/monthly`, {
-          headers,
-          params: { year, month },
-        })
+        .get(url, { headers, params }) // ✅ 동적으로 지정된 url 사용
         .then((res) => {
           const result = res.data.result;
-          console.log('monthly data: ', result);
-
           setPayrollData({
             basePayroll: Number(result?.basePayroll ?? 0),
             positionAllowance: Number(result?.positionAllowance ?? 0),
@@ -296,6 +342,7 @@ const PayrollManagement = () => {
           });
         })
         .catch((err) => {
+          console.error('급여 조회 실패:', err);
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',
@@ -304,6 +351,7 @@ const PayrollManagement = () => {
           });
         });
     } else {
+      // 월이 지정되지 않은 경우: 본인 기본 급여 조회 (기존 로직 유지)
       axiosInstance
         .get(`${API_BASE_URL}${PAYROLL}/me`, { headers })
         .then((res) => {
@@ -315,7 +363,7 @@ const PayrollManagement = () => {
             bonus: Number(result?.bonus ?? 0),
           });
         })
-        .catch((err) => {
+        .catch(() => {
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',
@@ -328,11 +376,16 @@ const PayrollManagement = () => {
 
   useEffect(() => {
     const loadEmployees = async () => {
-      const employees = await fetchEmployees(); // ← 여기서 호출
+      console.log('🚀 isHR 전달됨:', isHR); // 확인
+      const employees = await fetchEmployees({ isHR });
+      console.log('📦 직원 목록:', employees); // 확인
       setEmployeeData(employees);
     };
-    loadEmployees();
-  }, []);
+
+    if (user && isHR !== null) {
+      loadEmployees();
+    }
+  }, [user, isHR]);
 
   useEffect(() => {
     if (!user) return;
@@ -341,13 +394,15 @@ const PayrollManagement = () => {
 
   const handleMonthChange = (e) => {
     setSelectedMonth(e.target.value);
-    if (e.target.value) {
-      const [year, month] = e.target.value.split('-');
-      fetchPayroll(year, month);
+    const [year, month] = e.target.value.split('-');
+
+    if (isHR && selectedEmployee) {
+      fetchPayroll(year, month, selectedEmployee.id);
     } else {
-      fetchPayroll();
+      fetchPayroll(year, month);
     }
   };
+
   const isAllChecked = checkedList.length === employeeData.length;
 
   const handleAllCheck = (e) => {
@@ -362,6 +417,15 @@ const PayrollManagement = () => {
     setCheckedList((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
+  };
+
+  const handleEmployeeClick = (emp) => {
+    setSelectedEmployee(emp);
+
+    if (isHR && selectedMonth) {
+      const [year, month] = selectedMonth.split('-');
+      fetchPayroll(year, month, emp.id); // HR이면 해당 직원 월급 조회
+    }
   };
 
   // 부서 필터링
@@ -447,7 +511,7 @@ const PayrollManagement = () => {
                 <tr
                   key={emp.id}
                   style={{ cursor: 'pointer' }}
-                  onClick={() => setSelectedEmployee(emp)}
+                  onClick={() => handleEmployeeClick(emp)} // ✅ 수정
                 >
                   <td>
                     <input
@@ -602,7 +666,7 @@ const PayrollManagement = () => {
         </div>
       </div>
       {/* 하단에 급여 등록/수정 화면 (hrRole이 'Y'일 때만) */}
-      {user?.hrRole === 'Y' && selectedEmployee && (
+      {isHR && selectedEmployee && (
         <PayrollDetail
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
