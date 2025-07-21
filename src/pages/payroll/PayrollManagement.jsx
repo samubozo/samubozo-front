@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import axiosInstance from '../../configs/axios-config';
 import styles from './PayrollManagement.module.scss';
@@ -420,11 +420,26 @@ const PayrollManagement = () => {
   };
 
   const handleEmployeeClick = (emp) => {
-    setSelectedEmployee(emp);
+    const isSameEmployeeSelected = selectedEmployee?.id === emp.id;
 
-    if (isHR && selectedMonth) {
-      const [year, month] = selectedMonth.split('-');
-      fetchPayroll(year, month, emp.id); // HR이면 해당 직원 월급 조회
+    if (isSameEmployeeSelected) {
+      setSelectedEmployee(null); // 🔄 선택 해제
+
+      setCheckedList((prev) => prev.filter((id) => id !== emp.id)); // 체크 해제
+    } else {
+      setSelectedEmployee(emp); // 선택
+
+      setCheckedList((prev) => {
+        if (!prev.includes(emp.id)) {
+          return [...prev, emp.id];
+        }
+        return prev;
+      });
+
+      if (isHR && selectedMonth) {
+        const [year, month] = selectedMonth.split('-');
+        fetchPayroll(year, month, emp.id);
+      }
     }
   };
 
@@ -455,6 +470,86 @@ const PayrollManagement = () => {
   const totalDeduction = pension + health + employment + incomeTax + localTax;
   const netPay = total - totalDeduction;
 
+  const printRef = useRef(null);
+
+  const handlePrintPayroll = () => {
+    const printContents = printRef.current.innerHTML;
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+    if (!printWindow) {
+      alert('팝업 차단 해제를 먼저 해주세요!');
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`
+    <html>
+      <head>
+        <title>급여명세서</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+          }
+
+          h2 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+          }
+
+          th {
+            background-color: #f5f5f5;
+            text-align: center;
+            font-weight: 600;
+            padding: 10px;
+            border: 1px solid #ccc;
+            width: 30%;
+          }
+
+          td {
+            text-align: right;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+          }
+
+          td:first-child {
+            text-align: left;
+            width: 70%;
+          }
+
+          .summary-table td {
+            font-weight: bold;
+            background-color: #fafafa;
+          }
+          </style>
+
+      </head>
+      <body>
+        <h2>급여명세서</h2>
+        ${printContents}
+      </body>
+    </html>
+  `);
+    printWindow.document.close();
+
+    // 💡 DOM 로딩 완료 후 print() 실행
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      setTimeout(() => {
+        printWindow.close();
+      }, 1500);
+    };
+  };
+
   return (
     <div className={styles['payroll-management-container']}>
       {/* 상단 필터/검색 영역 */}
@@ -483,7 +578,17 @@ const PayrollManagement = () => {
           </label>
         </div>
         <div className={styles['button-group']}>
-          <button>급여명세서 출력</button>
+          <button
+            onClick={handlePrintPayroll}
+            disabled={!selectedEmployee}
+            style={
+              !selectedEmployee
+                ? { background: '#ccc', cursor: 'not-allowed' }
+                : {}
+            }
+          >
+            급여명세서 출력
+          </button>
         </div>
       </div>
 
@@ -537,7 +642,7 @@ const PayrollManagement = () => {
         </div>
 
         {/* 급여/공제/합계 테이블 */}
-        <div className={styles['payroll-details']}>
+        <div className={styles['payroll-details']} ref={printRef}>
           <div className={styles['pay-section']}>
             <table>
               <thead>
