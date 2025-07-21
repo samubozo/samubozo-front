@@ -12,6 +12,18 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [position, setPosition] = useState(''); // positionId
   const [positionName, setPositionName] = useState('');
   const [residentRegNo, setResidentRegNo] = useState('');
+  // 주민등록번호 입력 핸들러: 숫자만 저장, 입력은 6자리 뒤에 자동으로 '-' 표시, 최대 13자리
+  const handleResidentRegNoChange = (e) => {
+    let value = e.target.value.replace(/[^0-9]/g, ''); // 숫자만
+    if (value.length > 13) value = value.slice(0, 13);
+    setResidentRegNo(value);
+  };
+  // 화면에 표시할 주민등록번호: 6자리 뒤에 - 삽입
+  const displayResidentRegNo = residentRegNo
+    ? residentRegNo.length > 6
+      ? residentRegNo.slice(0, 6) + '-' + residentRegNo.slice(6)
+      : residentRegNo
+    : '';
   const [status, setStatus] = useState('재직');
   const [role, setRole] = useState('N'); // hrRole: 'Y' or 'N'
   const [joinDate, setJoinDate] = useState('');
@@ -20,6 +32,25 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [gender, setGender] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [employeePhone, setEmployeePhone] = useState('');
+  // 연락처 입력 핸들러: 3-4-4 형태로 하이픈 포함하여 저장, 최대 13자리(하이픈 포함)
+  const handleEmployeePhoneChange = (e) => {
+    let value = e.target.value.replace(/[^0-9]/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    let formatted = value;
+    if (formatted.length > 7) {
+      formatted =
+        formatted.slice(0, 3) +
+        '-' +
+        formatted.slice(3, 7) +
+        '-' +
+        formatted.slice(7);
+    } else if (formatted.length > 3) {
+      formatted = formatted.slice(0, 3) + '-' + formatted.slice(3);
+    }
+    setEmployeePhone(formatted);
+  };
+  // 화면에 표시할 연락처: employeePhone 그대로 사용
+  const displayEmployeePhone = employeePhone;
   const [employeeOutEmail, setEmployeeOutEmail] = useState('');
   const [employeeEmail, setEmployeeEmail] = useState('');
   const [employeeAddress, setEmployeeAddress] = useState('');
@@ -35,6 +66,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [birthDate, setBirthDate] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
+
+  const handleAccountNumberChange = (e) => {
+    let value = e.target.value;
+    if (value.length > 16) value = value.slice(0, 16);
+    setAccountNumber(value);
+  };
   const [accountHolder, setAccountHolder] = useState('');
   const { user } = React.useContext(AuthContext);
 
@@ -604,8 +641,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <td className={styles.tableLabel}>주민등록번호</td>
                   <td>
                     <input
-                      value={residentRegNo}
-                      onChange={(e) => setResidentRegNo(e.target.value)}
+                      value={displayResidentRegNo}
+                      onChange={handleResidentRegNoChange}
+                      maxLength={14} // 6자리+하이픈+7자리 = 14
+                      placeholder='예: 123456-1234567'
                     />
                   </td>
                   <td className={styles.tableLabel}>성별</td>
@@ -638,8 +677,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <td className={styles.tableLabel}>연락처</td>
                   <td>
                     <input
-                      value={employeePhone}
-                      onChange={(e) => setEmployeePhone(e.target.value)}
+                      value={displayEmployeePhone}
+                      onChange={handleEmployeePhoneChange}
+                      maxLength={13} // 3자리+하이픈+4자리+하이픈+4자리 = 13
+                      placeholder='예: 010-1234-5678'
                     />
                   </td>
                 </tr>
@@ -655,9 +696,11 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <td className={styles.tableLabel}>외부이메일</td>
                   <td>
                     <input
+                      type='email'
                       value={employeeOutEmail}
                       onChange={(e) => setEmployeeOutEmail(e.target.value)}
                       className={styles.emailInput}
+                      placeholder='예: example@email.com'
                     />
                   </td>
                 </tr>
@@ -668,19 +711,22 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                       <input
                         type='text'
                         placeholder='은행명'
+                        maxLength={6}
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
                       />
                       <input
                         type='text'
-                        placeholder='계좌번호'
                         value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
+                        onChange={handleAccountNumberChange}
+                        maxLength={16}
+                        placeholder='계좌번호'
                       />
                       <span className={styles.accName}>예금주</span>
                       <input
                         type='text'
                         placeholder='예금주'
+                        maxLength={6}
                         value={accountHolder}
                         onChange={(e) => setAccountHolder(e.target.value)}
                       />
