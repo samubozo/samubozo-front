@@ -12,11 +12,14 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [position, setPosition] = useState(''); // positionId
   const [positionName, setPositionName] = useState('');
   const [residentRegNo, setResidentRegNo] = useState('');
+  const [residentRegNoError, setResidentRegNoError] = useState('');
   // 주민등록번호 입력 핸들러: 숫자만 저장, 입력은 6자리 뒤에 자동으로 '-' 표시, 최대 13자리
   const handleResidentRegNoChange = (e) => {
     let value = e.target.value.replace(/[^0-9]/g, ''); // 숫자만
     if (value.length > 13) value = value.slice(0, 13);
     setResidentRegNo(value);
+    // 입력값이 변경될 때마다 에러 초기화
+    setResidentRegNoError('');
   };
   // 화면에 표시할 주민등록번호: 6자리 뒤에 - 삽입
   const displayResidentRegNo = residentRegNo
@@ -24,6 +27,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       ? residentRegNo.slice(0, 6) + '-' + residentRegNo.slice(6)
       : residentRegNo
     : '';
+
+  // 주민등록번호 유효성 검사 함수
+  const isValidResidentRegNo = (value) => {
+    // 6자리-7자리, 총 14글자, 하이픈 포함
+    return /^\d{6}-\d{7}$/.test(value);
+  };
   const [status, setStatus] = useState('재직');
   const [role, setRole] = useState('N'); // hrRole: 'Y' or 'N'
   const [joinDate, setJoinDate] = useState('');
@@ -32,6 +41,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [gender, setGender] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [employeePhone, setEmployeePhone] = useState('');
+  const [employeePhoneError, setEmployeePhoneError] = useState('');
   // 연락처 입력 핸들러: 3-4-4 형태로 하이픈 포함하여 저장, 최대 13자리(하이픈 포함)
   const handleEmployeePhoneChange = (e) => {
     let value = e.target.value.replace(/[^0-9]/g, '');
@@ -48,10 +58,18 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       formatted = formatted.slice(0, 3) + '-' + formatted.slice(3);
     }
     setEmployeePhone(formatted);
+    setEmployeePhoneError('');
   };
   // 화면에 표시할 연락처: employeePhone 그대로 사용
   const displayEmployeePhone = employeePhone;
+
+  // 연락처 유효성 검사 함수 (하이픈 필수, 010-1234-5678 등)
+  const isValidPhone = (value) => {
+    // 010-1234-5678, 011-123-4567 등 3-3~4-4
+    return /^01[016789]-\d{3,4}-\d{4}$/.test(value);
+  };
   const [employeeOutEmail, setEmployeeOutEmail] = useState('');
+  const [employeeOutEmailError, setEmployeeOutEmailError] = useState('');
   const [employeeEmail, setEmployeeEmail] = useState('');
   const [employeeAddress, setEmployeeAddress] = useState('');
   const [activeTab, setActiveTab] = useState('info');
@@ -645,7 +663,24 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                       onChange={handleResidentRegNoChange}
                       maxLength={14} // 6자리+하이픈+7자리 = 14
                       placeholder='예: 123456-1234567'
+                      onBlur={() => {
+                        if (
+                          displayResidentRegNo &&
+                          !isValidResidentRegNo(displayResidentRegNo)
+                        ) {
+                          setResidentRegNoError(
+                            '주민등록번호 형식이 올바르지 않습니다. (예: 123456-1234567)',
+                          );
+                        } else {
+                          setResidentRegNoError('');
+                        }
+                      }}
                     />
+                    {residentRegNoError && (
+                      <div style={{ color: 'red', fontSize: 13, marginTop: 4 }}>
+                        {residentRegNoError}
+                      </div>
+                    )}
                   </td>
                   <td className={styles.tableLabel}>성별</td>
                   <td className={styles.genderCell}>
@@ -681,7 +716,24 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                       onChange={handleEmployeePhoneChange}
                       maxLength={13} // 3자리+하이픈+4자리+하이픈+4자리 = 13
                       placeholder='예: 010-1234-5678'
+                      onBlur={() => {
+                        if (
+                          displayEmployeePhone &&
+                          !isValidPhone(displayEmployeePhone)
+                        ) {
+                          setEmployeePhoneError(
+                            '연락처 형식이 올바르지 않습니다. (예: 010-1234-5678)',
+                          );
+                        } else {
+                          setEmployeePhoneError('');
+                        }
+                      }}
                     />
+                    {employeePhoneError && (
+                      <div style={{ color: 'red', fontSize: 13, marginTop: 4 }}>
+                        {employeePhoneError}
+                      </div>
+                    )}
                   </td>
                 </tr>
                 <tr>
@@ -698,10 +750,32 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                     <input
                       type='email'
                       value={employeeOutEmail}
-                      onChange={(e) => setEmployeeOutEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmployeeOutEmail(e.target.value);
+                        setEmployeeOutEmailError('');
+                      }}
                       className={styles.emailInput}
                       placeholder='예: example@email.com'
+                      onBlur={() => {
+                        if (
+                          employeeOutEmail &&
+                          !/^([\w.-]+)@([\w-]+)\.(\w{2,})$/.test(
+                            employeeOutEmail,
+                          )
+                        ) {
+                          setEmployeeOutEmailError(
+                            '이메일 형식이 올바르지 않습니다.',
+                          );
+                        } else {
+                          setEmployeeOutEmailError('');
+                        }
+                      }}
                     />
+                    {employeeOutEmailError && (
+                      <div style={{ color: 'red', fontSize: 13, marginTop: 4 }}>
+                        {employeeOutEmailError}
+                      </div>
+                    )}
                   </td>
                 </tr>
                 <tr>
@@ -1174,7 +1248,18 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
               <button
                 className={styles.save}
                 onClick={handleSave}
-                disabled={loading}
+                disabled={
+                  loading ||
+                  (!!residentRegNo && !!residentRegNoError) ||
+                  (!!residentRegNo &&
+                    !isValidResidentRegNo(displayResidentRegNo)) ||
+                  (!!employeeOutEmail && !!employeeOutEmailError) ||
+                  (!!employeeOutEmail &&
+                    !/^([\w.-]+)@([\w-]+)\.(\w{2,})$/.test(employeeOutEmail)) ||
+                  (!!displayEmployeePhone && !!employeePhoneError) ||
+                  (!!displayEmployeePhone &&
+                    !isValidPhone(displayEmployeePhone))
+                }
               >
                 저장
               </button>
