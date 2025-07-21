@@ -126,6 +126,28 @@ const Signup = () => {
   // 실시간 입력값 변경 및 즉시 에러 체크
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // 연락처 입력 시 하이픈 자동 포맷팅
+    if (name === 'phone') {
+      let onlyNum = value.replace(/[^0-9]/g, '');
+      if (onlyNum.length > 11) onlyNum = onlyNum.slice(0, 11);
+      let formatted = onlyNum;
+      if (formatted.length > 7) {
+        formatted =
+          formatted.slice(0, 3) +
+          '-' +
+          formatted.slice(3, 7) +
+          '-' +
+          formatted.slice(7);
+      } else if (formatted.length > 3) {
+        formatted = formatted.slice(0, 3) + '-' + formatted.slice(3);
+      }
+      setForm((prev) => ({ ...prev, [name]: formatted }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: validateField(name, formatted, { ...form, [name]: formatted }),
+      }));
+      return;
+    }
     setForm((prev) => ({
       ...prev,
       [name]: value,
@@ -483,7 +505,12 @@ const Signup = () => {
               <button
                 className={styles.registerSubmit}
                 type='submit'
-                disabled={isSubmitting || isLoading}
+                disabled={
+                  isSubmitting ||
+                  isLoading ||
+                  !!errors.phone ||
+                  !/^01[016789]-\d{3,4}-\d{4}$/.test(form.phone)
+                }
               >
                 {isSubmitting ? '가입 중...' : '직원 등록'}
               </button>
