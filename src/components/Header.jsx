@@ -613,6 +613,14 @@ const Header = ({ showChatbot }) => {
     setupSSE();
   };
 
+  // JWT 토큰에서 hrRole 파싱
+  let hrRole = 'N';
+  const token = sessionStorage.getItem('ACCESS_TOKEN');
+  if (token) {
+    const payload = parseJwt(token);
+    hrRole = payload.hrRole || payload.role || 'N';
+  }
+
   return (
     <>
       <header className={styles.headerWrap}>
@@ -737,9 +745,12 @@ const Header = ({ showChatbot }) => {
               조직도
             </NavLink>
             <span className={styles.headerDivider}>|</span>
-            <NavLink to='/approval' className={styles.headerLink}>
-              전자결재
-            </NavLink>
+            {/* 전자결재 NavLink 부분 */}
+            {isLoggedIn && hrRole === 'Y' && (
+              <NavLink to='/approval' className={styles.headerLink}>
+                전자결재
+              </NavLink>
+            )}
 
             {/* 알림함 버튼 */}
             <div
@@ -835,18 +846,21 @@ const Header = ({ showChatbot }) => {
                 메인
               </NavLink>
             </li>
-            <li>
-              <NavLink
-                to='/employee'
-                className={
-                  isActive('/employee')
-                    ? `${styles.navLink} ${styles.active}`
-                    : styles.navLink
-                }
-              >
-                인사관리
-              </NavLink>
-            </li>
+            {/* 인사관리 NavLink 부분 */}
+            {isLoggedIn && hrRole === 'Y' && (
+              <li>
+                <NavLink
+                  to='/employee'
+                  className={
+                    isActive('/employee')
+                      ? `${styles.navLink} ${styles.active}`
+                      : styles.navLink
+                  }
+                >
+                  인사관리
+                </NavLink>
+              </li>
+            )}
             <li>
               <NavLink
                 to='/attendance'
