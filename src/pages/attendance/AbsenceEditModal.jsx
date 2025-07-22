@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AbsenceEditModal.module.scss';
 
+const typeOptions = [
+  { value: 'BUSINESS_TRIP', label: '출장' },
+  { value: 'TRAINING', label: '연수' },
+  { value: 'ANNUAL_LEAVE', label: '연차' },
+  { value: 'HALF_DAY_LEAVE', label: '반차' },
+  { value: 'SHORT_LEAVE', label: '외출' },
+  { value: 'ETC', label: '기타' },
+];
+
 const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
   const [type, setType] = useState(absence?.type || '');
   const [startDate, setStartDate] = useState(absence?.startDate || '');
@@ -12,7 +21,7 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
 
   useEffect(() => {
     if (absence) {
-      setType(absence.type);
+      setType(absence.type); // ENUM 값이 들어오도록 보장
       setStartDate(absence.startDate);
       setEndDate(absence.endDate);
       setStartTime(absence.startTime);
@@ -64,12 +73,11 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
           <div className={styles.row}>
             <label>부재 유형</label>
             <select value={type} onChange={(e) => setType(e.target.value)}>
-              <option value='출장'>출장</option>
-              <option value='연수'>연수</option>
-              <option value='연차'>연차</option>
-              <option value='반차'>반차</option>
-              <option value='외출'>외출</option>
-              <option value='기타'>기타</option>
+              {typeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
           <div className={styles.row}>

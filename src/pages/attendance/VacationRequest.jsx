@@ -31,7 +31,7 @@ function toInputDate(str) {
   return str.replace(/\./g, '-');
 }
 
-const VacationRequest = ({ onClose, editData = null }) => {
+const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const [requestDate, setRequestDate] = useState(todayStr);
   // 휴가 유형을 Enum 값으로 관리
   const [vacationType, setVacationType] = useState(
@@ -65,6 +65,18 @@ const VacationRequest = ({ onClose, editData = null }) => {
     // 사유 유효성 검사
     if (!reason.trim()) {
       setReasonError('휴가 사유를 입력해주세요.');
+      return;
+    }
+
+    // 잔여 연차 유효성 검사 (연차만 적용)
+    if (
+      vacationType === 'ANNUAL_LEAVE' &&
+      vacationBalance &&
+      days > vacationBalance.remainingDays
+    ) {
+      alert(
+        `보유 연차(${vacationBalance.remainingDays}일)보다 많이 신청할 수 없습니다.`,
+      );
       return;
     }
 

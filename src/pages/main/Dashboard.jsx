@@ -351,9 +351,6 @@ function DashboardProfile({ onAttendanceChange }) {
 
   const statusInfo = getAttendanceStatus();
 
-  // 렌더링 직전 attendanceData 값 로그
-  console.log('attendanceData:', attendanceData);
-
   return (
     <div className={styles.dashboardProfile}>
       <div className={styles.profileUpper}>

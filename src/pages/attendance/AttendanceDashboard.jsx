@@ -53,6 +53,14 @@ function Modal({ open, onClose, children }) {
   );
 }
 
+// 안전한 로컬 날짜 문자열 생성 함수 추가
+function getDateStrLocal(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export default function AttendanceDashboard() {
   const today = new Date();
   // 근태 관련 state는 attendanceData만 사용
@@ -80,6 +88,41 @@ export default function AttendanceDashboard() {
   const [workedHours, setWorkedHours] = useState('00:00');
   const [showSuccessModal, setShowSuccessModal] = useState(false); // 성공 메시지 모달
   const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 내용
+  const [todayHighlight, setTodayHighlight] = useState(false);
+
+  // 1. 월별 근태 데이터 상태 추가
+  const [monthlyAttendance, setMonthlyAttendance] = useState([]);
+
+  // 2. 월별 근태 데이터 불러오기
+  useEffect(() => {
+    attendanceService.getMonthlyAttendance(year, month).then((res) => {
+      setMonthlyAttendance(res.result || res.data?.result || []);
+    });
+  }, [year, month]);
+
+  // 3. 날짜별 데이터 찾기 함수
+  // 날짜 매칭 보완
+  const getAttendanceByDate = (dateStr) => {
+    const found = monthlyAttendance.find((a) => {
+      return a.attendanceDate?.slice(0, 10) === dateStr;
+    });
+    return found;
+  };
+
+  // 4. 시간 포맷팅 함수 (ISO, HH:mm:ss 모두 지원)
+  const formatTime = (time) => {
+    if (!time) return '';
+    if (typeof time === 'string' && time.includes('T')) {
+      // ISO 형식: '2025-07-22T11:34:44.37815'
+      const t = time.split('T')[1];
+      return t ? t.slice(0, 5) : '';
+    }
+    if (typeof time === 'string' && time.match(/^\d{2}:\d{2}/)) {
+      // '11:34:44.007' 등
+      return time.slice(0, 5);
+    }
+    return '';
+  };
 
   // 근태 상태를 attendanceData로부터 계산
   useEffect(() => {
@@ -128,6 +171,10 @@ export default function AttendanceDashboard() {
       }
       // 성공 시 최신 데이터 다시 불러오기
       await fetchTodayAttendance();
+      // 월별 근태 데이터도 새로 불러오기
+      attendanceService.getMonthlyAttendance(year, month).then((res) => {
+        setMonthlyAttendance(res.result || res.data?.result || []);
+      });
     } catch (error) {
       // 출근 시 승인된 휴가/반차로 인한 400 에러 메시지 표시
       if (
@@ -153,8 +200,11 @@ export default function AttendanceDashboard() {
     setError(null);
     try {
       await attendanceService.checkOut();
-      // 성공 시 최신 데이터 다시 불러오기
       await fetchTodayAttendance();
+      // 퇴근 후 월별 데이터도 새로 불러오기
+      attendanceService.getMonthlyAttendance(year, month).then((res) => {
+        setMonthlyAttendance(res.result || res.data?.result || []);
+      });
     } catch (error) {
       setError('퇴근 처리 중 오류가 발생했습니다.');
     } finally {
@@ -199,7 +249,6 @@ export default function AttendanceDashboard() {
         year: year,
         month: month,
       });
-      console.log('부재 목록 API 응답:', response);
       // 응답 구조에 따라 absences 할당
       if (Array.isArray(response)) {
         setAbsences(response);
@@ -289,9 +338,10 @@ export default function AttendanceDashboard() {
   // 부재 수정 (WorkStatusUpdateRequestDto 구조에 맞게)
   const handleUpdateAbsence = async (updated) => {
     try {
-      // updated: { type(한글), startDate, endDate, startTime, endTime, reason }
+      // updated: { type(한글 또는 ENUM), ... }
+      const isEnum = Object.values(typeMap).includes(updated.type);
       const apiData = {
-        type: typeMap[updated.type] || 'ETC',
+        type: isEnum ? updated.type : typeMap[updated.type] || 'ETC',
         startDate: updated.startDate,
         endDate: updated.endDate,
         startTime: updated.startTime,
@@ -327,17 +377,19 @@ export default function AttendanceDashboard() {
   };
 
   const handleToday = () => {
-    // 이미 오늘 강조 상태면 해제, 아니면 오늘로 이동 및 강조
+    // 토글 방식: todayHighlight가 true면 해제, false면 오늘로 이동 및 강조
     if (
       year === today.getFullYear() &&
       month === today.getMonth() + 1 &&
-      todayRowIdx === today.getDate() - 1
+      todayRowIdx === today.getDate() - 1 &&
+      todayHighlight
     ) {
-      setTodayRowIdx(null);
+      setTodayHighlight(false);
     } else {
       setYear(today.getFullYear());
       setMonth(today.getMonth() + 1);
       setTodayRowIdx(today.getDate() - 1);
+      setTodayHighlight(true);
     }
   };
 
@@ -440,10 +492,8 @@ export default function AttendanceDashboard() {
       setVacationError(null);
       try {
         const response = await attendanceService.getVacationBalance();
-        console.log('vacation balance API response:', response.data.result);
         if (isMounted && response.data && response.data.result) {
           setVacationBalance(response.data.result);
-          console.log('setVacationBalance:', response.data.result);
         }
       } catch (e) {
         if (isMounted) setVacationError('연차 현황을 불러오지 못했습니다.');
@@ -832,33 +882,45 @@ export default function AttendanceDashboard() {
             </thead>
             <tbody>
               {Array.from({ length: 15 }).map((_, i) => {
+                // 왼쪽(1~15일)
                 const d1 = new Date(year, month - 1, i + 1);
-                const d2 = new Date(year, month - 1, i + 16);
-                const d1str = d1.toISOString().slice(0, 10);
-                const d2str = d2.toISOString().slice(0, 10);
-                // 날짜 범위 내 부재 표시
+                const d1str = getDateStrLocal(d1);
+                const att1 = getAttendanceByDate(d1str);
                 const absence1 = absences.find(
                   (a) => a.startDate <= d1str && a.endDate >= d1str,
                 );
+                // 오른쪽(16~말일)
+                const d2 = new Date(year, month - 1, i + 16);
+                const d2str = getDateStrLocal(d2);
+                const att2 = getAttendanceByDate(d2str);
                 const absence2 = absences.find(
                   (a) => a.startDate <= d2str && a.endDate >= d2str,
                 );
                 return (
                   <tr key={i}>
+                    {/* 날짜/출근/퇴근/부재 */}
                     <td
                       className={
                         year === today.getFullYear() &&
                         month === today.getMonth() + 1 &&
-                        todayRowIdx === i &&
-                        today.getDate() <= 15
+                        today.getDate() === i + 1 &&
+                        todayHighlight
                           ? styles.todayRow
                           : getDayColor(d1.getDay())
                       }
                     >
                       {i + 1}({getDayName(d1)})
                     </td>
-                    <td></td>
-                    <td></td>
+                    <td>
+                      {formatTime(
+                        att1?.checkInTime || att1?.workStatus?.checkInTime,
+                      )}
+                    </td>
+                    <td>
+                      {formatTime(
+                        att1?.checkOutTime || att1?.workStatus?.checkOutTime,
+                      )}
+                    </td>
                     <td>
                       {absence1 && (
                         <span
@@ -871,26 +933,43 @@ export default function AttendanceDashboard() {
                         </span>
                       )}
                     </td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                    {/* 합계/정상/연장/심야 */}
+                    <td>{att1?.totalWorkTime || ''}</td>
+                    <td>{att1?.normalWorkTime || ''}</td>
+                    <td>{att1?.overtimeWorkTime || ''}</td>
+                    <td>{att1?.nightWorkTime || ''}</td>
+                    {/* 오른쪽 날짜/출근/퇴근/부재 */}
                     <td
                       className={
                         year === today.getFullYear() &&
                         month === today.getMonth() + 1 &&
-                        todayRowIdx === i &&
-                        today.getDate() > 15
+                        today.getDate() === i + 16 &&
+                        todayHighlight
                           ? styles.todayRow
                           : getDayColor(d2.getDay())
                       }
                     >
-                      {i + 16}({getDayName(d2)})
+                      {i + 16 <= days.length
+                        ? `${i + 16}(${getDayName(d2)})`
+                        : ''}
                     </td>
-                    <td></td>
-                    <td></td>
                     <td>
-                      {absence2 && (
+                      {i + 16 <= days.length
+                        ? formatTime(
+                            att2?.checkInTime || att2?.workStatus?.checkInTime,
+                          )
+                        : ''}
+                    </td>
+                    <td>
+                      {i + 16 <= days.length
+                        ? formatTime(
+                            att2?.checkOutTime ||
+                              att2?.workStatus?.checkOutTime,
+                          )
+                        : ''}
+                    </td>
+                    <td>
+                      {i + 16 <= days.length && absence2 && (
                         <span
                           className={styles.absenceBtn}
                           style={{ cursor: 'pointer', display: 'inline-block' }}
@@ -901,10 +980,21 @@ export default function AttendanceDashboard() {
                         </span>
                       )}
                     </td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                    {/* 합계/정상/연장/심야 */}
+                    <td>
+                      {i + 16 <= days.length ? att2?.totalWorkTime || '' : ''}
+                    </td>
+                    <td>
+                      {i + 16 <= days.length ? att2?.normalWorkTime || '' : ''}
+                    </td>
+                    <td>
+                      {i + 16 <= days.length
+                        ? att2?.overtimeWorkTime || ''
+                        : ''}
+                    </td>
+                    <td>
+                      {i + 16 <= days.length ? att2?.nightWorkTime || '' : ''}
+                    </td>
                   </tr>
                 );
               })}
@@ -919,7 +1009,10 @@ export default function AttendanceDashboard() {
               <button className={styles.modalClose} onClick={closeModal}>
                 ×
               </button>
-              <VacationRequest onClose={closeModal} />
+              <VacationRequest
+                onClose={closeModal}
+                vacationBalance={vacationBalance}
+              />
             </div>
           </div>
         )}
