@@ -88,6 +88,7 @@ export const attendanceService = {
         checkOutTime: null,
         goOutTime: null,
         returnTime: null,
+        isLate: false, // 지각 여부 추가
       };
     } catch (error) {
       return {
@@ -95,28 +96,56 @@ export const attendanceService = {
         checkOutTime: null,
         goOutTime: null,
         returnTime: null,
+        isLate: false, // 지각 여부 추가
       };
     }
   },
 
-  // 부재 등록 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)
+  // 부재 등록
   registerAbsence: async (absenceData) => {
-    try {
-      // 실제로는 백엔드 API를 호출해야 하지만, 현재 백엔드에 해당 API가 없으므로
-      // 프론트엔드에서 임시로 처리
-      console.log('부재 등록 데이터:', absenceData);
+    // absenceData: { type, startDate, endDate, time, reason }
+    const response = await axiosInstance.post(
+      `${API_BASE_URL}${ATTENDANCE}/absence`,
+      absenceData,
+    );
+    return response.data;
+  },
 
-      return {
-        success: true,
-        message: '부재 등록이 완료되었습니다.',
-        result: {
-          absenceId: Date.now(), // 임시 ID
-          ...absenceData,
-        },
-      };
-    } catch (error) {
-      throw error;
-    }
+  // 내 부재 목록 조회 (userId 없이 /my 엔드포인트 사용)
+  getAbsences: async ({ year, month }) => {
+    const params = {};
+    if (year) params.year = year;
+    if (month) params.month = month;
+    const response = await axiosInstance.get(
+      `${API_BASE_URL}${ATTENDANCE}/absence/my`,
+      { params },
+    );
+    return response.data;
+  },
+
+  // 단일 부재 상세 조회
+  getAbsenceById: async (absenceId) => {
+    const response = await axiosInstance.get(
+      `${API_BASE_URL}${ATTENDANCE}/absence/${absenceId}`,
+    );
+    return response.data;
+  },
+
+  // 부재 수정
+  updateAbsence: async (absenceId, updateData) => {
+    const response = await axiosInstance.put(
+      `${API_BASE_URL}${ATTENDANCE}/absence/${absenceId}`,
+      updateData,
+    );
+    return response.data;
+  },
+
+  // 부재 삭제
+  deleteAbsence: async (absenceId) => {
+    const response = await axiosInstance.delete(
+      `${API_BASE_URL}${ATTENDANCE}/absence/${absenceId}`,
+    );
+    return response.data;
   },
 
   // 근태 기록 수정 (백엔드에 해당 API가 없으므로 프론트엔드에서 구현)

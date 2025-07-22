@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AbsenceEditModal.module.scss';
 
-const AbsenceEditModal = ({ open, onClose, absence, onSubmit }) => {
+const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
   const [type, setType] = useState(absence?.type || '');
   const [startDate, setStartDate] = useState(absence?.startDate || '');
   const [endDate, setEndDate] = useState(absence?.endDate || '');
   const [startTime, setStartTime] = useState(absence?.startTime || '');
   const [endTime, setEndTime] = useState(absence?.endTime || '');
   const [reason, setReason] = useState(absence?.reason || '');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (absence) {
@@ -24,20 +25,40 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // startTime, endTime이 'HH:mm' 포맷인지 보장 (예: '09:00')
+    const formattedStartTime =
+      startTime && startTime.length === 5 ? startTime : '';
+    const formattedEndTime = endTime && endTime.length === 5 ? endTime : '';
     onSubmit({
       ...absence,
       type,
       startDate,
       endDate,
-      startTime,
-      endTime,
+      startTime: formattedStartTime,
+      endTime: formattedEndTime,
       reason,
     });
+  };
+
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
+    if (onDelete) onDelete(absence.id);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
+        <button className={styles.modalClose} onClick={onClose}>
+          ×
+        </button>
         <h2>부재 수정</h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.row}>
@@ -95,13 +116,30 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit }) => {
             </button>
             <button
               type='button'
-              className={styles.cancelBtn}
-              onClick={onClose}
+              className={styles.deleteBtn}
+              onClick={handleDelete}
             >
-              취소
+              삭제
             </button>
           </div>
         </form>
+        {showDeleteConfirm && (
+          <div className={styles.deleteConfirmOverlay}>
+            <div className={styles.deleteConfirmModal}>
+              <div style={{ marginBottom: 16 }}>정말 삭제하시겠습니까?</div>
+              <div
+                style={{ display: 'flex', gap: 8, justifyContent: 'center' }}
+              >
+                <button className={styles.confirmBtn} onClick={confirmDelete}>
+                  확인
+                </button>
+                <button className={styles.deleteBtn} onClick={cancelDelete}>
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

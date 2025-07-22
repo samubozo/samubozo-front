@@ -61,6 +61,7 @@ export default function AttendanceDashboard() {
     checkOutTime: null,
     goOutTime: null,
     returnTime: null,
+    isLate: false, // 지각 여부 추가
   });
   const [step, setStep] = useState('출근'); // 출근, 외출, 복귀, 복귀완료
   const [loading, setLoading] = useState(false);
@@ -77,6 +78,8 @@ export default function AttendanceDashboard() {
   const [memo, setMemo] = useState(localStorage.getItem('todayMemo') || '');
   const [remainingWorkTime, setRemainingWorkTime] = useState('00:00');
   const [workedHours, setWorkedHours] = useState('00:00');
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // 성공 메시지 모달
+  const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 내용
 
   // 근태 상태를 attendanceData로부터 계산
   useEffect(() => {
@@ -98,6 +101,21 @@ export default function AttendanceDashboard() {
 
   // 출근/외출/복귀 버튼
   const handleAttendanceAction = async () => {
+    // 오늘이 휴가/부재일인지 체크
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const isVacation = absences.some(
+      (a) =>
+        a.startDate <= todayStr &&
+        a.endDate >= todayStr &&
+        (a.type === '연차' || a.type === 'ANNUAL_LEAVE'),
+    );
+    if (step === '출근' && isVacation) {
+      setSuccessMessage(
+        '오늘은 승인된 연차(휴가)일입니다. 출근할 수 없습니다.',
+      );
+      setShowSuccessModal(true);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -111,7 +129,19 @@ export default function AttendanceDashboard() {
       // 성공 시 최신 데이터 다시 불러오기
       await fetchTodayAttendance();
     } catch (error) {
-      setError(`${step} 처리 중 오류가 발생했습니다.`);
+      // 출근 시 승인된 휴가/반차로 인한 400 에러 메시지 표시
+      if (
+        step === '출근' &&
+        error.response &&
+        error.response.status === 400 &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setSuccessMessage(error.response.data.message);
+        setShowSuccessModal(true);
+      } else {
+        setError(`${step} 처리 중 오류가 발생했습니다.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -141,6 +171,7 @@ export default function AttendanceDashboard() {
         checkOutTime: result.checkOutTime,
         goOutTime: result.goOutTime,
         returnTime: result.returnTime,
+        isLate: result.isLate, // isLate 필드 추가
       });
     } catch (e) {
       setAttendanceData({
@@ -148,6 +179,7 @@ export default function AttendanceDashboard() {
         checkOutTime: null,
         goOutTime: null,
         returnTime: null,
+        isLate: false, // isLate 필드 추가
       });
     }
   };
@@ -158,13 +190,63 @@ export default function AttendanceDashboard() {
     // eslint-disable-next-line
   }, []);
 
+  // 부재 목록 불러오기
+  const fetchAbsences = async () => {
+    try {
+      const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
+      const response = await attendanceService.getAbsences({
+        userId: userId,
+        year: year,
+        month: month,
+      });
+      console.log('부재 목록 API 응답:', response);
+      // 응답 구조에 따라 absences 할당
+      if (Array.isArray(response)) {
+        setAbsences(response);
+      } else if (response.result && Array.isArray(response.result)) {
+        setAbsences(response.result);
+      } else if (response.data && Array.isArray(response.data)) {
+        setAbsences(response.data);
+      } else {
+        setAbsences([]);
+      }
+    } catch (error) {
+      console.error('부재 목록 불러오기 실패:', error);
+    }
+  };
+
+  // 컴포넌트 마운트 시 부재 목록 불러오기
+  useEffect(() => {
+    fetchAbsences();
+  }, [year, month]);
+
   const handleVacation = () => setShowVacation(true);
   const closeModal = () => setShowVacation(false);
   const handleAbsence = () => setShowAbsence(true);
   const closeAbsenceModal = () => setShowAbsence(false);
-  const handleAbsenceSubmit = (absence) => {
-    setAbsences((prev) => [...prev, absence]);
-    setShowAbsence(false);
+  // 부재 등록 (WorkStatusRegisterRequestDto 구조에 맞게)
+  const handleAbsenceSubmit = async (absence) => {
+    try {
+      // absence: { type(한글), startDate, endDate, startTime, endTime, reason }
+      const apiData = {
+        type: typeMap[absence.type] || 'ETC',
+        startDate: absence.startDate,
+        endDate: absence.endDate,
+        startTime: absence.startTime,
+        endTime: absence.endTime,
+        reason: absence.reason,
+      };
+      await attendanceService.registerAbsence(apiData);
+      await fetchAbsences();
+      setShowAbsence(false);
+      setSuccessMessage('부재 등록이 완료되었습니다.');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
+    } catch (error) {
+      setSuccessMessage('부재 등록 중 오류가 발생했습니다.');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
+    }
   };
 
   const handlePrevMonth = () => {
@@ -204,9 +286,44 @@ export default function AttendanceDashboard() {
     setEditAbsence(absence);
   };
   const closeEditAbsence = () => setEditAbsence(null);
-  const handleUpdateAbsence = (updated) => {
-    setAbsences((prev) => prev.map((a) => (a === editAbsence ? updated : a)));
-    closeEditAbsence();
+  // 부재 수정 (WorkStatusUpdateRequestDto 구조에 맞게)
+  const handleUpdateAbsence = async (updated) => {
+    try {
+      // updated: { type(한글), startDate, endDate, startTime, endTime, reason }
+      const apiData = {
+        type: typeMap[updated.type] || 'ETC',
+        startDate: updated.startDate,
+        endDate: updated.endDate,
+        startTime: updated.startTime,
+        endTime: updated.endTime,
+        reason: updated.reason,
+      };
+      await attendanceService.updateAbsence(editAbsence.id, apiData);
+      await fetchAbsences();
+      closeEditAbsence();
+      setSuccessMessage('부재 수정이 완료되었습니다.');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
+    } catch (error) {
+      setSuccessMessage('부재 수정 중 오류가 발생했습니다.');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
+    }
+  };
+
+  const handleDeleteAbsence = async (absenceId) => {
+    try {
+      setEditAbsence(null); // 삭제 확인 시 바로 모달 닫기
+      await attendanceService.deleteAbsence(absenceId);
+      await fetchAbsences();
+      setSuccessMessage('부재가 삭제되었습니다.');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
+    } catch (error) {
+      setSuccessMessage('부재 삭제 중 오류가 발생했습니다.');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 3000);
+    }
   };
 
   const handleToday = () => {
@@ -339,6 +456,25 @@ export default function AttendanceDashboard() {
       isMounted = false;
     };
   }, []);
+
+  // 한글 → ENUM 변환 맵
+  const typeMap = {
+    출장: 'BUSINESS_TRIP',
+    연수: 'TRAINING',
+    연차: 'ANNUAL_LEAVE',
+    반차: 'HALF_DAY_LEAVE',
+    외출: 'SHORT_LEAVE',
+    기타: 'ETC',
+  };
+  // ENUM → 한글 변환 맵
+  const typeToKorean = {
+    BUSINESS_TRIP: '출장',
+    TRAINING: '연수',
+    ANNUAL_LEAVE: '연차',
+    HALF_DAY_LEAVE: '반차',
+    SHORT_LEAVE: '외출',
+    ETC: '기타',
+  };
 
   // renderAttendanceDashboard 함수로 분리
   function renderAttendanceDashboard() {
@@ -700,6 +836,7 @@ export default function AttendanceDashboard() {
                 const d2 = new Date(year, month - 1, i + 16);
                 const d1str = d1.toISOString().slice(0, 10);
                 const d2str = d2.toISOString().slice(0, 10);
+                // 날짜 범위 내 부재 표시
                 const absence1 = absences.find(
                   (a) => a.startDate <= d1str && a.endDate >= d1str,
                 );
@@ -730,7 +867,7 @@ export default function AttendanceDashboard() {
                           onClick={() => handleEditAbsence(absence1)}
                           title='수정'
                         >
-                          {absence1.type}
+                          {typeToKorean[absence1.type] || absence1.type}
                         </span>
                       )}
                     </td>
@@ -760,7 +897,7 @@ export default function AttendanceDashboard() {
                           onClick={() => handleEditAbsence(absence2)}
                           title='수정'
                         >
-                          {absence2.type}
+                          {typeToKorean[absence2.type] || absence2.type}
                         </span>
                       )}
                     </td>
@@ -797,7 +934,23 @@ export default function AttendanceDashboard() {
           onClose={closeEditAbsence}
           absence={editAbsence}
           onSubmit={handleUpdateAbsence}
+          onDelete={handleDeleteAbsence}
         />
+        {/* 성공 메시지 모달 */}
+        {showSuccessModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.successModal}>
+              <div className={styles.successIcon}>✓</div>
+              <div className={styles.successMessage}>{successMessage}</div>
+              <button
+                className={styles.successCloseBtn}
+                onClick={() => setShowSuccessModal(false)}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

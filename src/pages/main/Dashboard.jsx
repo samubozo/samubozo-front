@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 
 // 대시보드 왼쪽 영역: 통계 현황을 보여주는 컴포넌트
-function DashboardStats({ refresh }) {
+function DashboardStats({ refresh, onAttendanceChange }) {
   const barRefs = useRef([]);
   const countRefs = useRef([]);
   const [stats, setStats] = useState([
@@ -27,88 +27,87 @@ function DashboardStats({ refresh }) {
     { label: '연차', count: 0, percent: 0, total: 0, color: '#8854d0' },
   ]);
 
+  // 통계 새로고침 함수
+  const refreshStats = async () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    try {
+      const res = await attendanceService.getPersonalStats(year, month);
+      const d = res.result;
+      console.log('API result (refreshed):', d); // ← 실제 값 확인
+      // total은 모든 카운트의 합
+      const total =
+        (d.attendanceCount || 0) +
+        (d.lateCount || 0) +
+        (d.goOutCount || 0) +
+        (d.halfDayVacationCount || 0) +
+        (d.fullDayVacationCount || 0);
+      setStats([
+        {
+          label: '출근',
+          count: d.attendanceCount || 0,
+          percent: total
+            ? (((d.attendanceCount || 0) / total) * 100).toFixed(1)
+            : 0,
+          total,
+          color: '#66be80',
+        },
+        {
+          label: '지각',
+          count: d.lateCount || 0,
+          percent: total ? (((d.lateCount || 0) / total) * 100).toFixed(1) : 0,
+          total,
+          color: '#f7b731',
+        },
+        {
+          label: '외출',
+          count: d.goOutCount || 0,
+          percent: total ? (((d.goOutCount || 0) / total) * 100).toFixed(1) : 0,
+          total,
+          color: '#eb3b5a',
+        },
+        {
+          label: '반차',
+          count: d.halfDayVacationCount || 0,
+          percent: total
+            ? (((d.halfDayVacationCount || 0) / total) * 100).toFixed(1)
+            : 0,
+          total,
+          color: '#4b7bec',
+        },
+        {
+          label: '연차',
+          count: d.fullDayVacationCount || 0,
+          percent: total
+            ? (((d.fullDayVacationCount || 0) / total) * 100).toFixed(1)
+            : 0,
+          total,
+          color: '#8854d0',
+        },
+      ]);
+      console.log('setStats (refreshed):', [
+        d.attendanceCount || 0,
+        d.lateCount || 0,
+        d.goOutCount || 0,
+        d.halfDayVacationCount || 0,
+        d.fullDayVacationCount || 0,
+      ]);
+    } catch (e) {
+      console.error('통계 새로고침 실패:', e);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
-      try {
-        const res = await attendanceService.getPersonalStats(year, month);
-        const d = res.result;
-        console.log('API result:', d); // ← 실제 값 확인
-        // total은 모든 카운트의 합
-        const total =
-          (d.attendanceCount || 0) +
-          (d.lateCount || 0) +
-          (d.goOutCount || 0) +
-          (d.halfDayVacationCount || 0) +
-          (d.fullDayVacationCount || 0);
-        setStats([
-          {
-            label: '출근',
-            count: d.attendanceCount || 0,
-            percent: total
-              ? (((d.attendanceCount || 0) / total) * 100).toFixed(1)
-              : 0,
-            total,
-            color: '#66be80',
-          },
-          {
-            label: '지각',
-            count: d.lateCount || 0,
-            percent: total
-              ? (((d.lateCount || 0) / total) * 100).toFixed(1)
-              : 0,
-            total,
-            color: '#f7b731',
-          },
-          {
-            label: '외출',
-            count: d.goOutCount || 0,
-            percent: total
-              ? (((d.goOutCount || 0) / total) * 100).toFixed(1)
-              : 0,
-            total,
-            color: '#eb3b5a',
-          },
-          {
-            label: '반차',
-            count: d.halfDayVacationCount || 0,
-            percent: total
-              ? (((d.halfDayVacationCount || 0) / total) * 100).toFixed(1)
-              : 0,
-            total,
-            color: '#4b7bec',
-          },
-          {
-            label: '연차',
-            count: d.fullDayVacationCount || 0,
-            percent: total
-              ? (((d.fullDayVacationCount || 0) / total) * 100).toFixed(1)
-              : 0,
-            total,
-            color: '#8854d0',
-          },
-        ]);
-        console.log('setStats:', [
-          d.attendanceCount || 0,
-          d.lateCount || 0,
-          d.goOutCount || 0,
-          d.halfDayVacationCount || 0,
-          d.fullDayVacationCount || 0,
-        ]);
-      } catch (e) {
-        setStats([
-          { label: '출근', count: 0, percent: 0, total: 0, color: '#66be80' },
-          { label: '지각', count: 0, percent: 0, total: 0, color: '#f7b731' },
-          { label: '외출', count: 0, percent: 0, total: 0, color: '#eb3b5a' },
-          { label: '반차', count: 0, percent: 0, total: 0, color: '#4b7bec' },
-          { label: '연차', count: 0, percent: 0, total: 0, color: '#8854d0' },
-        ]);
-      }
-    };
-    fetchStats();
+    refreshStats();
   }, [refresh]);
+
+  // 외출/복귀 후 통계 새로고침
+  useEffect(() => {
+    if (onAttendanceChange) {
+      refreshStats();
+    }
+  }, [onAttendanceChange]);
 
   useEffect(() => {
     // 게이지 애니메이션
@@ -500,9 +499,13 @@ function DashboardProfile({ onAttendanceChange }) {
 // 메인 대시보드 컨테이너: DashboardStats와 DashboardProfile을 나란히 배치
 export default function Dashboard() {
   const [refreshStats, setRefreshStats] = useState(0);
+
   return (
     <div className={styles.dashboardMain}>
-      <DashboardStats refresh={refreshStats} />
+      <DashboardStats
+        refresh={refreshStats}
+        onAttendanceChange={() => setRefreshStats((v) => v + 1)}
+      />
       <DashboardProfile
         onAttendanceChange={() => setRefreshStats((v) => v + 1)}
       />

@@ -12,18 +12,37 @@ const absenceTypes = [
   { value: '기타', label: '기타' },
 ];
 
+const timeOptions = Array.from({ length: 36 }, (_, i) => {
+  const hour = String(Math.floor(i / 2) + 6).padStart(2, '0'); // 06:00 ~ 23:30
+  const min = i % 2 === 0 ? '00' : '30';
+  return `${hour}:${min}`;
+});
+
 const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   const [type, setType] = useState('출장');
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(todayStr);
-  const [time, setTime] = useState('09:00');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('18:00');
   const [reason, setReason] = useState('');
 
   if (!open) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSubmit) onSubmit({ type, startDate, endDate, time, reason });
+    // startTime, endTime이 'HH:mm' 포맷인지 보장
+    const formattedStartTime =
+      startTime && startTime.length === 5 ? startTime : '';
+    const formattedEndTime = endTime && endTime.length === 5 ? endTime : '';
+    if (onSubmit)
+      onSubmit({
+        type,
+        startDate,
+        endDate,
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        reason,
+      });
     if (onClose) onClose();
   };
 
@@ -60,13 +79,29 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
           </div>
           <div className={styles.row}>
             <label>시간</label>
-            <input
-              type='text'
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              placeholder='예: 09:00'
+            <select
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
               style={{ width: 120 }}
-            />
+            >
+              {timeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            <span>~</span>
+            <select
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              style={{ width: 120 }}
+            >
+              {timeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
           </div>
           <div className={styles.row}>
             <label>사유</label>
