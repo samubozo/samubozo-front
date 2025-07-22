@@ -403,15 +403,18 @@ const PayrollManagement = () => {
     }
   };
 
-  const isAllChecked = checkedList.length === employeeData.length;
+  // 전체 체크 코드
+  // const isAllChecked = checkedList.length === employeeData.length;
 
-  const handleAllCheck = (e) => {
-    if (e.target.checked) {
-      setCheckedList(employeeData.map((emp) => emp.id));
-    } else {
-      setCheckedList([]);
-    }
-  };
+  // const handleAllCheck = (e) => {
+  //   if (e.target.checked) {
+  //     setCheckedList(employeeData.map((emp) => emp.id));
+  //   } else {
+  //     setCheckedList([]);
+  //   }
+  // };
+
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
   const handleCheck = (id) => {
     setCheckedList((prev) =>
@@ -420,21 +423,14 @@ const PayrollManagement = () => {
   };
 
   const handleEmployeeClick = (emp) => {
-    const isSameEmployeeSelected = selectedEmployee?.id === emp.id;
+    const isSame = selectedEmployeeId === emp.id;
 
-    if (isSameEmployeeSelected) {
-      setSelectedEmployee(null); // 🔄 선택 해제
-
-      setCheckedList((prev) => prev.filter((id) => id !== emp.id)); // 체크 해제
+    if (isSame) {
+      setSelectedEmployeeId(null);
+      setSelectedEmployee(null);
     } else {
-      setSelectedEmployee(emp); // 선택
-
-      setCheckedList((prev) => {
-        if (!prev.includes(emp.id)) {
-          return [...prev, emp.id];
-        }
-        return prev;
-      });
+      setSelectedEmployeeId(emp.id);
+      setSelectedEmployee(emp);
 
       if (isHR && selectedMonth) {
         const [year, month] = selectedMonth.split('-');
@@ -599,13 +595,7 @@ const PayrollManagement = () => {
           <table>
             <thead>
               <tr>
-                <th>
-                  <input
-                    type='checkbox'
-                    checked={isAllChecked}
-                    onChange={handleAllCheck}
-                  />
-                </th>
+                <th></th>
                 <th>no</th>
                 <th>사원명</th>
                 <th>직급</th>
@@ -621,8 +611,8 @@ const PayrollManagement = () => {
                   <td>
                     <input
                       type='checkbox'
-                      checked={checkedList.includes(emp.id)}
-                      onChange={() => handleCheck(emp.id)}
+                      checked={selectedEmployeeId === emp.id}
+                      onChange={() => handleEmployeeClick(emp)} // ✅ 단일 선택
                       onClick={(e) => e.stopPropagation()}
                     />
                   </td>
