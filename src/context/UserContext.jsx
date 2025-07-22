@@ -96,7 +96,18 @@ export const AuthContextProvider = (props) => {
 
   // 로그아웃 핸들러
   const logoutHandler = () => {
-    sessionStorage.clear(); // 세션스토리지 전체 삭제
+    // 저장된 이메일 배열 보존
+    const rememberedEmails = localStorage.getItem('rememberedEmails');
+
+    // 세션스토리지 전체 삭제
+    sessionStorage.clear();
+
+    // 로컬스토리지 클리어 후 이메일 배열 복원
+    localStorage.clear();
+    if (rememberedEmails) {
+      localStorage.setItem('rememberedEmails', rememberedEmails);
+    }
+
     setIsLoggedIn(false);
     setUserRole('');
   };

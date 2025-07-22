@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, HR, CERTIFICATE } from '../../configs/host-config';
 // certificateEnums.js import 제거
+import AuthContext from '../../context/UserContext';
 
 const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [dept, setDept] = useState(''); // departmentId
@@ -11,6 +12,27 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [position, setPosition] = useState(''); // positionId
   const [positionName, setPositionName] = useState('');
   const [residentRegNo, setResidentRegNo] = useState('');
+  const [residentRegNoError, setResidentRegNoError] = useState('');
+  // 주민등록번호 입력 핸들러: 숫자만 저장, 입력은 6자리 뒤에 자동으로 '-' 표시, 최대 13자리
+  const handleResidentRegNoChange = (e) => {
+    let value = e.target.value.replace(/[^0-9]/g, ''); // 숫자만
+    if (value.length > 13) value = value.slice(0, 13);
+    setResidentRegNo(value);
+    // 입력값이 변경될 때마다 에러 초기화
+    setResidentRegNoError('');
+  };
+  // 화면에 표시할 주민등록번호: 6자리 뒤에 - 삽입
+  const displayResidentRegNo = residentRegNo
+    ? residentRegNo.length > 6
+      ? residentRegNo.slice(0, 6) + '-' + residentRegNo.slice(6)
+      : residentRegNo
+    : '';
+
+  // 주민등록번호 유효성 검사 함수
+  const isValidResidentRegNo = (value) => {
+    // 6자리-7자리, 총 14글자, 하이픈 포함
+    return /^\d{6}-\d{7}$/.test(value);
+  };
   const [status, setStatus] = useState('재직');
   const [role, setRole] = useState('N'); // hrRole: 'Y' or 'N'
   const [joinDate, setJoinDate] = useState('');
@@ -19,7 +41,35 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [gender, setGender] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [employeePhone, setEmployeePhone] = useState('');
+  const [employeePhoneError, setEmployeePhoneError] = useState('');
+  // 연락처 입력 핸들러: 3-4-4 형태로 하이픈 포함하여 저장, 최대 13자리(하이픈 포함)
+  const handleEmployeePhoneChange = (e) => {
+    let value = e.target.value.replace(/[^0-9]/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    let formatted = value;
+    if (formatted.length > 7) {
+      formatted =
+        formatted.slice(0, 3) +
+        '-' +
+        formatted.slice(3, 7) +
+        '-' +
+        formatted.slice(7);
+    } else if (formatted.length > 3) {
+      formatted = formatted.slice(0, 3) + '-' + formatted.slice(3);
+    }
+    setEmployeePhone(formatted);
+    setEmployeePhoneError('');
+  };
+  // 화면에 표시할 연락처: employeePhone 그대로 사용
+  const displayEmployeePhone = employeePhone;
+
+  // 연락처 유효성 검사 함수 (하이픈 필수, 010-1234-5678 등)
+  const isValidPhone = (value) => {
+    // 010-1234-5678, 011-123-4567 등 3-3~4-4
+    return /^01[016789]-\d{3,4}-\d{4}$/.test(value);
+  };
   const [employeeOutEmail, setEmployeeOutEmail] = useState('');
+  const [employeeOutEmailError, setEmployeeOutEmailError] = useState('');
   const [employeeEmail, setEmployeeEmail] = useState('');
   const [employeeAddress, setEmployeeAddress] = useState('');
   const [activeTab, setActiveTab] = useState('info');
@@ -34,7 +84,14 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [birthDate, setBirthDate] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
+
+  const handleAccountNumberChange = (e) => {
+    let value = e.target.value;
+    if (value.length > 16) value = value.slice(0, 16);
+    setAccountNumber(value);
+  };
   const [accountHolder, setAccountHolder] = useState('');
+  const { user } = React.useContext(AuthContext);
 
   // 부서/직책 목록 불러오기
   useEffect(() => {
@@ -282,10 +339,24 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     formData.append('employeeNo', selectedEmployee.id);
     formData.append('profileImage', profileFile);
     try {
-      await axiosInstance.post(`${API_BASE_URL}${HR}/user/profile`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await axiosInstance.post(
+        `${API_BASE_URL}${HR}/user/profile`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        },
+      );
       alert('프로필 이미지가 업로드되었습니다.');
+      // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
+      if (
+        user?.employeeNo &&
+        String(user.employeeNo) === String(selectedEmployee.id)
+      ) {
+        // 서버 응답에서 최신 프로필 이미지 URL을 받아서 저장 (예시: res.data.result.profileImage)
+        const newProfileImage = res.data?.result?.profileImage || profileImage;
+        sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
+        window.location.reload();
+      }
     } catch {
       alert('프로필 이미지 업로드 실패');
     }
@@ -334,35 +405,23 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         },
       );
       alert('저장되었습니다.');
-      // 저장 후 상세정보를 즉시 다시 불러오기
-      try {
-        const res = await axiosInstance.get(
-          `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
-        );
-        const data = res.data.result;
-        setEmployeeName(data.userName || '');
-        setEmployeePhone(data.phone || '');
-        setEmployeeOutEmail(data.externalEmail || '');
-        setEmployeeEmail(data.email || '');
-        setDept(data.department?.departmentId || '');
-        setDeptName(data.department?.departmentName || '');
-        setPosition(data.positionId || '');
-        setPositionName(data.positionName || '');
-        setStatus(data.activate || 'Y');
-        setRole(data.hrRole === 'Y' ? 'Y' : 'N');
-        setJoinDate(data.hireDate || '');
-        setLeaveDate(data.retireDate || '');
-        setMemo(data.remarks || '');
-        setGender(data.gender || '');
-        setEmployeeAddress(data.address || '');
-        setResidentRegNo(data.residentRegNo || '');
-        setBirthDate(data.birthDate || '');
-        setBankName(data.bankName || '');
-        setAccountNumber(data.accountNumber || '');
-        setAccountHolder(data.accountHolder || '');
-        setProfileImage(data.profileImage);
-      } catch (err) {
-        alert('저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.');
+      // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
+      if (
+        user?.employeeNo &&
+        String(user.employeeNo) === String(selectedEmployee.id)
+      ) {
+        // 저장 후 상세정보를 즉시 다시 불러오기
+        try {
+          const res = await axiosInstance.get(
+            `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
+          );
+          const data = res.data.result;
+          const newProfileImage = data.profileImage || profileImage;
+          sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
+          window.location.reload();
+        } catch (err) {
+          alert('저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.');
+        }
       }
     } catch {
       setError('저장에 실패했습니다.');
@@ -600,9 +659,28 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <td className={styles.tableLabel}>주민등록번호</td>
                   <td>
                     <input
-                      value={residentRegNo}
-                      onChange={(e) => setResidentRegNo(e.target.value)}
+                      value={displayResidentRegNo}
+                      onChange={handleResidentRegNoChange}
+                      maxLength={14} // 6자리+하이픈+7자리 = 14
+                      placeholder='예: 123456-1234567'
+                      onBlur={() => {
+                        if (
+                          displayResidentRegNo &&
+                          !isValidResidentRegNo(displayResidentRegNo)
+                        ) {
+                          setResidentRegNoError(
+                            '주민등록번호 형식이 올바르지 않습니다. (예: 123456-1234567)',
+                          );
+                        } else {
+                          setResidentRegNoError('');
+                        }
+                      }}
                     />
+                    {residentRegNoError && (
+                      <div style={{ color: 'red', fontSize: 13, marginTop: 4 }}>
+                        {residentRegNoError}
+                      </div>
+                    )}
                   </td>
                   <td className={styles.tableLabel}>성별</td>
                   <td className={styles.genderCell}>
@@ -634,9 +712,28 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <td className={styles.tableLabel}>연락처</td>
                   <td>
                     <input
-                      value={employeePhone}
-                      onChange={(e) => setEmployeePhone(e.target.value)}
+                      value={displayEmployeePhone}
+                      onChange={handleEmployeePhoneChange}
+                      maxLength={13} // 3자리+하이픈+4자리+하이픈+4자리 = 13
+                      placeholder='예: 010-1234-5678'
+                      onBlur={() => {
+                        if (
+                          displayEmployeePhone &&
+                          !isValidPhone(displayEmployeePhone)
+                        ) {
+                          setEmployeePhoneError(
+                            '연락처 형식이 올바르지 않습니다. (예: 010-1234-5678)',
+                          );
+                        } else {
+                          setEmployeePhoneError('');
+                        }
+                      }}
                     />
+                    {employeePhoneError && (
+                      <div style={{ color: 'red', fontSize: 13, marginTop: 4 }}>
+                        {employeePhoneError}
+                      </div>
+                    )}
                   </td>
                 </tr>
                 <tr>
@@ -651,10 +748,34 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <td className={styles.tableLabel}>외부이메일</td>
                   <td>
                     <input
+                      type='email'
                       value={employeeOutEmail}
-                      onChange={(e) => setEmployeeOutEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmployeeOutEmail(e.target.value);
+                        setEmployeeOutEmailError('');
+                      }}
                       className={styles.emailInput}
+                      placeholder='예: example@email.com'
+                      onBlur={() => {
+                        if (
+                          employeeOutEmail &&
+                          !/^([\w.-]+)@([\w-]+)\.(\w{2,})$/.test(
+                            employeeOutEmail,
+                          )
+                        ) {
+                          setEmployeeOutEmailError(
+                            '이메일 형식이 올바르지 않습니다.',
+                          );
+                        } else {
+                          setEmployeeOutEmailError('');
+                        }
+                      }}
                     />
+                    {employeeOutEmailError && (
+                      <div style={{ color: 'red', fontSize: 13, marginTop: 4 }}>
+                        {employeeOutEmailError}
+                      </div>
+                    )}
                   </td>
                 </tr>
                 <tr>
@@ -664,19 +785,22 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                       <input
                         type='text'
                         placeholder='은행명'
+                        maxLength={6}
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
                       />
                       <input
                         type='text'
-                        placeholder='계좌번호'
                         value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
+                        onChange={handleAccountNumberChange}
+                        maxLength={16}
+                        placeholder='계좌번호'
                       />
                       <span className={styles.accName}>예금주</span>
                       <input
                         type='text'
                         placeholder='예금주'
+                        maxLength={6}
                         value={accountHolder}
                         onChange={(e) => setAccountHolder(e.target.value)}
                       />
@@ -1124,7 +1248,18 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
               <button
                 className={styles.save}
                 onClick={handleSave}
-                disabled={loading}
+                disabled={
+                  loading ||
+                  (!!residentRegNo && !!residentRegNoError) ||
+                  (!!residentRegNo &&
+                    !isValidResidentRegNo(displayResidentRegNo)) ||
+                  (!!employeeOutEmail && !!employeeOutEmailError) ||
+                  (!!employeeOutEmail &&
+                    !/^([\w.-]+)@([\w-]+)\.(\w{2,})$/.test(employeeOutEmail)) ||
+                  (!!displayEmployeePhone && !!employeePhoneError) ||
+                  (!!displayEmployeePhone &&
+                    !isValidPhone(displayEmployeePhone))
+                }
               >
                 저장
               </button>

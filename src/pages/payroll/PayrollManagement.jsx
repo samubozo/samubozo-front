@@ -1,15 +1,83 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
+import axiosInstance from '../../configs/axios-config';
 import styles from './PayrollManagement.module.scss';
 import AuthContext from '../../context/UserContext';
+import { API_BASE_URL, PAYROLL, HR } from '../../configs/host-config';
 
-const employeeData = [
-  { id: 1, name: '신한국', position: '팀장', department: '경영지원' },
-  { id: 2, name: '이호영', position: '부팀장', department: '영업부' },
-  { id: 3, name: '김예은', position: '사원', department: '기획부' },
-  { id: 4, name: '주영찬', position: '사원', department: '마케팅' },
-  { id: 5, name: '구현희', position: '사원', department: '디자인' },
-];
+function parseJwt(token) {
+  if (!token) return {};
+  const base64Url = token.split('.')[1];
+  if (!base64Url) return {};
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  try {
+    return JSON.parse(decodeURIComponent(escape(window.atob(base64))));
+  } catch (e) {
+    console.error('JWT 파싱 실패:', e);
+    return {};
+  }
+}
+
+// 직원 목록 불러오는 함수
+const fetchEmployees = async ({
+  page = 0,
+  size = 100,
+  searchName = '',
+  includeRetired = false,
+  isHR = false,
+} = {}) => {
+  try {
+    // ✅ HR이 아니면 본인 정보만 반환
+    if (!isHR) {
+      const payload = parseJwt(sessionStorage.getItem('ACCESS_TOKEN'));
+
+      // 🔽 사용자 상세 정보 API 호출
+      const res = await axiosInstance.get(`${API_BASE_URL}${HR}/users/detail`, {
+        params: { employeeNo: payload.employeeNo },
+      });
+
+      const emp = res.data.result;
+
+      return [
+        {
+          id: emp.employeeNo,
+          name: emp.userName,
+          position: emp.positionName,
+          department: emp.department?.name || '',
+          imageUrl: emp.profileImage || '',
+        },
+      ];
+    }
+
+    // ✅ HR이면 전체 호출
+    let url = `${API_BASE_URL}${HR}/user/list`;
+    let params = { page, size };
+
+    if (searchName) {
+      url = `${API_BASE_URL}${HR}/users/search`;
+      params = {
+        userName: searchName,
+        activate: includeRetired ? undefined : 'Y',
+        page,
+        size,
+      };
+    }
+
+    const res = await axiosInstance.get(url, { params });
+    const rawList = res.data.result?.content || res.data.result || [];
+
+    return rawList.map((emp) => ({
+      id: emp.employeeNo,
+      name: emp.userName,
+      position: emp.positionName,
+      department: emp.department?.name || '',
+      imageUrl: emp.profileImage || '',
+    }));
+  } catch (err) {
+    console.error('직원 불러오기 실패:', err);
+    return [];
+  }
+};
 
 const departmentOptions = [
   '전체',
@@ -20,73 +88,304 @@ const departmentOptions = [
   '디자인',
 ];
 
+const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
+
+const PayrollDetail = ({ employee, onClose }) => {
+  const [form, setForm] = useState({
+    payMonthStr: '',
+    basePayroll: '',
+    positionAllowance: '',
+    mealAllowance: '',
+    bonus: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  // 숫자만 추출 후 콤마 포맷
+  const formatNumber = (value) => {
+    const num = value.replace(/[^\d]/g, '');
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'payMonthStr') {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: formatNumber(value) }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const [yearStr, monthStr] = form.payMonthStr.split('-');
+      const year = parseInt(yearStr);
+      const month = parseInt(monthStr);
+      // 숫자 필드는 콤마 제거 후 숫자로 변환
+      const payload = {
+        userId: employee.id,
+        payYear: year,
+        payMonth: month,
+        basePayroll: Number(form.basePayroll.replace(/,/g, '')),
+        positionAllowance: Number(form.positionAllowance.replace(/,/g, '')),
+        mealAllowance: Number(form.mealAllowance.replace(/,/g, '')),
+        bonus: Number(form.bonus.replace(/,/g, '')),
+      };
+
+      console.log('🚀 급여 저장 요청 payload:', payload);
+
+      await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
+      setMessage('저장되었습니다.');
+      setForm({
+        payMonthStr: '',
+        basePayroll: '',
+        positionAllowance: '',
+        mealAllowance: '',
+        bonus: '',
+      });
+    } catch (err) {
+      console.error('급여 저장 요청 실패:', err); // 저장 실패 로그
+      setMessage('저장 실패: ' + (err?.response?.data?.message || '오류'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 예시: employee에 계좌, 이미지 등 추가 정보가 있다고 가정
+  const bankName = employee.bankName || '국민은행';
+  const accountNumber = employee.accountNumber || '123-456-7890';
+  const accountHolder = employee.accountHolder || employee.name;
+  const employeeNo = employee.id;
+  const imageUrl = employee.imageUrl || defaultImg;
+  const department = employee.department || '경영지원';
+  const position = employee.position || '사원';
+
+  return (
+    <div className={styles['payroll-detail-flex-wrap']}>
+      <div className={styles['payroll-profile-outer']}>
+        <img
+          src={imageUrl}
+          alt='profile'
+          className={styles['payroll-profile-img']}
+        />
+      </div>
+      <form onSubmit={handleSubmit} style={{ flex: 2.1 }}>
+        <table className={styles['payroll-detail-table-merged']}>
+          <tbody>
+            <tr>
+              <th>사원번호</th>
+              <td>{employeeNo}</td>
+              <th>급여월</th>
+              <td>
+                <input
+                  type='month'
+                  name='payMonthStr'
+                  value={form.payMonthStr}
+                  onChange={handleChange}
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>성명</th>
+              <td>{employee.name}</td>
+              <th>기본급</th>
+              <td>
+                <input
+                  type='text'
+                  name='basePayroll'
+                  value={form.basePayroll}
+                  onChange={handleChange}
+                  autoComplete='off'
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>계좌</th>
+              <td>
+                {bankName} {accountNumber} ({accountHolder})
+              </td>
+              <th>직급수당</th>
+              <td>
+                <input
+                  type='text'
+                  name='positionAllowance'
+                  value={form.positionAllowance}
+                  onChange={handleChange}
+                  autoComplete='off'
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>부서</th>
+              <td>{department}</td>
+              <th>식대</th>
+              <td>
+                <input
+                  type='text'
+                  name='mealAllowance'
+                  value={form.mealAllowance}
+                  onChange={handleChange}
+                  autoComplete='off'
+                  required
+                />
+              </td>
+            </tr>
+            <tr>
+              <th>직책</th>
+              <td>{position}</td>
+              <th>성과급</th>
+              <td>
+                <input
+                  type='text'
+                  name='bonus'
+                  value={form.bonus}
+                  onChange={handleChange}
+                  autoComplete='off'
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            marginTop: 18,
+          }}
+        >
+          <button
+            type='submit'
+            disabled={loading}
+            style={{ minWidth: 180 }}
+            className={styles['save-button']}
+          >
+            {loading ? '저장 중...' : '저장'}
+          </button>
+          {message && (
+            <div
+              style={{
+                textAlign: 'center',
+                color: message.includes('실패') ? 'red' : 'green',
+                paddingTop: 8,
+                fontWeight: 500,
+              }}
+            >
+              {message}
+            </div>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+};
+
 const PayrollManagement = () => {
+  const [isHR, setIsHR] = useState(false);
+  const [employeeData, setEmployeeData] = useState([]);
   const [checkedList, setCheckedList] = useState([]);
   const [payrollData, setPayrollData] = useState({
     basePayroll: '',
     positionAllowance: '',
     mealAllowance: '',
+    bonus: '',
   });
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('전체');
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [searchName, setSearchName] = useState('');
 
   const { user } = useContext(AuthContext);
 
-  const fetchPayroll = (year, month) => {
+  useEffect(() => {
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
+    const payload = parseJwt(token);
+    console.log('✅ JWT payload:', payload); // 추가
+    setIsHR(payload?.role === 'Y');
+  }, []);
+
+  const fetchPayroll = (year, month, employeeId = null) => {
     if (!user) return;
-    const userRole = user.hrRole === 'Y' ? 'Y' : 'N';
-    const userEmail = user.email;
-    const userEmployeeNo = user.employeeNo;
+
     const accessToken = sessionStorage.getItem('ACCESS_TOKEN');
 
     const headers = {
       Authorization: `Bearer ${accessToken}`,
-      'X-User-Email': userEmail,
-      'X-User-Role': userRole,
-      'X-User-Employee-No': userEmployeeNo,
     };
 
+    let url = '';
+    const params = { year, month };
+
+    if (employeeId && isHR) {
+      url = `${API_BASE_URL}${PAYROLL}/admin/monthly`;
+      params.userId = employeeId;
+    } else {
+      url = `${API_BASE_URL}${PAYROLL}/me/monthly`;
+    }
+
     if (year && month) {
-      axios
-        .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me/monthly`, {
-          headers,
-          params: { year, month },
-        })
+      axiosInstance
+        .get(url, { headers, params }) // ✅ 동적으로 지정된 url 사용
         .then((res) => {
           const result = res.data.result;
           setPayrollData({
             basePayroll: Number(result?.basePayroll ?? 0),
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
+            bonus: Number(result?.bonus ?? 0),
           });
         })
         .catch((err) => {
+          console.error('급여 조회 실패:', err);
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',
             mealAllowance: '',
+            bonus: '',
           });
         });
     } else {
-      axios
-        .get(`${import.meta.env.VITE_BACKEND_API}/payroll/me`, { headers })
+      // 월이 지정되지 않은 경우: 본인 기본 급여 조회 (기존 로직 유지)
+      axiosInstance
+        .get(`${API_BASE_URL}${PAYROLL}/me`, { headers })
         .then((res) => {
           const result = res.data.result;
           setPayrollData({
             basePayroll: Number(result?.basePayroll ?? 0),
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
+            bonus: Number(result?.bonus ?? 0),
           });
         })
-        .catch((err) => {
+        .catch(() => {
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',
             mealAllowance: '',
+            bonus: '',
           });
         });
     }
   };
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      console.log('🚀 isHR 전달됨:', isHR); // 확인
+      const employees = await fetchEmployees({ isHR });
+      console.log('📦 직원 목록:', employees); // 확인
+      setEmployeeData(employees);
+    };
+
+    if (user && isHR !== null) {
+      loadEmployees();
+    }
+  }, [user, isHR]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,27 +394,49 @@ const PayrollManagement = () => {
 
   const handleMonthChange = (e) => {
     setSelectedMonth(e.target.value);
-    if (e.target.value) {
-      const [year, month] = e.target.value.split('-');
-      fetchPayroll(year, month);
-    } else {
-      fetchPayroll();
-    }
-  };
-  const isAllChecked = checkedList.length === employeeData.length;
+    const [year, month] = e.target.value.split('-');
 
-  const handleAllCheck = (e) => {
-    if (e.target.checked) {
-      setCheckedList(employeeData.map((emp) => emp.id));
+    if (isHR && selectedEmployee) {
+      fetchPayroll(year, month, selectedEmployee.id);
     } else {
-      setCheckedList([]);
+      fetchPayroll(year, month);
     }
   };
+
+  // 전체 체크 코드
+  // const isAllChecked = checkedList.length === employeeData.length;
+
+  // const handleAllCheck = (e) => {
+  //   if (e.target.checked) {
+  //     setCheckedList(employeeData.map((emp) => emp.id));
+  //   } else {
+  //     setCheckedList([]);
+  //   }
+  // };
+
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
   const handleCheck = (id) => {
     setCheckedList((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
+  };
+
+  const handleEmployeeClick = (emp) => {
+    const isSame = selectedEmployeeId === emp.id;
+
+    if (isSame) {
+      setSelectedEmployeeId(null);
+      setSelectedEmployee(null);
+    } else {
+      setSelectedEmployeeId(emp.id);
+      setSelectedEmployee(emp);
+
+      if (isHR && selectedMonth) {
+        const [year, month] = selectedMonth.split('-');
+        fetchPayroll(year, month, emp.id);
+      }
+    }
   };
 
   // 부서 필터링
@@ -128,9 +449,10 @@ const PayrollManagement = () => {
   const base = payrollData.basePayroll || 0;
   const allowance = payrollData.positionAllowance || 0;
   const meal = payrollData.mealAllowance || 0;
+  const bonus = payrollData.bonus || 0;
   const nonTaxableMeal = Math.min(meal, 100000);
   const taxableMeal = Math.max(meal - 100000, 0);
-  const taxable = base + allowance + taxableMeal;
+  const taxable = base + allowance + taxableMeal + bonus;
   const nonTaxable = nonTaxableMeal;
   const total = taxable + nonTaxable;
 
@@ -143,6 +465,86 @@ const PayrollManagement = () => {
 
   const totalDeduction = pension + health + employment + incomeTax + localTax;
   const netPay = total - totalDeduction;
+
+  const printRef = useRef(null);
+
+  const handlePrintPayroll = () => {
+    const printContents = printRef.current.innerHTML;
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+    if (!printWindow) {
+      alert('팝업 차단 해제를 먼저 해주세요!');
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`
+    <html>
+      <head>
+        <title>급여명세서</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+          }
+
+          h2 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+          }
+
+          th {
+            background-color: #f5f5f5;
+            text-align: center;
+            font-weight: 600;
+            padding: 10px;
+            border: 1px solid #ccc;
+            width: 30%;
+          }
+
+          td {
+            text-align: right;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+          }
+
+          td:first-child {
+            text-align: left;
+            width: 70%;
+          }
+
+          .summary-table td {
+            font-weight: bold;
+            background-color: #fafafa;
+          }
+          </style>
+
+      </head>
+      <body>
+        <h2>급여명세서</h2>
+        ${printContents}
+      </body>
+    </html>
+  `);
+    printWindow.document.close();
+
+    // 💡 DOM 로딩 완료 후 print() 실행
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      setTimeout(() => {
+        printWindow.close();
+      }, 1500);
+    };
+  };
 
   return (
     <div className={styles['payroll-management-container']}>
@@ -172,7 +574,17 @@ const PayrollManagement = () => {
           </label>
         </div>
         <div className={styles['button-group']}>
-          <button>급여명세서 출력</button>
+          <button
+            onClick={handlePrintPayroll}
+            disabled={!selectedEmployee}
+            style={
+              !selectedEmployee
+                ? { background: '#ccc', cursor: 'not-allowed' }
+                : {}
+            }
+          >
+            급여명세서 출력
+          </button>
         </div>
       </div>
 
@@ -183,13 +595,7 @@ const PayrollManagement = () => {
           <table>
             <thead>
               <tr>
-                <th>
-                  <input
-                    type='checkbox'
-                    checked={isAllChecked}
-                    onChange={handleAllCheck}
-                  />
-                </th>
+                <th></th>
                 <th>no</th>
                 <th>사원명</th>
                 <th>직급</th>
@@ -197,12 +603,17 @@ const PayrollManagement = () => {
             </thead>
             <tbody>
               {filteredEmployees.map((emp, idx) => (
-                <tr key={emp.id}>
+                <tr
+                  key={emp.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleEmployeeClick(emp)} // ✅ 수정
+                >
                   <td>
                     <input
                       type='checkbox'
-                      checked={checkedList.includes(emp.id)}
-                      onChange={() => handleCheck(emp.id)}
+                      checked={selectedEmployeeId === emp.id}
+                      onChange={() => handleEmployeeClick(emp)} // ✅ 단일 선택
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </td>
                   <td>{idx + 1}</td>
@@ -221,7 +632,7 @@ const PayrollManagement = () => {
         </div>
 
         {/* 급여/공제/합계 테이블 */}
-        <div className={styles['payroll-details']}>
+        <div className={styles['payroll-details']} ref={printRef}>
           <div className={styles['pay-section']}>
             <table>
               <thead>
@@ -242,6 +653,10 @@ const PayrollManagement = () => {
                 <tr>
                   <td>식대</td>
                   <td>{meal ? meal.toLocaleString() : ''}</td>
+                </tr>
+                <tr>
+                  <td>성과급</td>
+                  <td>{bonus ? bonus.toLocaleString() : ''}</td>
                 </tr>
               </tbody>
             </table>
@@ -345,6 +760,13 @@ const PayrollManagement = () => {
           </div>
         </div>
       </div>
+      {/* 하단에 급여 등록/수정 화면 (hrRole이 'Y'일 때만) */}
+      {isHR && selectedEmployee && (
+        <PayrollDetail
+          employee={selectedEmployee}
+          onClose={() => setSelectedEmployee(null)}
+        />
+      )}
     </div>
   );
 };

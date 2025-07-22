@@ -66,7 +66,6 @@
 
       button {
         background-color: #66be80;
-        margin-top: 25px;
         border: none;
         color: white;
         padding: 0.75rem;
@@ -132,33 +131,133 @@
 
 .emailDropdown {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid #ccc;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  max-height: 200px;
+  border: 2px solid #66be80;
+  border-bottom: none;
+  border-radius: 1px;
+  max-height: 250px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(12, 190, 128, 0.15);
   list-style: none;
   margin: 0;
   padding: 0;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.dropdownHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e9ecef;
+  font-weight: 600;
+  color: #495579;
+  font-size: 13px;
+  height: 48px;
+  box-sizing: border-box;
+}
+
+.clearAllButton {
+  background: #dc3545;
+  border: none;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+
+  &:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+  }
 }
 
 .emailOption {
-  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
+  border-bottom: 1px solid #f1f3f5;
+  transition: all 0.2s ease;
+  position: relative;
+  height: 48px;
+  box-sizing: border-box;
 
   &:hover {
     background-color: #f8f9fa;
   }
 
+  &.selected {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+
   &:last-child {
     border-bottom: none;
   }
+
+  .emailText {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    color: #333;
+    font-weight: 400;
+    padding-right: 16px;
+  }
+
+  .removeButton {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 50%;
+    margin-left: 12px;
+    transition: all 0.2s ease;
+    line-height: 1;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &:hover {
+      background-color: #dc3545;
+      color: white;
+      border-color: #dc3545;
+      transform: scale(1.1);
+    }
+  }
+}
+
+.noResults {
+  padding: 16px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  background-color: #f8f9fa;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
 }

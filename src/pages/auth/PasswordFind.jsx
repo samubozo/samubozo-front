@@ -2,13 +2,63 @@ import React, { useState } from 'react';
 import styles from './PasswordFind.module.scss';
 import Logo from '../../assets/samubozo-logo.png';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, AUTH } from '../../configs/host-config';
+import Tooltip from '@mui/material/Tooltip';
 
 export default function PasswordFind() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [codeRequested, setCodeRequested] = useState(false); // 인증번호 요청 여부
   const navigate = useNavigate();
+
+  // 인증번호 발송 및 재전송 (버튼 텍스트/쿨타임 관리)
+  const handleSendOrResendCode = async () => {
+    if (!email || resendCooldown > 0) return;
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/find-password`, { email });
+      if (!codeRequested) {
+        alert('인증번호가 발송되었습니다.');
+        setCodeRequested(true);
+      } else {
+        alert('인증번호가 재발송되었습니다.');
+      }
+      setCodeSent(true);
+      setResendCooldown(20); // 20초 쿨타임
+    } catch (e) {
+      alert(e.response?.data?.message || '인증번호 발송 실패');
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!email || !code) {
+      alert('이메일과 인증번호를 입력하세요.');
+      return;
+    }
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/verify-code`, {
+        email,
+        code,
+      });
+      alert('인증 성공! 비밀번호 변경 페이지로 이동합니다.');
+      navigate('/passwordUpdate', { state: { email, code } });
+    } catch (e) {
+      alert(e.response?.data?.message || '인증 실패');
+    }
+  };
+
+  // 쿨타임 타이머
+  React.useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [resendCooldown]);
 
   return (
     <div className={styles.loginWrapper}>
@@ -51,9 +101,14 @@ export default function PasswordFind() {
             />
             <button
               className={styles.codeBtn}
-              onClick={() => setCodeSent(true)}
+              onClick={handleSendOrResendCode}
+              disabled={!email || resendCooldown > 0}
             >
-              인증번호 받기
+              {resendCooldown > 0
+                ? `재전송 (${resendCooldown}s)`
+                : codeRequested
+                  ? '재전송'
+                  : '인증번호 받기'}
             </button>
           </div>
           <div style={{ marginBottom: 18 }}>
@@ -68,12 +123,27 @@ export default function PasswordFind() {
           </div>
           <div className={styles.infoRow}>
             <span className={styles.infoText}>인증번호가 오지 않나요</span>
-            <button className={styles.infoBtn}>?</button>
+            <Tooltip
+              title={
+                <div style={{ whiteSpace: 'pre-line', fontSize: 15 }}>
+                  - 스팸메일함을 확인해 주세요.<br />
+                  - 이메일 주소가 올바른지 다시 한번 확인해 주세요.<br />
+                  - 그래도 메일이 오지 않으면, 관리자에게 문의해 주세요. (it-support@samubozo.com)
+                </div>
+              }
+              placement="bottom"
+              arrow
+            >
+              <span>
+                <button className={styles.infoBtn} tabIndex={0} type="button">?</button>
+              </span>
+            </Tooltip>
           </div>
           <div className={styles.nextBtnRow}>
             <button
               className={styles.nextBtn}
-              onClick={() => navigate('/passwordUpdate')}
+              onClick={handleVerifyCode}
+              disabled={!codeSent || !code}
             >
               다음
             </button>

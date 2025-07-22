@@ -13,9 +13,12 @@ const Login = () => {
   const [remember, setRemember] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [filteredEmails, setFilteredEmails] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
   const emailInputRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const rememberedEmails = JSON.parse(
@@ -31,9 +34,12 @@ const Login = () => {
     const handleClickOutside = (event) => {
       if (
         emailInputRef.current &&
-        !emailInputRef.current.contains(event.target)
+        !emailInputRef.current.contains(event.target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
       ) {
         setShowDropdown(false);
+        setSelectedIndex(-1);
       }
     };
 
@@ -44,12 +50,59 @@ const Login = () => {
   }, []);
 
   const handleEmailChange = (e) => {
-    setEmail(e.target.value);
+    const value = e.target.value;
+    setEmail(value);
+
+    // 이메일 필터링
+    const rememberedEmails = JSON.parse(
+      localStorage.getItem('rememberedEmails') || '[]',
+    );
+    const filtered = rememberedEmails.filter((savedEmail) =>
+      savedEmail.toLowerCase().includes(value.toLowerCase()),
+    );
+    setFilteredEmails(filtered);
+    setSelectedIndex(-1);
+    if (filtered.length > 0) {
+      setShowDropdown(true);
+    } else {
+      setShowDropdown(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showDropdown) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < filteredEmails.length - 1 ? prev + 1 : 0,
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredEmails.length - 1,
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && filteredEmails[selectedIndex]) {
+          handleEmailSelect(filteredEmails[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowDropdown(false);
+        setSelectedIndex(-1);
+        break;
+    }
   };
 
   const handleEmailSelect = (selectedEmail) => {
     setEmail(selectedEmail);
     setShowDropdown(false);
+    setSelectedIndex(-1);
+    setFilteredEmails([]);
   };
 
   const updateRememberedEmails = (email, checked) => {
@@ -69,8 +122,6 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    updateRememberedEmails(email, remember);
 
     try {
       console.log('로그인 시도', email, password);
@@ -104,6 +155,11 @@ const Login = () => {
         console.log('sessionStorage에 저장할 ACCESS_TOKEN:', accessToken);
         sessionStorage.setItem('ACCESS_TOKEN', accessToken);
         localStorage.setItem('REFRESH_TOKEN', refreshToken);
+
+        // 로그인 성공 시에만 이메일 저장
+        if (remember) {
+          updateRememberedEmails(email, true);
+        }
       } else {
         console.log('로그인 응답에 토큰 없음:', res.data);
       }
@@ -115,6 +171,33 @@ const Login = () => {
       } else {
         alert('로그인 실패입니다. 아이디 또는 비밀번호를 확인하세요!');
       }
+    }
+  };
+
+  const clearSavedEmails = () => {
+    localStorage.removeItem('rememberedEmails');
+    setFilteredEmails([]);
+    setShowDropdown(false);
+  };
+
+  const removeEmail = (emailToRemove, e) => {
+    e.stopPropagation();
+    let rememberedEmails = JSON.parse(
+      localStorage.getItem('rememberedEmails') || '[]',
+    );
+    rememberedEmails = rememberedEmails.filter(
+      (email) => email !== emailToRemove,
+    );
+    localStorage.setItem('rememberedEmails', JSON.stringify(rememberedEmails));
+
+    // 현재 필터링된 목록도 업데이트
+    const filtered = rememberedEmails.filter((savedEmail) =>
+      savedEmail.toLowerCase().includes(email.toLowerCase()),
+    );
+    setFilteredEmails(filtered);
+
+    if (filtered.length === 0) {
+      setShowDropdown(false);
     }
   };
 
@@ -158,7 +241,19 @@ const Login = () => {
               placeholder='Email'
               value={email}
               onChange={handleEmailChange}
-              onFocus={() => setShowDropdown(true)}
+              onFocus={() => {
+                const rememberedEmails = JSON.parse(
+                  localStorage.getItem('rememberedEmails') || '[]',
+                );
+                const filtered = rememberedEmails.filter((savedEmail) =>
+                  savedEmail.toLowerCase().includes(email.toLowerCase()),
+                );
+                setFilteredEmails(filtered);
+                if (filtered.length > 0) {
+                  setShowDropdown(true);
+                }
+              }}
+              onKeyDown={handleKeyDown}
               autoComplete='username'
               name='email'
               id='email'
@@ -166,20 +261,40 @@ const Login = () => {
               spellCheck='false'
             />
             {showDropdown && (
-              <ul className={styles.emailDropdown}>
-                {JSON.parse(localStorage.getItem('rememberedEmails') || '[]')
-                  .filter((savedEmail) =>
-                    savedEmail.toLowerCase().includes(email.toLowerCase()),
-                  )
-                  .map((savedEmail, index) => (
-                    <li
-                      key={index}
-                      onClick={() => handleEmailSelect(savedEmail)}
-                      className={styles.emailOption}
+              <ul className={styles.emailDropdown} ref={dropdownRef}>
+                {filteredEmails.length > 0 && (
+                  <li className={styles.dropdownHeader}>
+                    <span>저장된 이메일</span>
+                    <button
+                      className={styles.clearAllButton}
+                      onClick={clearSavedEmails}
+                      title='모든 이메일 삭제'
                     >
-                      {savedEmail}
-                    </li>
-                  ))}
+                      모두 삭제
+                    </button>
+                  </li>
+                )}
+                {filteredEmails.map((savedEmail, index) => (
+                  <li
+                    key={index}
+                    onClick={() => handleEmailSelect(savedEmail)}
+                    className={`${styles.emailOption} ${selectedIndex === index ? styles.selected : ''}`}
+                  >
+                    <span className={styles.emailText}>{savedEmail}</span>
+                    <button
+                      className={styles.removeButton}
+                      onClick={(e) => removeEmail(savedEmail, e)}
+                      title='이 이메일 삭제'
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+                {filteredEmails.length === 0 && email && (
+                  <li className={styles.noResults}>
+                    일치하는 이메일이 없습니다.
+                  </li>
+                )}
               </ul>
             )}
             {/* 이메일 자동완성 드롭다운(ul) 완전 제거 */}
@@ -202,11 +317,7 @@ const Login = () => {
               type='checkbox'
               id='remember'
               checked={remember}
-              onChange={() => {
-                setRemember(!remember);
-                if (!remember) updateRememberedEmails(email, true);
-                else updateRememberedEmails(email, false);
-              }}
+              onChange={() => setRemember(!remember)}
             />
             <label htmlFor='remember'>이메일 저장</label>
           </div>

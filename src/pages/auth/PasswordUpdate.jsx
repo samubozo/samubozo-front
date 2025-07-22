@@ -1,12 +1,42 @@
 import React, { useState } from 'react';
 import styles from './PasswordUpdate.module.scss';
 import Logo from '../../assets/samubozo-logo.png';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, AUTH } from '../../configs/host-config';
 
 export default function PasswordUpdate() {
   const [password, setPassword] = useState('');
   const [passwordCheck, setPasswordCheck] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const { email, code } = location.state || {};
+
+  const handleResetPassword = async () => {
+    if (!password || !passwordCheck) {
+      alert('비밀번호를 모두 입력하세요.');
+      return;
+    }
+    if (password !== passwordCheck) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+    if (!email || !code) {
+      alert('비정상적인 접근입니다.');
+      return;
+    }
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${AUTH}/reset-password`, {
+        email,
+        code,
+        newPassword: password,
+      });
+      alert('비밀번호가 재설정되었습니다.');
+      navigate('/login');
+    } catch (e) {
+      alert(e.response?.data?.message || '비밀번호 재설정 실패');
+    }
+  };
 
   return (
     <div className={styles.loginWrapper}>
@@ -42,7 +72,9 @@ export default function PasswordUpdate() {
             />
           </div>
           <div className={styles.nextBtnRow}>
-            <button className={styles.nextBtn}>비밀번호 변경</button>
+            <button className={styles.nextBtn} onClick={handleResetPassword}>
+              비밀번호 변경
+            </button>
           </div>
         </div>
       </div>
