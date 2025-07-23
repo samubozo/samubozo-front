@@ -1229,14 +1229,26 @@ function EventDetailPopup({
   onMouseEnter,
   onMouseLeave,
 }) {
+  const popupRef = React.useRef(null);
+  const [modalHeight, setModalHeight] = React.useState(0);
+
+  React.useEffect(() => {
+    if (popupRef.current) {
+      setModalHeight(popupRef.current.offsetHeight);
+    }
+  }, [event, popupPos]);
+
   if (!popupPos) return null;
+  // 아래로 뜨던 것을 위로 뜨게(top - modalHeight)
+  const adjustedTop = popupPos.top - modalHeight;
   return ReactDOM.createPortal(
     <div
+      ref={popupRef}
       className={styles.eventDetailPopup}
       style={{
         position: 'fixed',
         left: popupPos.left,
-        top: popupPos.top,
+        top: adjustedTop,
         zIndex: 99999,
       }}
       onMouseEnter={onMouseEnter}
