@@ -699,6 +699,8 @@ function Schedule() {
               }
               days.forEach((date, idx) => {
                 const dateStr = date.toISOString().slice(0, 10);
+                // 1일 셀에만 별도 클래스 추가
+                const isFirstDay = date.getDate() === 1;
                 // 1. 연속 일정 바(해당 날짜가 bar의 실제 start~end에 포함되는 모든 바)
                 const barsForCell = eventBars.filter((bar) => {
                   const start = toDateOnly(new Date(bar.startDate));
@@ -732,6 +734,7 @@ function Schedule() {
                     key={dateStr}
                     className={
                       styles.calendarCell +
+                      (isFirstDay ? ' ' + styles.firstDayCell : '') +
                       (toDateOnly(date).getTime() ===
                       toDateOnly(today).getTime()
                         ? ' ' +
