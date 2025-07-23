@@ -526,6 +526,10 @@ export default function AttendanceDashboard() {
     ETC: '기타',
   };
 
+  // === 툴팁 상태 추가 ===
+  const [hoveredAbsence, setHoveredAbsence] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
   // renderAttendanceDashboard 함수로 분리
   function renderAttendanceDashboard() {
     return (
@@ -925,9 +929,22 @@ export default function AttendanceDashboard() {
                       {absence1 && (
                         <span
                           className={styles.absenceBtn}
-                          style={{ cursor: 'pointer', display: 'inline-block' }}
+                          style={{
+                            cursor: 'pointer',
+                            display: 'inline-block',
+                            position: 'relative',
+                          }}
                           onClick={() => handleEditAbsence(absence1)}
                           title='수정'
+                          onMouseEnter={(e) => {
+                            setHoveredAbsence(absence1);
+                            const rect = e.target.getBoundingClientRect();
+                            setTooltipPos({
+                              x: rect.right + window.scrollX,
+                              y: rect.top + window.scrollY,
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredAbsence(null)}
                         >
                           {typeToKorean[absence1.type] || absence1.type}
                         </span>
@@ -972,9 +989,22 @@ export default function AttendanceDashboard() {
                       {i + 16 <= days.length && absence2 && (
                         <span
                           className={styles.absenceBtn}
-                          style={{ cursor: 'pointer', display: 'inline-block' }}
+                          style={{
+                            cursor: 'pointer',
+                            display: 'inline-block',
+                            position: 'relative',
+                          }}
                           onClick={() => handleEditAbsence(absence2)}
                           title='수정'
+                          onMouseEnter={(e) => {
+                            setHoveredAbsence(absence2);
+                            const rect = e.target.getBoundingClientRect();
+                            setTooltipPos({
+                              x: rect.right + window.scrollX,
+                              y: rect.top + window.scrollY,
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredAbsence(null)}
                         >
                           {typeToKorean[absence2.type] || absence2.type}
                         </span>
@@ -1000,6 +1030,43 @@ export default function AttendanceDashboard() {
               })}
             </tbody>
           </table>
+          {/* === 부재 툴팁 === */}
+          {hoveredAbsence && (
+            <div
+              style={{
+                position: 'absolute',
+                left: tooltipPos.x + 8,
+                top: tooltipPos.y,
+                background: '#fff',
+                border: '1px solid #bbb',
+                borderRadius: 6,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                padding: '12px 16px',
+                zIndex: 9999,
+                minWidth: 180,
+                fontSize: 14,
+                color: '#222',
+                pointerEvents: 'none',
+                whiteSpace: 'pre-line',
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                {typeToKorean[hoveredAbsence.type] || hoveredAbsence.type}
+              </div>
+              <div>
+                날짜: {hoveredAbsence.startDate} ~ {hoveredAbsence.endDate}
+              </div>
+              {(hoveredAbsence.startTime || hoveredAbsence.endTime) && (
+                <div>
+                  시간: {hoveredAbsence.startTime || ''}
+                  {hoveredAbsence.endTime ? ' ~ ' + hoveredAbsence.endTime : ''}
+                </div>
+              )}
+              {hoveredAbsence.reason && (
+                <div>사유: {hoveredAbsence.reason}</div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 휴가신청 모달 */}

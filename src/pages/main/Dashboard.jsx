@@ -35,63 +35,48 @@ function DashboardStats({ refresh, onAttendanceChange }) {
     try {
       const res = await attendanceService.getPersonalStats(year, month);
       const d = res.result;
-      console.log('API result (refreshed):', d); // ← 실제 값 확인
-      // total은 모든 카운트의 합
-      const total =
-        (d.attendanceCount || 0) +
-        (d.lateCount || 0) +
-        (d.goOutCount || 0) +
-        (d.halfDayVacationCount || 0) +
-        (d.fullDayVacationCount || 0);
+      // === 261일 기준 ===
+      const YEAR_TOTAL = 261;
       setStats([
         {
           label: '출근',
           count: d.attendanceCount || 0,
-          percent: total
-            ? (((d.attendanceCount || 0) / total) * 100).toFixed(1)
-            : 0,
-          total,
+          percent: (((d.attendanceCount || 0) / YEAR_TOTAL) * 100).toFixed(1),
+          total: YEAR_TOTAL,
           color: '#66be80',
         },
         {
           label: '지각',
           count: d.lateCount || 0,
-          percent: total ? (((d.lateCount || 0) / total) * 100).toFixed(1) : 0,
-          total,
+          percent: (((d.lateCount || 0) / YEAR_TOTAL) * 100).toFixed(1),
+          total: YEAR_TOTAL,
           color: '#f7b731',
         },
         {
           label: '외출',
           count: d.goOutCount || 0,
-          percent: total ? (((d.goOutCount || 0) / total) * 100).toFixed(1) : 0,
-          total,
+          percent: (((d.goOutCount || 0) / YEAR_TOTAL) * 100).toFixed(1),
+          total: YEAR_TOTAL,
           color: '#eb3b5a',
         },
         {
           label: '반차',
           count: d.halfDayVacationCount || 0,
-          percent: total
-            ? (((d.halfDayVacationCount || 0) / total) * 100).toFixed(1)
-            : 0,
-          total,
+          percent: (((d.halfDayVacationCount || 0) / YEAR_TOTAL) * 100).toFixed(
+            1,
+          ),
+          total: YEAR_TOTAL,
           color: '#4b7bec',
         },
         {
           label: '연차',
           count: d.fullDayVacationCount || 0,
-          percent: total
-            ? (((d.fullDayVacationCount || 0) / total) * 100).toFixed(1)
-            : 0,
-          total,
+          percent: (((d.fullDayVacationCount || 0) / YEAR_TOTAL) * 100).toFixed(
+            1,
+          ),
+          total: YEAR_TOTAL,
           color: '#8854d0',
         },
-      ]);
-      console.log('setStats (refreshed):', [
-        d.attendanceCount || 0,
-        d.lateCount || 0,
-        d.goOutCount || 0,
-        d.halfDayVacationCount || 0,
-        d.fullDayVacationCount || 0,
       ]);
     } catch (e) {
       console.error('통계 새로고침 실패:', e);
@@ -208,7 +193,6 @@ function DashboardProfile({ onAttendanceChange }) {
     goOutTime: null,
     returnTime: null,
   });
-<<<<<<< HEAD
 
   // 연차 수/요청수 상태 추가
   const [vacationBalance, setVacationBalance] = useState({
@@ -235,8 +219,6 @@ function DashboardProfile({ onAttendanceChange }) {
       });
   }, []);
 
-=======
->>>>>>> e9086d937bdd353e0da3e7ca75cc2811e1bf23a2
   const [isLoading, setIsLoading] = useState(false);
 
   // === 오늘의 날씨 정보 상태 ===

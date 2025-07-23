@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import styles from './VacationRequest.module.scss';
 import { approvalService } from '../../services/approvalService';
 import AuthContext from '../../context/UserContext';
@@ -47,6 +47,64 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const [reason, setReason] = useState(editData?.reason || '');
   const [loading, setLoading] = useState(false);
   const [reasonError, setReasonError] = useState('');
+  const [overlapError, setOverlapError] = useState('');
+  const [myVacations, setMyVacations] = useState([]);
+
+  // 내 휴가 목록 불러오기
+  useEffect(() => {
+    async function fetchMyVacations() {
+      try {
+        const res = await approvalService.getMyVacationRequests();
+        console.log('getMyVacationRequests 응답:', res);
+        const vacations = res.result || res.data || res || [];
+        vacations.forEach((v, i) => {
+          console.log(
+            `휴가[${i}] id=${v.id}, vacationStatus=${v.vacationStatus}, startDate=${v.startDate}, endDate=${v.endDate}`,
+          );
+        });
+        // 승인/처리중 상태만 필터링 (vacationStatus 사용)
+        const filtered = vacations.filter((v) =>
+          ['PENDING', 'APPROVED', 'PROCESSING'].includes(v.vacationStatus),
+        );
+        setMyVacations(filtered);
+      } catch (e) {
+        setMyVacations([]);
+      }
+    }
+    fetchMyVacations();
+  }, []);
+
+  // 날짜 겹침 검사 함수
+  useEffect(() => {
+    if (!myVacations.length) {
+      setOverlapError('');
+      return;
+    }
+    // 신청하려는 기간 계산
+    let reqStart = startDate;
+    let reqEnd = endDate;
+    if (vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY') {
+      reqEnd = reqStart;
+    }
+    const reqStartDate = new Date(reqStart);
+    const reqEndDate = new Date(reqEnd);
+    // 본인 수정모드일 때는 자기 자신 제외
+    const filteredVacations = editData
+      ? myVacations.filter((v) => v.id !== editData.id)
+      : myVacations;
+    // 겹치는 휴가가 있는지 검사
+    const overlap = filteredVacations.find((v) => {
+      const vStart = new Date(v.startDate);
+      const vEnd = new Date(v.endDate);
+      // 기간이 겹치면 true
+      return reqStartDate <= vEnd && reqEndDate >= vStart;
+    });
+    if (overlap) {
+      setOverlapError('이미 해당 기간에 신청된 휴가가 있습니다.');
+    } else {
+      setOverlapError('');
+    }
+  }, [startDate, endDate, vacationType, myVacations, editData]);
 
   const authCtx = useContext(AuthContext);
   const applicantId = authCtx?.user?.employeeNo || null;
@@ -62,6 +120,11 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // 날짜 겹침 유효성 검사
+    if (overlapError) {
+      alert(overlapError);
+      return;
+    }
     // 사유 유효성 검사
     if (!reason.trim()) {
       setReasonError('휴가 사유를 입력해주세요.');
@@ -186,6 +249,12 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
             {days > 0 && `${days}일 신청`}
           </span>
         </div>
+        {/* 날짜 겹침 에러 메시지 */}
+        {overlapError && (
+          <div style={{ color: 'red', fontWeight: 600, marginBottom: 8 }}>
+            {overlapError}
+          </div>
+        )}
         {/* 사유 */}
         <div className={styles.row}>
           <label>사유</label>
@@ -210,7 +279,7 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
           <button
             type='submit'
             className={styles['confirm-btn']}
-            disabled={loading}
+            disabled={loading || !!overlapError}
           >
             {loading
               ? editData
