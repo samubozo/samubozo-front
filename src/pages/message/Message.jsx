@@ -645,7 +645,7 @@ const Message = () => {
     } else {
       fetchSentMessages();
     }
-  }, [tab]);
+  }, [tab, page]); // page 추가!
 
   useEffect(() => {
     if (tab === 'received') {
