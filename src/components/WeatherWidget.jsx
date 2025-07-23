@@ -45,33 +45,19 @@ function dfs_xy_conv(lat, lon) {
   return rs;
 }
 
-// base_date, base_time 계산 함수 (기상청 단기예보 규칙)
-function getKmaBaseDateTime() {
+// base_date, base_time 계산 함수 (초단기실황 규칙: 10분 단위)
+function getKmaBaseDateTimeForUltraSrtNcst() {
   const now = new Date();
-  // 단기예보 발표시각: 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300
-  const baseTimes = [2, 5, 8, 11, 14, 17, 20, 23];
-  let hour = now.getHours();
-  let minute = now.getMinutes();
-  let baseHour = baseTimes[0];
-  for (let i = 0; i < baseTimes.length; i++) {
-    if (hour > baseTimes[i] || (hour === baseTimes[i] && minute >= 10)) {
-      baseHour = baseTimes[i];
-    }
-  }
-  // 만약 00:00~02:10 사이면 전날 23시로 요청해야 함
-  if (hour < 2 || (hour === 2 && minute < 10)) {
-    const yest = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const base_date =
-      yest.getFullYear().toString() +
-      String(yest.getMonth() + 1).padStart(2, '0') +
-      String(yest.getDate()).padStart(2, '0');
-    return { base_date, base_time: '2300' };
-  }
+  // 10분 단위로 내림
+  now.setMinutes(Math.floor(now.getMinutes() / 10) * 10, 0, 0);
   const base_date =
     now.getFullYear().toString() +
     String(now.getMonth() + 1).padStart(2, '0') +
     String(now.getDate()).padStart(2, '0');
-  return { base_date, base_time: String(baseHour).padStart(2, '0') + '00' };
+  const base_time =
+    String(now.getHours()).padStart(2, '0') +
+    String(now.getMinutes()).padStart(2, '0');
+  return { base_date, base_time };
 }
 
 const WeatherWidget = ({
@@ -85,12 +71,12 @@ const WeatherWidget = ({
 
   // 날씨 정보 가져오기
   useEffect(() => {
-    function fetchWeather(lat, lon) {
+    function fetchWeather(lat, lon, addressStr = '') {
       const grid = dfs_xy_conv(lat, lon);
-      const { base_date, base_time } = getKmaBaseDateTime();
-      const url = `${KMA_API_ENDPOINT}/getVilageFcst?serviceKey=${KMA_API_KEY}&numOfRows=100&pageNo=1&dataType=JSON&base_date=${base_date}&base_time=${base_time}&nx=${grid.x}&ny=${grid.y}`;
+      const { base_date, base_time } = getKmaBaseDateTimeForUltraSrtNcst();
+      const url = `${KMA_API_ENDPOINT}/getUltraSrtNcst?serviceKey=${KMA_API_KEY}&numOfRows=100&pageNo=1&dataType=JSON&base_date=${base_date}&base_time=${base_time}&nx=${grid.x}&ny=${grid.y}`;
 
-      console.log('날씨 API 요청:', url);
+      console.log('초단기실황 API 요청:', url);
 
       fetch(url)
         .then((res) => res.json())
@@ -100,78 +86,15 @@ const WeatherWidget = ({
             return;
           }
           const items = data.response.body.items.item;
-
-          // 오늘/내일 날짜 구하기 (YYYYMMDD)
-          const now = new Date();
-          const pad = (n) => n.toString().padStart(2, '0');
-          const today = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
-          const tomorrowDate = new Date(now);
-          tomorrowDate.setDate(now.getDate() + 1);
-          const tomorrow = `${tomorrowDate.getFullYear()}${pad(tomorrowDate.getMonth() + 1)}${pad(tomorrowDate.getDate())}`;
-
-          // 오늘/내일의 모든 시각 구하기
-          const todayTimes = [
-            ...new Set(
-              items.filter((i) => i.fcstDate === today).map((i) => i.fcstTime),
-            ),
-          ].sort();
-          const tomorrowTimes = [
-            ...new Set(
-              items
-                .filter((i) => i.fcstDate === tomorrow)
-                .map((i) => i.fcstTime),
-            ),
-          ].sort();
-
-          // 오늘: 현재 시각 이후 가장 가까운 시각, 없으면 가장 마지막 시각
-          const nowHHMM = pad(now.getHours()) + '00';
-          let todayTargetTime =
-            todayTimes.find((t) => t >= nowHHMM) ||
-            todayTimes[todayTimes.length - 1];
-          // 내일: 가장 이른 시각 (없으면 null)
-          let tomorrowTargetTime = tomorrowTimes[0] || null;
-
-          // 카테고리별 추출 함수
-          function getWeather(items, date, time, category) {
-            return items.find(
-              (item) =>
-                item.fcstDate === date &&
-                item.fcstTime === time &&
-                item.category === category,
-            )?.fcstValue;
-          }
-
-          // 오늘 데이터
-          const todayWeather = {
-            TMP: getWeather(items, today, todayTargetTime, 'TMP'),
-            SKY: getWeather(items, today, todayTargetTime, 'SKY'),
-            POP: getWeather(items, today, todayTargetTime, 'POP'),
-            PTY: getWeather(items, today, todayTargetTime, 'PTY'),
-            fcstTime: todayTargetTime,
+          const get = (cat) => items.find((i) => i.category === cat)?.obsrValue;
+          const weather = {
+            TMP: get('T1H'), // 기온
+            SKY: get('SKY'), // 하늘상태
+            PTY: get('PTY'), // 강수형태
+            RN1: get('RN1'), // 1시간 강수량
+            REH: get('REH'), // 습도
+            WSD: get('WSD'), // 풍속
           };
-
-          // 내일 데이터 (없으면 null)
-          let tomorrowWeather;
-          if (tomorrowTargetTime) {
-            tomorrowWeather = {
-              TMP: getWeather(items, tomorrow, tomorrowTargetTime, 'TMP'),
-              SKY: getWeather(items, tomorrow, tomorrowTargetTime, 'SKY'),
-              POP: getWeather(items, tomorrow, tomorrowTargetTime, 'POP'),
-              PTY: getWeather(items, tomorrow, tomorrowTargetTime, 'PTY'),
-              fcstTime: tomorrowTargetTime,
-            };
-          } else {
-            console.warn('내일 예보 데이터가 없습니다.');
-            tomorrowWeather = {
-              TMP: null,
-              SKY: null,
-              POP: null,
-              PTY: null,
-              fcstTime: null,
-            };
-          }
-
-          // 하늘상태/강수형태 한글 변환
           const skyMap = { 1: '맑음', 3: '구름많음', 4: '흐림' };
           const ptyMap = {
             0: '없음',
@@ -180,32 +103,21 @@ const WeatherWidget = ({
             3: '눈',
             4: '소나기',
           };
-
-          todayWeather.SKY_KR = skyMap[todayWeather.SKY] || todayWeather.SKY;
-          todayWeather.PTY_KR = ptyMap[todayWeather.PTY] || todayWeather.PTY;
-          tomorrowWeather.SKY_KR =
-            skyMap[tomorrowWeather.SKY] || tomorrowWeather.SKY;
-          tomorrowWeather.PTY_KR =
-            ptyMap[tomorrowWeather.PTY] || tomorrowWeather.PTY;
-
-          console.log('기상청 단기예보:', {
-            오늘: todayWeather,
-            내일: tomorrowWeather,
-          });
-          setTodayWeatherState(todayWeather);
+          weather.SKY_KR = skyMap[weather.SKY] || weather.SKY;
+          weather.PTY_KR = ptyMap[weather.PTY] || weather.PTY;
+          setTodayWeatherState(weather);
+          if (addressStr) console.log('현재 위치(주소):', addressStr);
         })
         .catch((err) => {
           console.error('날씨 정보 가져오기 실패:', err);
-          // 날씨 API 실패 시 기본 날씨 상태 설정
           setTodayWeatherState({
             TMP: '20',
             SKY: '1',
-            POP: '0',
             PTY: '0',
             SKY_KR: '맑음',
             PTY_KR: '없음',
-            fcstTime: '1200',
           });
+          if (addressStr) console.log('현재 위치(주소):', addressStr);
         });
     }
 
@@ -229,7 +141,7 @@ const WeatherWidget = ({
                   geoData.latitude,
                   geoData.longitude,
                 );
-                fetchWeather(geoData.latitude, geoData.longitude);
+                fetchWeather(geoData.latitude, geoData.longitude, geoData.city);
               } else {
                 console.log('ipapi.co 위치 정보 없음 - 서울 좌표 사용');
                 fetchWeather(37.5665, 126.978);
@@ -283,6 +195,7 @@ const WeatherWidget = ({
     />
   );
 
+  // 주소 정보 표시
   if (onlyButtons) return buttons;
   if (onlyAnimation) return animation;
 
