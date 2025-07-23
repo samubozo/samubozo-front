@@ -155,13 +155,13 @@ const PayrollDetail = ({ employee, onClose }) => {
   };
 
   // 예시: employee에 계좌, 이미지 등 추가 정보가 있다고 가정
-  const bankName = employee.bankName || '국민은행';
-  const accountNumber = employee.accountNumber || '123-456-7890';
+  const bankName = employee.bankName || '';
+  const accountNumber = employee.accountNumber || '';
   const accountHolder = employee.accountHolder || employee.name;
   const employeeNo = employee.id;
   const imageUrl = employee.imageUrl || defaultImg;
-  const department = employee.department || '경영지원';
-  const position = employee.position || '사원';
+  const department = employee.department || '';
+  const position = employee.position || '';
 
   return (
     <div className={styles['payroll-detail-flex-wrap']}>
@@ -255,8 +255,7 @@ const PayrollDetail = ({ employee, onClose }) => {
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            justifyContent: 'flex-end',
             marginTop: 18,
           }}
         >
@@ -469,9 +468,44 @@ const PayrollManagement = () => {
   const printRef = useRef(null);
 
   const handlePrintPayroll = () => {
+    if (!selectedEmployee) return;
+
+    const emp = selectedEmployee;
+    const [year, month] = selectedMonth.split('-');
+    const formattedMonth = `${year}년 ${month}월`; // ✅ 여기서 변환
+    const employeeInfoHTML = `
+    <div style="margin-bottom: 20px;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr>
+          <td style="font-weight: bold; padding: 6px;">사원명</td>
+          <td style="padding: 6px;">${emp.name}</td>
+          <td style="font-weight: bold; padding: 6px;">사번</td>
+          <td style="padding: 6px;">${emp.id}</td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold; padding: 6px;">부서</td>
+          <td style="padding: 6px;">${emp.department || ''}</td>
+          <td style="font-weight: bold; padding: 6px;">직급</td>
+          <td style="padding: 6px;">${emp.position || ''}</td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold; padding: 6px;">계좌</td>
+          <td colspan="3" style="padding: 6px;">
+            ${emp.bankName || ''} ${emp.accountNumber || ''} (${emp.accountHolder || emp.name})
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+    const logoHTML = `
+    <div style="text-align: center; margin-top: 40px;">
+      <img src="/logo.png" alt="회사 로고" style="height: 80px; opacity: 0.85;" />
+    </div>
+  `;
+
     const printContents = printRef.current.innerHTML;
     const printWindow = window.open('', '_blank', 'width=800,height=600');
-
     if (!printWindow) {
       alert('팝업 차단 해제를 먼저 해주세요!');
       return;
@@ -479,64 +513,150 @@ const PayrollManagement = () => {
 
     printWindow.document.open();
     printWindow.document.write(`
-    <html>
-      <head>
-        <title>급여명세서</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            line-height: 1.5;
-          }
+  <html>
+    <head>
+      <title>급여명세서</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 30px;
+        }
+        h2 {
+          text-align: center;
+          margin-bottom: 70px;
+        }
+        .info-table, .salary-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 70px;
+        }
+        .info-table td {
+          border: 1px solid #ccc;
+          padding: 6px;
+          font-size: 15px;
+        }
+        .salary-table th, .salary-table td {
+          border: 1px solid #999;
+          padding: 8px;
+          font-size: 15px;
+          text-align: center;
+        }
+        .summary {
+          font-weight: bold;
+          background: #f5f5f5;
+        }
+        .footer {
+          font-size: 25px;
+          font-weight: bold;
+          text-align: center;
+          margin-top: 50px;
+        }
 
-          h2 {
-            text-align: center;
-            margin-bottom: 20px;
-          }
+        .ceo-signature {
+          position: relative; /* 기준이 되는 컨테이너 */
+          display: inline-block;
+          margin-top: 10px;
+          text-align: center;
+        }
 
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 24px;
-          }
+        .ceo-signature span {
+          font-size: 16px;
+          font-weight: 600;
+          position: relative;
+          z-index: 1; /* 텍스트가 위에 있도록 */
+        }
 
-          th {
-            background-color: #f5f5f5;
-            text-align: center;
-            font-weight: 600;
-            padding: 10px;
-            border: 1px solid #ccc;
-            width: 30%;
-          }
+        .ceo-signature img {
+          position: absolute;
+          top: -25px; /* (인) 위로 이동 */
+          left: 95%;
+          transform: translateX(-50%);
+          height: 40px;
+          opacity: 0.85; // 투명도
+          z-index: 0; /* 이미지가 아래로 */
+        }
 
-          td {
-            text-align: right;
-            padding: 10px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-          }
+        .footer img {
+          height: 60px;
+          margin-top: 10px;
+          opacity: 0.9;
+        }
+      </style>
+    </head>
+    <body>
+      <h2>${formattedMonth} 급여명세서</h2>
 
-          td:first-child {
-            text-align: left;
-            width: 70%;
-          }
+      <!-- 직원 정보 -->
+      <table class="info-table">
+        <tr>
+          <td>성명</td>
+          <td>${emp.name}</td>
+          <td>사번</td>
+          <td>${emp.id}</td>
+        </tr>
+        <tr>
+          <td>부서</td>
+          <td>${emp.department || ''}</td>
+          <td>직책</td>
+          <td>${emp.position || ''}</td>
+        </tr>
+        <tr>
+          <td>계좌</td>
+          <td colspan="3">
+            ${emp.bankName || ''} ${emp.accountNumber || ''} (${emp.accountHolder || emp.name})
+          </td>
+        </tr>
+      </table>
 
-          .summary-table td {
-            font-weight: bold;
-            background-color: #fafafa;
-          }
-          </style>
+      <!-- 급여 내역 -->
+      <table class="salary-table">
+        <thead>
+          <tr>
+            <th colspan="2">지급내역</th>
+            <th colspan="2">공제내역</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>기본급</td><td>${base.toLocaleString()}</td>
+            <td>국민연금</td><td>${pension.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td>직급수당</td><td>${allowance.toLocaleString()}</td>
+            <td>건강보험</td><td>${health.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td>식대</td><td>${meal.toLocaleString()}</td>
+            <td>고용보험</td><td>${employment.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td>성과급</td><td>${bonus.toLocaleString()}</td>
+            <td>소득세</td><td>${incomeTax.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td class="summary">지급합계</td><td class="summary">${total.toLocaleString()}</td>
+            <td class="summary">공제합계</td><td class="summary">${totalDeduction.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td colspan="2" class="summary">실수령액</td>
+            <td colspan="2" class="summary">${netPay.toLocaleString()}</td>
+          </tr>
+        </tbody>
+      </table>
 
-      </head>
-      <body>
-        <h2>급여명세서</h2>
-        ${printContents}
-      </body>
-    </html>
-  `);
+      <!-- 푸터 -->
+      <div class="footer">
+        <p>주식회사 사무보조</p>
+        <div class="ceo-signature">
+          <span>대표이사 ○○○ (인)</span>
+        <img src="/logo.png" alt="회사로고" />
+        </div>
+      </div>
+    </body>
+  </html>
+`);
     printWindow.document.close();
 
-    // 💡 DOM 로딩 완료 후 print() 실행
     printWindow.onload = () => {
       printWindow.focus();
       printWindow.print();
