@@ -120,7 +120,8 @@
 ---
 
 ## 13. 시스템 아키텍처  
-![시스템 아키텍처](https://github.com/user-attachments/assets/887899a7-68fc-4ad6-bbf2-676c0de717d6)
+<img width="1102" height="744" alt="drawio" src="https://github.com/user-attachments/assets/58e4f5a7-4b7e-4fd5-b9c4-7aa327d9fada" />
+
 
 ---
 
