@@ -13,21 +13,17 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [positionName, setPositionName] = useState('');
   const [residentRegNo, setResidentRegNo] = useState('');
   const [residentRegNoError, setResidentRegNoError] = useState('');
-  // 주민등록번호 입력 핸들러: 숫자만 저장, 입력은 6자리 뒤에 자동으로 '-' 표시, 최대 13자리
+  // 주민등록번호 입력 핸들러: 하이픈 포함하여 저장, 6자리 뒤에 자동으로 '-' 표시, 최대 14자리(하이픈 포함)
   const handleResidentRegNoChange = (e) => {
-    let value = e.target.value.replace(/[^0-9]/g, ''); // 숫자만
+    let value = e.target.value.replace(/[^0-9]/g, '');
     if (value.length > 13) value = value.slice(0, 13);
-    setResidentRegNo(value);
-    // 입력값이 변경될 때마다 에러 초기화
+    let formatted = value;
+    if (formatted.length > 6) {
+      formatted = formatted.slice(0, 6) + '-' + formatted.slice(6);
+    }
+    setResidentRegNo(formatted);
     setResidentRegNoError('');
   };
-  // 화면에 표시할 주민등록번호: 6자리 뒤에 - 삽입
-  const displayResidentRegNo = residentRegNo
-    ? residentRegNo.length > 6
-      ? residentRegNo.slice(0, 6) + '-' + residentRegNo.slice(6)
-      : residentRegNo
-    : '';
-
   // 주민등록번호 유효성 검사 함수
   const isValidResidentRegNo = (value) => {
     // 6자리-7자리, 총 14글자, 하이픈 포함
@@ -659,14 +655,14 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                   <td className={styles.tableLabel}>주민등록번호</td>
                   <td>
                     <input
-                      value={displayResidentRegNo}
+                      value={residentRegNo}
                       onChange={handleResidentRegNoChange}
                       maxLength={14} // 6자리+하이픈+7자리 = 14
                       placeholder='예: 123456-1234567'
                       onBlur={() => {
                         if (
-                          displayResidentRegNo &&
-                          !isValidResidentRegNo(displayResidentRegNo)
+                          residentRegNo &&
+                          !isValidResidentRegNo(residentRegNo)
                         ) {
                           setResidentRegNoError(
                             '주민등록번호 형식이 올바르지 않습니다. (예: 123456-1234567)',
@@ -1251,8 +1247,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 disabled={
                   loading ||
                   (!!residentRegNo && !!residentRegNoError) ||
-                  (!!residentRegNo &&
-                    !isValidResidentRegNo(displayResidentRegNo)) ||
+                  (!!residentRegNo && !isValidResidentRegNo(residentRegNo)) ||
                   (!!employeeOutEmail && !!employeeOutEmailError) ||
                   (!!employeeOutEmail &&
                     !/^([\w.-]+)@([\w-]+)\.(\w{2,})$/.test(employeeOutEmail)) ||
