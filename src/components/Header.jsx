@@ -747,12 +747,9 @@ const Header = ({ showChatbot }) => {
               조직도
             </NavLink>
             <span className={styles.headerDivider}>|</span>
-            {/* 전자결재 NavLink 부분 */}
-            {isLoggedIn && hrRole === 'Y' && (
-              <NavLink to='/approval' className={styles.headerLink}>
-                전자결재
-              </NavLink>
-            )}
+            <NavLink to='/approval' className={styles.headerLink}>
+              전자결재
+            </NavLink>
 
             {/* 알림함 버튼 */}
             <div
