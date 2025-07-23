@@ -55,6 +55,13 @@ function Modal({ open, onClose, children }) {
 
 export default function AttendanceDashboard() {
   const today = new Date();
+  const [attendanceData, setAttendanceData] = useState({
+    checkInTime: null,
+    checkOutTime: null,
+    goOutTime: null,
+    returnTime: null,
+    isLate: false, // 지각 여부 추가
+  });
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
   const [goOut, setGoOut] = useState(null);
@@ -159,36 +166,29 @@ export default function AttendanceDashboard() {
     }
   };
 
-  // 컴포넌트 마운트 시 오늘 출근 상태 확인
+  // 출근 상태를 attendanceData로 통합
   useEffect(() => {
-    const todayCheckIn = sessionStorage.getItem('TODAY_CHECK_IN');
-    const todayCheckOut = sessionStorage.getItem('TODAY_CHECK_OUT');
-    const todayGoOut = sessionStorage.getItem('TODAY_GO_OUT');
-    const todayReturn = sessionStorage.getItem('TODAY_RETURN');
-
-    if (todayCheckIn) {
-      setCheckIn(todayCheckIn);
-    }
-    if (todayCheckOut) {
-      setCheckOut(todayCheckOut);
-    }
-    if (todayGoOut) {
-      setGoOut(todayGoOut);
-    }
-    if (todayReturn) {
-      setReturnFromOut(todayReturn);
-    }
-
-    // 현재 액션 상태 결정
-    if (!todayCheckIn) {
-      setCurrentAction('출근하기');
-    } else if (todayGoOut && !todayReturn) {
-      setCurrentAction('복귀하기');
-    } else if (todayReturn) {
-      setCurrentAction('복귀완료');
-    } else {
-      setCurrentAction('외출하기');
-    }
+    const fetchTodayAttendance = async () => {
+      try {
+        const result = await attendanceService.getTodayAttendance();
+        setAttendanceData({
+          checkInTime: result.checkInTime,
+          checkOutTime: result.checkOutTime,
+          goOutTime: result.goOutTime,
+          returnTime: result.returnTime,
+          isLate: result.isLate, // isLate 필드 추가
+        });
+      } catch (e) {
+        setAttendanceData({
+          checkInTime: null,
+          checkOutTime: null,
+          goOutTime: null,
+          returnTime: null,
+          isLate: false, // isLate 필드 추가
+        });
+      }
+    };
+    fetchTodayAttendance();
   }, []);
   const handleVacation = () => setShowVacation(true);
   const closeModal = () => setShowVacation(false);

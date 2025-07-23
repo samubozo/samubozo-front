@@ -88,6 +88,21 @@
   text-align: center;
 }
 
+.vacationRequest .errorInput {
+  border-color: #f44336;
+  background-color: #fff5f5;
+}
+
+.vacationRequest .errorMessage {
+  color: #f44336;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 4px;
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
 .vacationRequest .button-row {
   display: flex;
   justify-content: flex-end;

@@ -1,9 +1,16 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import styles from './VacationRequest.module.scss';
 import { approvalService } from '../../services/approvalService';
 import AuthContext from '../../context/UserContext';
 
-const todayStr = new Date().toISOString().slice(0, 10);
+// 한국 시간으로 오늘 날짜 가져오기
+const today = new Date();
+const todayStr =
+  today.getFullYear() +
+  '-' +
+  String(today.getMonth() + 1).padStart(2, '0') +
+  '-' +
+  String(today.getDate()).padStart(2, '0');
 
 // 날짜 차이 계산 함수
 function getDateDiff(start, end) {
@@ -24,14 +31,80 @@ function toInputDate(str) {
   return str.replace(/\./g, '-');
 }
 
-const VacationRequest = ({ onClose }) => {
+const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const [requestDate, setRequestDate] = useState(todayStr);
   // 휴가 유형을 Enum 값으로 관리
-  const [vacationType, setVacationType] = useState('ANNUAL_LEAVE');
-  const [startDate, setStartDate] = useState(todayStr);
-  const [endDate, setEndDate] = useState(todayStr);
-  const [reason, setReason] = useState('');
+  const [vacationType, setVacationType] = useState(
+    editData?.vacationType || 'ANNUAL_LEAVE',
+  );
+  const [startDate, setStartDate] = useState(editData?.startDate || todayStr);
+  const [endDate, setEndDate] = useState(editData?.endDate || todayStr);
+
+  // 휴가 유형 변경 핸들러
+  const handleVacationTypeChange = (e) => {
+    setVacationType(e.target.value);
+  };
+  const [reason, setReason] = useState(editData?.reason || '');
   const [loading, setLoading] = useState(false);
+  const [reasonError, setReasonError] = useState('');
+  const [overlapError, setOverlapError] = useState('');
+  const [myVacations, setMyVacations] = useState([]);
+
+  // 내 휴가 목록 불러오기
+  useEffect(() => {
+    async function fetchMyVacations() {
+      try {
+        const res = await approvalService.getMyVacationRequests();
+        console.log('getMyVacationRequests 응답:', res);
+        const vacations = res.result || res.data || res || [];
+        vacations.forEach((v, i) => {
+          console.log(
+            `휴가[${i}] id=${v.id}, vacationStatus=${v.vacationStatus}, startDate=${v.startDate}, endDate=${v.endDate}`,
+          );
+        });
+        // 승인/처리중 상태만 필터링 (vacationStatus 사용)
+        const filtered = vacations.filter((v) =>
+          ['PENDING', 'APPROVED', 'PROCESSING'].includes(v.vacationStatus),
+        );
+        setMyVacations(filtered);
+      } catch (e) {
+        setMyVacations([]);
+      }
+    }
+    fetchMyVacations();
+  }, []);
+
+  // 날짜 겹침 검사 함수
+  useEffect(() => {
+    if (!myVacations.length) {
+      setOverlapError('');
+      return;
+    }
+    // 신청하려는 기간 계산
+    let reqStart = startDate;
+    let reqEnd = endDate;
+    if (vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY') {
+      reqEnd = reqStart;
+    }
+    const reqStartDate = new Date(reqStart);
+    const reqEndDate = new Date(reqEnd);
+    // 본인 수정모드일 때는 자기 자신 제외
+    const filteredVacations = editData
+      ? myVacations.filter((v) => v.id !== editData.id)
+      : myVacations;
+    // 겹치는 휴가가 있는지 검사
+    const overlap = filteredVacations.find((v) => {
+      const vStart = new Date(v.startDate);
+      const vEnd = new Date(v.endDate);
+      // 기간이 겹치면 true
+      return reqStartDate <= vEnd && reqEndDate >= vStart;
+    });
+    if (overlap) {
+      setOverlapError('이미 해당 기간에 신청된 휴가가 있습니다.');
+    } else {
+      setOverlapError('');
+    }
+  }, [startDate, endDate, vacationType, myVacations, editData]);
 
   const authCtx = useContext(AuthContext);
   const applicantId = authCtx?.user?.employeeNo || null;
@@ -46,6 +119,31 @@ const VacationRequest = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 날짜 겹침 유효성 검사
+    if (overlapError) {
+      alert(overlapError);
+      return;
+    }
+    // 사유 유효성 검사
+    if (!reason.trim()) {
+      setReasonError('휴가 사유를 입력해주세요.');
+      return;
+    }
+
+    // 잔여 연차 유효성 검사 (연차만 적용)
+    if (
+      vacationType === 'ANNUAL_LEAVE' &&
+      vacationBalance &&
+      days > vacationBalance.remainingDays
+    ) {
+      alert(
+        `보유 연차(${vacationBalance.remainingDays}일)보다 많이 신청할 수 없습니다.`,
+      );
+      return;
+    }
+
+    setReasonError('');
     setLoading(true);
     try {
       // 반차는 startDate, endDate 동일하게
@@ -57,22 +155,40 @@ const VacationRequest = ({ onClose }) => {
         vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
           ? startDate
           : endDate;
-      const payload = {
-        requestType: 'VACATION',
-        applicantId: applicantId ? Number(applicantId) : null,
-        reason,
-        vacationsId: null,
-        vacationType,
-        certificatesId: null,
-        startDate: reqStart,
-        endDate: reqEnd,
-      };
-      console.log('휴가신청 payload', payload);
-      await approvalService.requestVacation(payload);
-      alert('휴가 신청이 완료되었습니다.');
+
+      if (editData) {
+        // 수정 모드
+        await approvalService.updateVacation(editData.id, {
+          vacationType,
+          startDate: reqStart,
+          endDate: reqEnd,
+          reason,
+        });
+        alert('휴가 신청이 수정되었습니다.');
+      } else {
+        // 신규 신청 모드 - 백엔드 변경사항에 맞게 수정
+        await approvalService.requestVacation({
+          vacationType,
+          startDate: reqStart,
+          endDate: reqEnd,
+          reason,
+          requested_at: new Date(requestDate + 'T00:00:00').toISOString(), // 신청일자 추가
+        });
+        alert('휴가 신청이 완료되었습니다.');
+      }
+
       if (onClose) onClose();
     } catch (err) {
-      alert(err.message || '휴가 신청에 실패했습니다.');
+      if (err.response && err.response.status === 400) {
+        alert(err.response.data || '이미 해당 기간에 신청된 휴가가 있습니다.');
+      } else {
+        alert(
+          err.message ||
+            (editData
+              ? '휴가 신청 수정에 실패했습니다.'
+              : '휴가 신청에 실패했습니다.'),
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +196,7 @@ const VacationRequest = ({ onClose }) => {
 
   return (
     <div className={styles.vacationRequest}>
-      <h2>휴가 신청</h2>
+      <h2>{editData ? '휴가 신청 수정' : '휴가 신청'}</h2>
       <form onSubmit={handleSubmit}>
         {/* 휴가 신청일 */}
         <div className={styles.row}>
@@ -96,10 +212,7 @@ const VacationRequest = ({ onClose }) => {
         {/* 휴가 유형 */}
         <div className={styles.row}>
           <label>휴가 유형</label>
-          <select
-            value={vacationType}
-            onChange={(e) => setVacationType(e.target.value)}
-          >
+          <select value={vacationType} onChange={handleVacationTypeChange}>
             <option value='ANNUAL_LEAVE'>연차</option>
             <option value='AM_HALF_DAY'>반차(오전)</option>
             <option value='PM_HALF_DAY'>반차(오후)</option>
@@ -136,24 +249,45 @@ const VacationRequest = ({ onClose }) => {
             {days > 0 && `${days}일 신청`}
           </span>
         </div>
+        {/* 날짜 겹침 에러 메시지 */}
+        {overlapError && (
+          <div style={{ color: 'red', fontWeight: 600, marginBottom: 8 }}>
+            {overlapError}
+          </div>
+        )}
         {/* 사유 */}
         <div className={styles.row}>
           <label>사유</label>
           <input
             type='text'
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => {
+              setReason(e.target.value);
+              if (e.target.value.trim()) {
+                setReasonError('');
+              }
+            }}
             required
+            className={reasonError ? styles.errorInput : ''}
           />
+          {reasonError && (
+            <span className={styles.errorMessage}>{reasonError}</span>
+          )}
         </div>
         {/* 버튼 */}
         <div className={styles['button-row']}>
           <button
             type='submit'
             className={styles['confirm-btn']}
-            disabled={loading}
+            disabled={loading || !!overlapError}
           >
-            {loading ? '신청 중...' : '등록'}
+            {loading
+              ? editData
+                ? '수정 중...'
+                : '신청 중...'
+              : editData
+                ? '수정'
+                : '등록'}
           </button>
           <button
             type='button'
