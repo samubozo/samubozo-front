@@ -11,10 +11,31 @@ const AuthContext = React.createContext({
 
 // 위에서 생성한 Context를 제공하는 Provider 선언.
 // 이 Provider를 통해 자식 컴포넌트(Consumer)에게 인증 상태와 관련된 값, 함수를 전달할 수 있음.
+// JWT에서 role 파싱 함수
+function getRoleFromToken() {
+  const token = sessionStorage.getItem('ACCESS_TOKEN');
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded.role || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export const AuthContextProvider = (props) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState('');
   const [isInit, setIsInit] = useState(false); // 초기화 완료 상태 추가
+
+  // 앱 시작 시 JWT에서 role을 파싱해서 sessionStorage에 저장
+  useEffect(() => {
+    const role = getRoleFromToken();
+    if (role) {
+      sessionStorage.setItem('USER_ROLE', role);
+    }
+  }, []);
 
   // 로그인 시 실행할 핸들러
   const loginHandler = async (loginData) => {
@@ -46,7 +67,6 @@ export const AuthContextProvider = (props) => {
         console.log('🧾userInfo:', userInfo);
 
         sessionStorage.setItem('USER_EMAIL', userInfo.email || '');
-
         sessionStorage.setItem('USER_NAME', userInfo.userName || '');
         sessionStorage.setItem(
           'USER_DEPARTMENT',
@@ -58,14 +78,13 @@ export const AuthContextProvider = (props) => {
         );
         sessionStorage.setItem('USER_POSITION', userInfo.positionName || '');
         sessionStorage.setItem('USER_EMPLOYEE_NO', userInfo.employeeNo || '');
-
-        sessionStorage.setItem('USER_ROLE', userInfo.hrRole || 'N');
-        // 추가: 프로필 이미지와 입사일자
         sessionStorage.setItem(
           'USER_PROFILE_IMAGE',
           userInfo.profileImage || '',
         );
         sessionStorage.setItem('USER_HIRE_DATE', userInfo.hireDate || '');
+        // 반드시 USER_ROLE(hrRole) 저장!
+        sessionStorage.setItem('USER_ROLE', userInfo.hrRole || 'N');
       }
     } catch (e) {
       console.error('유저 상세정보 조회 실패:', e);
@@ -132,7 +151,6 @@ export const AuthContextProvider = (props) => {
           department: sessionStorage.getItem('USER_DEPARTMENT'),
           departmentId: sessionStorage.getItem('USER_DEPARTMENT_ID'),
           positionName: sessionStorage.getItem('USER_POSITION'),
-          // 추가: 프로필 이미지와 입사일자
           profileImage: sessionStorage.getItem('USER_PROFILE_IMAGE'),
           hireDate: sessionStorage.getItem('USER_HIRE_DATE'),
         },
