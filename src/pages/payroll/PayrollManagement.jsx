@@ -79,14 +79,7 @@ const fetchEmployees = async ({
   }
 };
 
-const departmentOptions = [
-  '전체',
-  '경영지원',
-  '영업부',
-  '기획부',
-  '마케팅',
-  '디자인',
-];
+const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '영업팀'];
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
@@ -157,7 +150,7 @@ const PayrollDetail = ({ employee, onClose }) => {
   // 예시: employee에 계좌, 이미지 등 추가 정보가 있다고 가정
   const bankName = employee.bankName || '';
   const accountNumber = employee.accountNumber || '';
-  const accountHolder = employee.accountHolder || employee.name;
+  const accountHolder = employee.accountHolder;
   const employeeNo = employee.id;
   const imageUrl = employee.imageUrl || defaultImg;
   const department = employee.department || '';
@@ -421,7 +414,7 @@ const PayrollManagement = () => {
     );
   };
 
-  const handleEmployeeClick = (emp) => {
+  const handleEmployeeClick = async (emp) => {
     const isSame = selectedEmployeeId === emp.id;
 
     if (isSame) {
@@ -429,11 +422,31 @@ const PayrollManagement = () => {
       setSelectedEmployee(null);
     } else {
       setSelectedEmployeeId(emp.id);
-      setSelectedEmployee(emp);
 
-      if (isHR && selectedMonth) {
-        const [year, month] = selectedMonth.split('-');
-        fetchPayroll(year, month, emp.id);
+      try {
+        const res = await axiosInstance.get(
+          `${API_BASE_URL}${HR}/user/${emp.id}`,
+        );
+        const data = res.data.result;
+
+        setSelectedEmployee({
+          id: data.employeeNo,
+          name: data.userName,
+          department: data.department?.name || '',
+          position: data.positionName || '',
+          imageUrl: data.profileImage || '',
+          bankName: data.bankName || '',
+          accountNumber: data.accountNumber || '',
+          accountHolder: data.accountHolder || data.userName,
+        });
+
+        if (isHR && selectedMonth) {
+          const [year, month] = selectedMonth.split('-');
+          fetchPayroll(year, month, data.employeeNo);
+        }
+      } catch (err) {
+        console.error('직원 상세 조회 실패:', err);
+        alert('직원 정보를 불러올 수 없습니다.');
       }
     }
   };
