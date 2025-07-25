@@ -1,5 +1,5 @@
 import axiosInstance from '../configs/axios-config';
-import { API_BASE_URL, VACATION } from '../configs/host-config';
+import { API_BASE_URL, VACATION, CERTIFICATE } from '../configs/host-config';
 
 // APPROVAL 상수 정의
 const APPROVAL = '/approval-service/approvals';
@@ -160,6 +160,95 @@ export const approvalService = {
       return response.data;
     } catch (error) {
       throw error;
+    }
+  },
+
+  // 증명서 신청
+  async applyCertificate({ type, requestDate, purpose }) {
+    try {
+      await axiosInstance.post(
+        `${API_BASE_URL}${CERTIFICATE}/application`,
+        {
+          type, // 필드명 수정
+          requestDate,
+          purpose,
+        },
+        { withCredentials: true },
+      );
+      return true;
+    } catch (error) {
+      const msg = error.response?.data?.message || '증명서 신청 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // HR 전체 증명서 신청 내역 조회
+  async getAllCertificates() {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/list/all`,
+        { withCredentials: true },
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 일반 사용자 본인 증명서 신청 내역 조회
+  async getMyCertificates() {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/my-list`,
+        { withCredentials: true },
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // HR 증명서 승인
+  async approveCertificate(id) {
+    try {
+      await axiosInstance.put(
+        `${API_BASE_URL}${CERTIFICATE}/${id}/approve`,
+        {},
+        { withCredentials: true },
+      );
+      return true;
+    } catch (error) {
+      const msg = error.response?.data?.message || '증명서 승인 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // HR 증명서 반려
+  async rejectCertificate(id) {
+    try {
+      await axiosInstance.put(
+        `${API_BASE_URL}${CERTIFICATE}/${id}/reject`,
+        {},
+        { withCredentials: true },
+      );
+      return true;
+    } catch (error) {
+      const msg = error.response?.data?.message || '증명서 반려 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 증명서 상세 조회
+  async getCertificateById(id) {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/${id}`,
+        { withCredentials: true },
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '증명서 상세 조회 실패';
+      throw new Error(msg);
     }
   },
 

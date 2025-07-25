@@ -10,6 +10,10 @@ function ApprovalTable({
   onApprove,
   onReject,
   isHR = false,
+  onEditCert, // 추가
+  onPrintCert, // 추가
+  typeToKor, // 추가
+  statusToKor, // 추가
 }) {
   const toggle = (id) => {
     setSelected((prev) =>
@@ -19,6 +23,11 @@ function ApprovalTable({
 
   return (
     <table className={styles.table}>
+      <colgroup>
+        {columns.map((col) => (
+          <col key={col.key} />
+        ))}
+      </colgroup>
       <thead>
         <tr>
           <th>
@@ -33,11 +42,12 @@ function ApprovalTable({
           {columns.map((col) => (
             <th key={col.key}>{col.label}</th>
           ))}
+          {/* 작업 칼럼 제거 */}
         </tr>
       </thead>
       <tbody>
-        {data.map((row, idx) => (
-          <tr key={row.id ?? idx}>
+        {data.map((row) => (
+          <tr key={row.id}>
             <td>
               <input
                 type='checkbox'
@@ -46,8 +56,15 @@ function ApprovalTable({
               />
             </td>
             {columns.map((col) => (
-              <td key={col.key}>{row[col.key]}</td>
+              <td key={`${row.id}-${col.key}`}>
+                {col.key === 'type' && typeToKor
+                  ? typeToKor(row[col.key])
+                  : col.key === 'status' && statusToKor
+                    ? statusToKor(row[col.key])
+                    : row[col.key]}
+              </td>
             ))}
+            {/* 작업 버튼 칼럼 제거 */}
           </tr>
         ))}
       </tbody>

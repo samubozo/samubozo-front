@@ -5,6 +5,7 @@ import { approvalService } from '../../services/approvalService';
 import ToastNotification from '../../components/ToastNotification';
 import VacationRequest from '../attendance/VacationRequest';
 import AuthContext from '../../context/UserContext';
+import axiosInstance from '../../configs/axios-config';
 
 // 분리된 컴포넌트들
 import ApprovalTabs from './ApprovalTabs';
@@ -12,6 +13,7 @@ import Dropdown from './Dropdown';
 import DatePicker from './DatePicker';
 import RejectModal from './RejectModal';
 import ApprovalTable from './ApprovalTable';
+import CertificateModal from './CertificateModal';
 
 // 상수들
 import {
@@ -67,6 +69,45 @@ function Approval() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const [rejectLoading, setRejectLoading] = useState(false);
+
+  // 모달 상태 추가
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [editCertData, setEditCertData] = useState(null); // 수정 시 데이터
+  const [certModalMode, setCertModalMode] = useState('create'); // 'create' | 'edit'
+  const [certModalLoading, setCertModalLoading] = useState(false);
+
+  // 증명서 신청/수정 핸들러
+  const handleCertModalOpen = (mode, data) => {
+    setCertModalMode(mode);
+    setEditCertData(data || null);
+    setShowCertModal(true);
+  };
+  const handleCertModalClose = () => {
+    setShowCertModal(false);
+    setEditCertData(null);
+    setCertModalMode('create');
+    setCertModalLoading(false);
+  };
+  const handleCertModalSubmit = async (form) => {
+    setCertModalLoading(true);
+    try {
+      if (certModalMode === 'create') {
+        // 신청(POST)
+        await approvalService.applyCertificate(form);
+        // handleCertModalClose(); // 성공 모달에서만 닫히도록 수정
+      } else if (certModalMode === 'edit' && editCertData) {
+        // 수정(PUT)
+        await approvalService.editCertificate(editCertData.id, form);
+        setToast({ message: '증명서 수정 완료', type: 'success' });
+        handleCertModalClose();
+      }
+      fetchData();
+      // handleCertModalClose(); // 성공 모달에서만 닫히도록 수정
+    } catch (e) {
+      setToast({ message: '처리 중 오류가 발생했습니다.', type: 'error' });
+      setCertModalLoading(false);
+    }
+  };
 
   // hooks 사용
   const {
@@ -304,8 +345,81 @@ function Approval() {
   );
   const pagedCert = filteredCert.slice((page - 1) * pageSize, page * pageSize);
 
+  // PDF 인쇄 함수
+  const printPdfFromServer = async (certificateId) => {
+    try {
+      const res = await axiosInstance.get(
+        `/certificate/my-print/${certificateId}`,
+        { responseType: 'arraybuffer' },
+      );
+      const contentType = res.headers['content-type'] || 'application/pdf';
+      const blob = new Blob([res.data], { type: contentType });
+      const fileURL = URL.createObjectURL(blob);
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = fileURL;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }, 100);
+      };
+    } catch (err) {
+      setToast({ message: 'PDF 인쇄 중 오류 발생', type: 'error' });
+    }
+  };
+
+  // 인쇄 버튼 클릭 핸들러
+  const handlePrintSelected = () => {
+    const approvedIds = selected.filter(
+      (id) => certData.find((row) => row.id === id)?.status === '승인',
+    );
+    if (approvedIds.length === 0) {
+      setToast({
+        message: '승인된 증명서만 인쇄할 수 있습니다.',
+        type: 'error',
+      });
+      return;
+    }
+    approvedIds.forEach((id) => printPdfFromServer(id));
+  };
+
+  const statusToKor = (status) => {
+    const s = (status || '').trim().toUpperCase();
+    if (s === 'PENDING') return '대기';
+    if (s === 'APPROVED') return '승인';
+    if (s === 'REJECTED') return '반려';
+    return status;
+  };
+
+  useEffect(() => {
+    console.log('certData:', certData);
+    console.log('selected:', selected);
+  }, [certData, selected]);
+
   return (
     <div className={styles.approvalWrap}>
+      {/* 증명서 탭에서만 보이는 신청 버튼 - 삭제 */}
+      {/* {tab === 'certificate' && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 12,
+          }}
+        >
+          <button
+            className={styles.approveBtn}
+            onClick={() => {
+              setEditCertData(null);
+              setShowCertModal(true);
+            }}
+          >
+            신청
+          </button>
+        </div>
+      )} */}
       {/* HR 권한 안내 */}
       {isHR && (
         <div className={styles.hrNotice}>
@@ -376,6 +490,22 @@ function Approval() {
               : null
           }
           isHR={isHR}
+          // 증명서 탭에서만 수정/인쇄 버튼 활성화
+          onEditCert={
+            tab === 'certificate'
+              ? (row) => {
+                  setEditCertData(row);
+                  setShowCertModal(true);
+                }
+              : null
+          }
+          onPrintCert={
+            tab === 'certificate'
+              ? (row) => {
+                  /* 추후 구현 */
+                }
+              : null
+          }
         />
       </div>
       <div className={styles.pagination}>
@@ -393,8 +523,45 @@ function Approval() {
           </button>
         ))}
       </div>
+      {/* 디버깅용 콘솔 */}
       <div className={styles.actionRow}>
-        {isHR && approvalStatus === 'pending' && (
+        {tab === 'certificate' && (
+          <>
+            <button
+              className={styles.approveBtn}
+              onClick={() => handleCertModalOpen('create', null)}
+            >
+              신청
+            </button>
+            <button
+              className={styles.rejectBtn}
+              onClick={() => {
+                if (selected.length > 0) {
+                  const row = certData.find((row) => row.id === selected[0]);
+                  handleCertModalOpen('edit', row);
+                }
+              }}
+              disabled={selected.length === 0}
+            >
+              수정
+            </button>
+            <button
+              className={styles.deleteBtn}
+              onClick={handlePrintSelected}
+              disabled={
+                selected.length === 0 ||
+                !selected.some(
+                  (id) =>
+                    certData.find((row) => row.id === id)?.status === '승인',
+                )
+              }
+            >
+              인쇄
+            </button>
+          </>
+        )}
+        {/* 기존 삭제/반려/승인 버튼 (휴가 탭, HR만) */}
+        {isHR && approvalStatus === 'pending' && tab === 'leave' && (
           <>
             <button
               className={styles.deleteBtn}
@@ -446,6 +613,17 @@ function Approval() {
         onConfirm={handleRejectConfirm}
         loading={rejectLoading}
       />
+
+      {/* 증명서 신청/수정 모달 */}
+      {showCertModal && (
+        <CertificateModal
+          mode={certModalMode}
+          defaultValues={editCertData || {}}
+          onSubmit={handleCertModalSubmit}
+          onClose={handleCertModalClose}
+          loading={certModalLoading}
+        />
+      )}
 
       {toast && (
         <ToastNotification

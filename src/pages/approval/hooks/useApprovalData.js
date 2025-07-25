@@ -43,6 +43,22 @@ export const useApprovalData = (
     }));
   };
 
+  // 한글 변환 함수
+  const typeToKor = (type) => {
+    const t = (type || '').trim().toUpperCase();
+    if (t === 'EMPLOYMENT') return '재직증명서';
+    if (t === 'CAREER') return '경력증명서';
+    if (t === 'RETIREMENT') return '퇴직증명서';
+    return type;
+  };
+  const statusToKor = (status) => {
+    const s = (status || '').trim().toUpperCase();
+    if (s === 'PENDING') return '대기';
+    if (s === 'APPROVED') return '승인';
+    if (s === 'REJECTED') return '반려';
+    return status;
+  };
+
   // 데이터 불러오기
   const fetchData = async ({
     status = approvalStatus === 'pending'
@@ -73,20 +89,30 @@ export const useApprovalData = (
         }
         setLeaveData(mapLeaveData(arr));
       } else {
-        // 증명서 탭의 경우 HR 사용자는 처리한 결재 요청 조회
+        // 증명서 탭의 경우 HR 사용자는 전체 증명서 내역 조회
         if (isHR) {
-          const res = await approvalService.getAllApprovals({
-            status: status === 'all' ? undefined : status,
-            sortBy,
-            sortOrder,
-            requestType: 'CERTIFICATE',
-          });
-          arr = Array.isArray(res) ? res : res?.result || [];
+          const res = await approvalService.getAllCertificates();
+          arr = Array.isArray(res)
+            ? res
+            : res?.result?.content || res?.result || [];
+        } else {
+          // 일반 사용자는 본인 증명서 내역 조회
+          const res = await approvalService.getMyCertificates();
+          arr = Array.isArray(res)
+            ? res
+            : res?.result?.content || res?.result || [];
         }
-        // 증명서 데이터도 매핑
+        // 증명서 데이터도 매핑 (CertificateResDto 구조에 맞게)
         const mappedCertData = arr.map((row) => ({
           ...row,
-          applicantDepartment: row.applicantDepartment || row.department || '',
+          id: row.certificateId, // id 필드 추가
+          type: typeToKor(row.type), // 한글 변환 적용
+          status: statusToKor(row.status), // 항상 한글 변환 적용
+          applicant: row.applicantName || '',
+          applicantDepartment: row.departmentName || '',
+          applyDate: row.requestDate || '',
+          approver: row.approverName || '',
+          processedAt: row.approveDate || '',
         }));
         setCertData(mappedCertData);
       }
