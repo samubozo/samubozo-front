@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AttendanceDashboard.module.scss';
+import { getKoreaToday } from '../../utils/dateUtils';
 import VacationRequest from './VacationRequest';
 import AbsenceRegistrationModal from './AbsenceRegistrationModal';
 import AbsenceEditModal from './AbsenceEditModal';
+import SuccessModal from '../../components/SuccessModal';
 import { attendanceService } from '../../services/attendanceService';
 
 function pad(num) {
@@ -145,7 +147,8 @@ export default function AttendanceDashboard() {
   // 출근/외출/복귀 버튼
   const handleAttendanceAction = async () => {
     // 오늘이 휴가/부재일인지 체크
-    const todayStr = new Date().toISOString().slice(0, 10);
+    // 한국 시간 기준 오늘 날짜
+    const todayStr = getKoreaToday();
     const isVacation = absences.some(
       (a) =>
         a.startDate <= todayStr &&
@@ -1098,18 +1101,12 @@ export default function AttendanceDashboard() {
         />
         {/* 성공 메시지 모달 */}
         {showSuccessModal && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.successModal}>
-              <div className={styles.successIcon}>✓</div>
-              <div className={styles.successMessage}>{successMessage}</div>
-              <button
-                className={styles.successCloseBtn}
-                onClick={() => setShowSuccessModal(false)}
-              >
-                확인
-              </button>
-            </div>
-          </div>
+          <SuccessModal
+            message={successMessage}
+            onClose={() => setShowSuccessModal(false)}
+            autoClose={true}
+            autoCloseDelay={3000}
+          />
         )}
       </div>
     );

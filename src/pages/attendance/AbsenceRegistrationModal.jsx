@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import styles from './AbsenceRegistrationModal.module.scss';
+import { getKoreaToday } from '../../utils/dateUtils';
 
-const todayStr = new Date().toISOString().slice(0, 10);
+// 한국 시간 기준 오늘 날짜
+const todayStr = getKoreaToday();
 
 const absenceTypes = [
   { value: '출장', label: '출장' },

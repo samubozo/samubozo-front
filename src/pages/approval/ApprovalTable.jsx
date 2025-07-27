@@ -14,6 +14,7 @@ function ApprovalTable({
   onPrintCert, // 추가
   typeToKor, // 추가
   statusToKor, // 추가
+  onRowClick, // 행 클릭 이벤트 추가
 }) {
   const toggle = (id) => {
     setSelected((prev) =>
@@ -47,8 +48,12 @@ function ApprovalTable({
       </thead>
       <tbody>
         {data.map((row) => (
-          <tr key={row.id}>
-            <td>
+          <tr
+            key={row.id}
+            onClick={() => onRowClick && onRowClick(row)}
+            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+          >
+            <td onClick={(e) => e.stopPropagation()}>
               <input
                 type='checkbox'
                 checked={selected.includes(row.id)}

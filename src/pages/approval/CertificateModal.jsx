@@ -2,36 +2,39 @@ import React, { useState, useEffect } from 'react';
 import styles from './Approval.module.scss';
 import absenceModalStyles from '../attendance/AbsenceRegistrationModal.module.scss';
 import editModalStyles from '../attendance/AbsenceEditModal.module.scss';
+import { getKoreaToday } from '../../utils/dateUtils';
+import SuccessModal from '../../components/SuccessModal';
 
 function CertificateModal({
-  mode = 'create', // 'create' | 'edit'
-  defaultValues = {},
   onSubmit,
   onClose,
   loading = false,
   certData = [], // 추가: 신청 내역 전체 전달
 }) {
+  // 오늘 날짜를 yyyy-MM-dd로 계산 (한국 시간 기준)
+  const todayStr = getKoreaToday();
+
   // 상태
-  const [type, setType] = useState(defaultValues.type || 'EMPLOYMENT');
-  const [requestDate, setRequestDate] = useState(
-    defaultValues.requestDate || '',
-  );
-  const [purpose, setPurpose] = useState(defaultValues.purpose || '');
+  const [type, setType] = useState('EMPLOYMENT');
+  const [requestDate, setRequestDate] = useState(todayStr);
+  const [purpose, setPurpose] = useState('');
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // 오늘 날짜를 yyyy-MM-dd로 계산
-  const todayStr = new Date().toISOString().slice(0, 10);
-
-  // 유효성 검사 함수
-  const isAlreadyApproved = () => {
+  // 유효성 검사 함수 - 같은 타입의 증명서가 대기/승인 상태인지 확인 (반려는 재신청 가능)
+  const isDuplicateRequest = () => {
     const t = (type || '').trim().toUpperCase();
-    const d = (requestDate || '').trim();
+
     return certData.some((row) => {
-      const rowType = (row.type || '').trim().toUpperCase();
-      const rowDate = (row.requestDate || '').slice(0, 10);
+      // 원본 타입 사용 (한글 변환 전)
+      const rowType = (row.originalType || row.type || '').trim().toUpperCase();
       const rowStatus = (row.status || '').trim().toUpperCase();
-      return rowType === t && rowDate === d && rowStatus === 'APPROVED';
+
+      // 같은 타입이고 대기/승인 상태인 경우만 중복으로 처리 (반려는 제외)
+      return (
+        rowType === t &&
+        ['대기', '승인', 'PENDING', 'APPROVED'].includes(rowStatus)
+      );
     });
   };
 
@@ -42,83 +45,49 @@ function CertificateModal({
       setError('모든 항목을 입력해 주세요.');
       return;
     }
-    if (isAlreadyApproved()) {
+
+    // 중복 신청 검사
+    if (isDuplicateRequest()) {
       setError(
-        `이미 승인된 ${type === 'EMPLOYMENT' ? '재직증명서' : '경력증명서'}는 재신청할 수 없습니다.`,
+        `${requestDate}에 ${type === 'EMPLOYMENT' ? '재직증명서' : '경력증명서'}가 이미 신청되어 있습니다.`,
       );
       setShowSuccess(false);
       return;
     }
+
     setError('');
     try {
-      await onSubmit({ type, requestDate, purpose });
-      setShowSuccess(true);
+      const result = await onSubmit({ type, requestDate, purpose });
+      // 실제로 성공했을 때만 성공 모달 표시
+      if (result === true) {
+        setShowSuccess(true);
+        // 성공 후 2초 뒤에 모달 닫기 (자동 새로고침을 위해)
+        setTimeout(() => {
+          setShowSuccess(false);
+          if (onClose) onClose();
+        }, 2000);
+      } else {
+        setError('신청에 실패했습니다.');
+        setShowSuccess(false);
+      }
     } catch (err) {
       setError(err.message || '신청에 실패했습니다.');
       setShowSuccess(false);
     }
   };
 
-  useEffect(() => {
-    if (mode === 'edit' && defaultValues) {
-      setType(defaultValues.type || 'EMPLOYMENT');
-      setRequestDate(defaultValues.requestDate || '');
-      setPurpose(defaultValues.purpose || '');
-    }
-  }, [mode, defaultValues]);
-
   // 성공 모달 렌더링
   if (showSuccess) {
     return (
-      <div className={editModalStyles.modalOverlay}>
-        <div
-          className={editModalStyles.modalContent}
-          style={{
-            textAlign: 'center',
-            padding: '3.5rem 2.5rem 2.5rem 2.5rem',
-          }}
-        >
-          <svg
-            width='80'
-            height='80'
-            viewBox='0 0 64 64'
-            style={{ margin: '0 auto 24px auto', display: 'block' }}
-          >
-            <polyline
-              points='16,34 28,48 48,18'
-              fill='none'
-              stroke='#4caf50'
-              strokeWidth='6'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-            />
-          </svg>
-          <div
-            style={{
-              fontSize: '1.45rem',
-              fontWeight: 700,
-              color: '#333',
-              marginBottom: 18,
-            }}
-          >
-            증명서 신청이 완료되었습니다.
-          </div>
-          <div
-            className={editModalStyles.buttonRow}
-            style={{ justifyContent: 'center' }}
-          >
-            <button
-              className={editModalStyles.confirmBtn}
-              onClick={() => {
-                setShowSuccess(false);
-                if (onClose) onClose();
-              }}
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      </div>
+      <SuccessModal
+        message='증명서 신청이 완료되었습니다.'
+        onClose={() => {
+          setShowSuccess(false);
+          if (onClose) onClose();
+        }}
+        autoClose={true}
+        autoCloseDelay={2000}
+      />
     );
   }
 
@@ -159,7 +128,7 @@ function CertificateModal({
                 margin: 0,
               }}
             >
-              {mode === 'edit' ? '증명서 수정' : '증명서 신청'}
+              증명서 신청
             </div>
             <button
               className={styles.modalClose}
@@ -231,8 +200,8 @@ function CertificateModal({
                 id='requestDate'
                 className={styles.datePicker}
                 type='date'
-                value={requestDate}
-                onChange={(e) => setRequestDate(e.target.value)}
+                value={todayStr}
+                readOnly
                 style={{
                   width: '100%',
                   marginTop: 8,
@@ -240,12 +209,13 @@ function CertificateModal({
                   fontSize: 16,
                   borderRadius: 8,
                   border: '1.5px solid #cfd8dc',
-                  background: '#fafbfc',
+                  background: '#f5f5f5',
                   paddingLeft: 12,
                   boxSizing: 'border-box',
+                  color: '#666',
+                  cursor: 'not-allowed',
                 }}
-                placeholder='발급일자를 선택하세요'
-                min={todayStr}
+                placeholder='오늘 날짜로 자동 설정됩니다'
               />
             </div>
             <div style={{ marginBottom: 0 }}>
@@ -317,7 +287,7 @@ function CertificateModal({
                 borderRadius: 8,
               }}
             >
-              {mode === 'edit' ? '수정' : '신청'}
+              신청
             </button>
           </div>
         </form>

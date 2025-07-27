@@ -23,8 +23,11 @@ export const approvalService = {
       });
       return true;
     } catch (error) {
-      const msg = error.response?.data || '휴가 신청 실패';
-      throw new Error(msg);
+      console.log('approvalService requestVacation 에러:', error);
+      console.log('에러 응답 데이터:', error.response?.data);
+      console.log('에러 메시지:', error.message);
+      // 원본 에러 객체를 그대로 던져서 원본 정보를 보존
+      throw error;
     }
   },
 
@@ -89,7 +92,7 @@ export const approvalService = {
     try {
       await axiosInstance.post(
         `${API_BASE_URL}${VACATION}/${vacationId}/reject`,
-        { comment },
+        { rejectComment: comment },
       );
       return true;
     } catch (error) {
@@ -130,7 +133,7 @@ export const approvalService = {
     try {
       await axiosInstance.put(
         `${API_BASE_URL}${APPROVAL}/${approvalId}/reject`,
-        { comment },
+        { rejectComment: comment },
       );
       return true;
     } catch (error) {
@@ -166,18 +169,26 @@ export const approvalService = {
   // 증명서 신청
   async applyCertificate({ type, requestDate, purpose }) {
     try {
-      await axiosInstance.post(
+      const response = await axiosInstance.post(
         `${API_BASE_URL}${CERTIFICATE}/application`,
         {
           type, // 필드명 수정
           requestDate,
           purpose,
+          approverId: 1, // 기본 HR 담당자 ID (실제로는 동적으로 설정해야 함)
         },
         { withCredentials: true },
       );
-      return true;
+
+      // 응답 상태 확인
+      if (response.status >= 200 && response.status < 300) {
+        return true;
+      } else {
+        throw new Error('증명서 신청에 실패했습니다.');
+      }
     } catch (error) {
-      const msg = error.response?.data?.message || '증명서 신청 실패';
+      const msg =
+        error.response?.data?.message || error.message || '증명서 신청 실패';
       throw new Error(msg);
     }
   },
@@ -224,11 +235,11 @@ export const approvalService = {
   },
 
   // HR 증명서 반려
-  async rejectCertificate(id) {
+  async rejectCertificate(id, rejectComment) {
     try {
       await axiosInstance.put(
         `${API_BASE_URL}${CERTIFICATE}/${id}/reject`,
-        {},
+        { rejectComment },
         { withCredentials: true },
       );
       return true;

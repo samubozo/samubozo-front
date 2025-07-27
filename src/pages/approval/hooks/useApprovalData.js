@@ -11,10 +11,23 @@ export const useApprovalData = (
   const [leaveData, setLeaveData] = useState([]);
   const [certData, setCertData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
 
-  // 날짜 포맷 함수 - 백엔드에서 온 값을 그대로 반환
+  // 날짜 포맷 함수 - ISO 날짜 문자열을 YYYY-MM-DD 형태로 변환
   const formatDate = (dateStr) => {
-    return dateStr || '';
+    if (!dateStr) return '';
+
+    // ISO 날짜 문자열인 경우 (예: 2025-07-27T22:02:51.518708)
+    if (dateStr.includes('T')) {
+      return dateStr.split('T')[0];
+    }
+
+    // 이미 YYYY-MM-DD 형태인 경우
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+
+    return dateStr;
   };
 
   // 데이터 매핑 함수
@@ -39,6 +52,9 @@ export const useApprovalData = (
       status:
         statusMap[(row.vacationStatus || row.status || '').toUpperCase()] ||
         '대기',
+      rejectComment:
+        row.rejectComment ||
+        (row.vacationStatus === 'REJECTED' ? row.reason : ''), // 반려 사유 추가 (임시 해결책)
       originalData: row,
     }));
   };
@@ -65,10 +81,10 @@ export const useApprovalData = (
       ? 'pending'
       : approvalStatus === 'processed'
         ? 'processed'
-        : 'all', // <-- 수정된 부분
+        : 'all',
     sortBy = 'requestedAt',
     sortOrder = 'desc',
-    requestType = 'VACATION',
+    requestType = tab === 'leave' ? 'VACATION' : undefined, // 연차/반차 탭에서만 VACATION 타입 필터링
   } = {}) => {
     setLoading(true);
     try {
@@ -87,32 +103,30 @@ export const useApprovalData = (
           const res = await approvalService.getMyVacationRequests();
           arr = Array.isArray(res) ? res : res?.result || [];
         }
-        setLeaveData(mapLeaveData(arr));
+        const mappedData = mapLeaveData(arr);
+        setLeaveData(mappedData);
       } else {
-        // 증명서 탭의 경우 HR 사용자는 전체 증명서 내역 조회
-        if (isHR) {
-          const res = await approvalService.getAllCertificates();
-          arr = Array.isArray(res)
-            ? res
-            : res?.result?.content || res?.result || [];
-        } else {
-          // 일반 사용자는 본인 증명서 내역 조회
-          const res = await approvalService.getMyCertificates();
-          arr = Array.isArray(res)
-            ? res
-            : res?.result?.content || res?.result || [];
-        }
+        // 증명서 탭의 경우 모든 사용자가 본인 증명서 내역 조회
+        const res = await approvalService.getMyCertificates();
+        arr = Array.isArray(res)
+          ? res
+          : res?.result?.content || res?.result || [];
         // 증명서 데이터도 매핑 (CertificateResDto 구조에 맞게)
         const mappedCertData = arr.map((row) => ({
           ...row,
           id: row.certificateId, // id 필드 추가
-          type: typeToKor(row.type), // 한글 변환 적용
+          type: typeToKor(row.type), // 한글 변환 적용 (화면 표시용)
+          originalType: row.type, // 원본 타입 보존 (중복 검사용)
           status: statusToKor(row.status), // 항상 한글 변환 적용
           applicant: row.applicantName || '',
           applicantDepartment: row.departmentName || '',
           applyDate: row.requestDate || '',
           approver: row.approverName || '',
-          processedAt: row.approveDate || '',
+          processedAt: formatDate(
+            row.approveDate || row.rejectedAt || row.processedAt || '',
+          ),
+          rejectComment:
+            row.rejectComment || (row.status === 'REJECTED' ? row.purpose : ''), // 반려 사유 추가 (임시 해결책)
         }));
         setCertData(mappedCertData);
       }
@@ -125,7 +139,19 @@ export const useApprovalData = (
   };
 
   useEffect(() => {
+    // 초기 로드
     fetchData();
+
+    // 연차/반차 탭일 때 모든 사용자에게 자동 새로고침 (10초마다)
+    if (tab === 'leave') {
+      const interval = setInterval(fetchData, 10000);
+      setAutoRefreshInterval(interval);
+
+      return () => {
+        clearInterval(interval);
+        setAutoRefreshInterval(null);
+      };
+    }
   }, [tab, isHR, user, approvalStatus]);
 
   return {
@@ -135,5 +161,6 @@ export const useApprovalData = (
     loading,
     fetchData,
     mapLeaveData,
+    autoRefreshInterval,
   };
 };

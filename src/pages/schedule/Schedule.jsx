@@ -307,9 +307,11 @@ function Schedule() {
 
   // 3. 오늘 기준 분류
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
+  // 한국 시간 기준 날짜
+  const koreaNow = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+  const todayStr = koreaNow.toISOString().slice(0, 10);
+  const tomorrow = new Date(koreaNow);
+  tomorrow.setDate(koreaNow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
   const rightNormal = filteredEvents.filter(

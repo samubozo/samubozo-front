@@ -6,6 +6,9 @@ import { API_BASE_URL, HR, CERTIFICATE } from '../../configs/host-config';
 // certificateEnums.js import 제거
 import AuthContext from '../../context/UserContext';
 import { approvalService } from '../../services/approvalService';
+import { getKoreaToday } from '../../utils/dateUtils';
+import RejectModal from '../approval/RejectModal';
+import SuccessModal from '../../components/SuccessModal';
 
 const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [dept, setDept] = useState(''); // departmentId
@@ -172,63 +175,98 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   // === 증명서 내역 상태 ===
   const [certList, setCertList] = useState([]);
   const [certType, setCertType] = useState('EMPLOYMENT');
-  const [certDate, setCertDate] = useState('');
+  const [certDate, setCertDate] = useState(getKoreaToday());
   const [certApproveDate, setCertApproveDate] = useState('');
   const [certStatus, setCertStatus] = useState('REQUESTED');
   const [certPurpose, setCertPurpose] = useState('');
-  const [editingCertRowId, setEditingCertRowId] = useState(null);
-  const [editForm, setEditForm] = useState({
-    type: '',
-    purpose: '',
-    requestDate: '',
-  });
+
   const [certId, setCertId] = useState(''); // 추가: 폼에 표시할 발급번호 상태
   const [selectedCertIds, setSelectedCertIds] = useState([]); // 체크된 증명서 ID 목록
 
+  // 반려 모달 상태
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTargetId, setRejectTargetId] = useState(null);
+  const [rejectLoading, setRejectLoading] = useState(false);
+
+  // 성공 모달 상태
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
   // 증명서 내역 불러오기 (GET /list 또는 /list/all)
   useEffect(() => {
-    if (isHR && selectedEmployee?.id) {
-      // 관리자이면서 특정 직원 선택 시: 해당 직원의 증명서 내역만 조회
-      axiosInstance
-        .get(`${API_BASE_URL}${CERTIFICATE}/list/all`, {
-          params: { employeeNo: selectedEmployee.id },
-        })
-        .then((res) => {
-          setCertList(res.data.result?.content || res.data.result || []);
-        })
-        .catch(() => setCertList([]));
-    } else if (isHR) {
-      // 관리자이지만 직원 선택 안 한 경우: 전체 내역 조회(기존 유지)
-      approvalService
-        .getAllCertificates()
-        .then((res) => {
-          setCertList(res.result?.content || res.result || []);
-        })
-        .catch(() => setCertList([]));
-    } else if (selectedEmployee?.id) {
-      // 일반 사용자가 특정 직원을 선택한 경우: 해당 직원의 증명서 내역 조회
-      axiosInstance
-        .get(`${API_BASE_URL}${CERTIFICATE}/my-list`, {
-          params: { employeeNo: selectedEmployee.id },
-        })
-        .then((res) => {
-          setCertList(res.data.result?.content || res.data.result || []);
-        })
-        .catch(() => setCertList([]));
-    } else {
-      // 일반 사용자가 인사관리 페이지에 들어온 경우: 자신의 증명서 내역 조회
-      approvalService
-        .getMyCertificates()
-        .then((res) => {
-          setCertList(res.result?.content || res.result || []);
-        })
-        .catch(() => setCertList([]));
-    }
+    const loadCertList = () => {
+      if (isHR && selectedEmployee?.id) {
+        // 관리자이면서 특정 직원 선택 시: 해당 직원의 증명서 내역만 조회
+        axiosInstance
+          .get(`${API_BASE_URL}${CERTIFICATE}/list/all`, {
+            params: { employeeNo: selectedEmployee.id },
+          })
+          .then((res) => {
+            setCertList(res.data.result?.content || res.data.result || []);
+          })
+          .catch(() => setCertList([]));
+      } else if (isHR) {
+        // 관리자이지만 직원 선택 안 한 경우: 전체 내역 조회(기존 유지)
+        approvalService
+          .getAllCertificates()
+          .then((res) => {
+            setCertList(res.result?.content || res.result || []);
+          })
+          .catch(() => setCertList([]));
+      } else if (selectedEmployee?.id) {
+        // 일반 사용자가 특정 직원을 선택한 경우: 해당 직원의 증명서 내역 조회
+        axiosInstance
+          .get(`${API_BASE_URL}${CERTIFICATE}/my-list`, {
+            params: { employeeNo: selectedEmployee.id },
+          })
+          .then((res) => {
+            setCertList(res.data.result?.content || res.data.result || []);
+          })
+          .catch(() => setCertList([]));
+      } else {
+        // 일반 사용자가 인사관리 페이지에 들어온 경우: 자신의 증명서 내역 조회
+        approvalService
+          .getMyCertificates()
+          .then((res) => {
+            setCertList(res.result?.content || res.result || []);
+          })
+          .catch(() => setCertList([]));
+      }
+    };
+
+    // 초기 로드
+    loadCertList();
+
+    // 5초마다 자동 새로고침 (실시간 업데이트)
+    const interval = setInterval(loadCertList, 5000);
+
+    return () => clearInterval(interval);
   }, [isHR, selectedEmployee]);
 
   // 증명서 신청 (POST /application)
   const handleSubmitCertificate = async () => {
     if (!selectedEmployee?.id) return;
+
+    // 중복 신청 검사 - 같은 타입의 증명서가 대기/승인 상태인지 확인 (반려는 재신청 가능)
+    const isDuplicate = certList.some((row) => {
+      const rowType = (row.type || '').trim().toUpperCase();
+      const rowStatus = (row.status || '').trim().toUpperCase();
+      const currentType = (certType || '').trim().toUpperCase();
+
+      // 같은 타입이고 대기/승인 상태인 경우만 중복으로 처리 (반려는 제외)
+      return (
+        rowType === currentType &&
+        ['REQUESTED', 'PENDING', 'APPROVED'].includes(rowStatus)
+      );
+    });
+
+    if (isDuplicate) {
+      alert(
+        `${certType === 'EMPLOYMENT' ? '재직증명서' : '경력증명서'}가 이미 신청되어 있습니다.`,
+      );
+      return;
+    }
+
     try {
       await axiosInstance.post(`${API_BASE_URL}${CERTIFICATE}/application`, {
         employeeNo: selectedEmployee.id,
@@ -236,6 +274,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         type: certType,
         purpose: certPurpose,
         approveDate: certApproveDate,
+        approverId: 1, // 기본 HR 담당자 ID (실제로는 동적으로 설정해야 함)
       });
       // 신청 후 목록 갱신
       const res = await axiosInstance.get(
@@ -243,57 +282,11 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       );
       setCertList(res.data.result?.content || []);
       setCertType('EMPLOYMENT');
-      setCertDate('');
+      setCertDate(getKoreaToday());
       setCertPurpose('');
       setCertApproveDate('');
     } catch (e) {
       alert('증명서 신청 실패');
-    }
-  };
-
-  // 증명서 수정 (PUT /certificate/{id})
-  const handleEditCertRow = (row) => {
-    if (row.status !== 'REQUESTED') return; // 요청됨만 수정 가능
-    setEditForm({
-      type: row.type,
-      purpose: row.purpose,
-      requestDate: row.requestDate,
-    });
-    setEditingCertRowId(row.certificateId);
-  };
-  const handleEditSave = async (id) => {
-    try {
-      await axiosInstance.put(
-        `${API_BASE_URL}${CERTIFICATE}/certificate/${id}`,
-        {
-          type: editForm.type,
-          purpose: editForm.purpose,
-          requestDate: editForm.requestDate,
-        },
-      );
-      setEditingCertRowId(null);
-      // 목록 갱신
-      const res = await axiosInstance.get(
-        `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
-      );
-      setCertList(res.data.result?.content || []);
-    } catch (e) {
-      alert('수정 실패');
-    }
-  };
-
-  // 증명서 삭제 (DELETE /delete/{id})
-  const handleDeleteCert = async (id) => {
-    if (!window.confirm('정말 삭제하시겠습니까?')) return;
-    try {
-      await axiosInstance.delete(`${API_BASE_URL}${CERTIFICATE}/delete/${id}`);
-      // 목록 갱신
-      const res = await axiosInstance.get(
-        `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
-      );
-      setCertList(res.data.result?.content || []);
-    } catch (e) {
-      alert('삭제 실패');
     }
   };
 
@@ -473,23 +466,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       <path d='M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z' />
     </svg>
   );
-  const DeleteIcon = () => (
-    <svg
-      width='18'
-      height='18'
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='#e74c3c'
-      strokeWidth='2'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    >
-      <polyline points='3 6 5 6 21 6' />
-      <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2' />
-      <line x1='10' y1='11' x2='10' y2='17' />
-      <line x1='14' y1='11' x2='14' y2='17' />
-    </svg>
-  );
 
   // === [수정] 테이블 행 클릭 시 폼에만 데이터 연동, 행은 항상 읽기 전용 ===
   // 1. Remove handleRowToForm logic from row onClick
@@ -498,20 +474,9 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   // === [수정] 폼 제출 ===
   const handleFormSubmit = async () => {
     if (!selectedEmployee?.id) return;
-    if (editingCertRowId) {
-      // 수정
-      await handleEditSave(editingCertRowId);
-      setEditingCertRowId(null);
-      setEditForm({ type: '', purpose: '', requestDate: '' });
-      setCertType('EMPLOYMENT');
-      setCertDate('');
-      setCertPurpose('');
-      setCertId(''); // 추가: 폼 초기화 시 발급번호도 초기화
-    } else {
-      // 신규
-      await handleSubmitCertificate();
-      setCertId(''); // 추가: 신규 신청 후 발급번호 초기화
-    }
+    // 신규 신청만 가능
+    await handleSubmitCertificate();
+    setCertId(''); // 추가: 신규 신청 후 발급번호 초기화
   };
 
   // axiosInstance를 활용한 PDF 인쇄 함수 예시
@@ -541,7 +506,9 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
 
   const handleCertCheckbox = (id) => {
     setSelectedCertIds((prev) =>
-      prev.includes(id) ? prev.filter((id) => id !== id) : [...prev, id],
+      prev.includes(id)
+        ? prev.filter((itemId) => itemId !== id)
+        : [...prev, id],
     );
   };
 
@@ -608,6 +575,76 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const getCertificateById = async (certificateId) => {
     const res = await approvalService.getCertificateById(certificateId);
     return res.result;
+  };
+
+  // 증명서 반려 핸들러
+  const handleCertReject = (certificateId) => {
+    setRejectTargetId(certificateId);
+    setShowRejectModal(true);
+  };
+
+  // 반려 확인 핸들러
+  const handleRejectConfirm = async (comment) => {
+    setRejectLoading(true);
+    try {
+      // rejectTargetId가 배열인 경우 (다중 선택)
+      const targetIds = Array.isArray(rejectTargetId)
+        ? rejectTargetId
+        : [rejectTargetId];
+
+      // 선택된 증명서들 중 처리 가능한 항목만 필터링
+      const selectedCerts = certList.filter((row) =>
+        targetIds.includes(row.certificateId),
+      );
+
+      // 대기 상태인 증명서만 필터링
+      const pendingCerts = selectedCerts.filter(
+        (cert) =>
+          cert.status === 'REQUESTED' ||
+          cert.status === 'PENDING' ||
+          cert.status === '대기',
+      );
+
+      if (pendingCerts.length === 0) {
+        // 처리 가능한 항목이 없으면 조용히 종료
+        setShowRejectModal(false);
+        setRejectTargetId(null);
+        setRejectLoading(false);
+        return;
+      }
+
+      // 반려 처리
+      let processedCount = 0;
+      for (const cert of pendingCerts) {
+        try {
+          await approvalService.rejectCertificate(cert.certificateId, comment);
+          // 단건 조회 후 certList 갱신
+          const updated = await getCertificateById(cert.certificateId);
+          setCertList((prev) =>
+            prev.map((row) =>
+              row.certificateId === cert.certificateId ? updated : row,
+            ),
+          );
+          processedCount++;
+        } catch (e) {
+          console.error(`증명서 ${cert.certificateId} 반려 실패:`, e);
+        }
+      }
+
+      setShowRejectModal(false);
+      setRejectTargetId(null);
+      setSelectedCertIds([]);
+      if (processedCount > 0) {
+        setSuccessMessage(`${processedCount}개 증명서가 반려되었습니다.`);
+        setShowSuccessModal(true);
+        // 반려 후 목록 자동 새로고침
+        refreshCertList();
+      }
+    } catch (err) {
+      alert('반려 처리 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setRejectLoading(false);
+    }
   };
 
   return (
@@ -907,16 +944,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                         type='checkbox'
                         checked={
                           certList.length > 0 &&
-                          selectedCertIds.length ===
-                            certList.filter((row) => row.status === 'REQUESTED')
-                              .length
+                          selectedCertIds.length === certList.length
                         }
                         onChange={(e) => {
                           if (e.target.checked) {
                             setSelectedCertIds(
-                              certList
-                                .filter((row) => row.status === 'REQUESTED')
-                                .map((row) => row.certificateId),
+                              certList.map((row) => row.certificateId),
                             );
                           } else {
                             setSelectedCertIds([]);
@@ -935,14 +968,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 <tbody>
                   {certList.length > 0 ? (
                     certList.map((row) => (
-                      <tr
-                        key={row.certificateId}
-                        style={
-                          editingCertRowId === row.certificateId
-                            ? { background: '#eafaf1' }
-                            : {}
-                        }
-                      >
+                      <tr key={row.certificateId}>
                         <td>
                           <input
                             type='checkbox'
@@ -988,19 +1014,62 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 disabled={selectedCertIds.length === 0}
                 onClick={async () => {
                   try {
-                    for (const id of selectedCertIds) {
-                      await approvalService.approveCertificate(id);
-                      // 단건 조회 후 certList 갱신
-                      const updated = await getCertificateById(id);
-                      setCertList((prev) =>
-                        prev.map((row) =>
-                          row.certificateId === id ? updated : row,
-                        ),
-                      );
+                    // 선택된 증명서들 중 처리 가능한 항목만 필터링
+                    const selectedCerts = certList.filter((row) =>
+                      selectedCertIds.includes(row.certificateId),
+                    );
+
+                    // 대기 상태인 증명서만 필터링
+                    const pendingCerts = selectedCerts.filter(
+                      (cert) =>
+                        cert.status === 'REQUESTED' ||
+                        cert.status === 'PENDING' ||
+                        cert.status === '대기',
+                    );
+
+                    if (pendingCerts.length === 0) {
+                      // 처리 가능한 항목이 없으면 조용히 종료
+                      return;
                     }
+
+                    // 승인 처리
+                    let processedCount = 0;
+                    for (const cert of pendingCerts) {
+                      try {
+                        await approvalService.approveCertificate(
+                          cert.certificateId,
+                        );
+                        // 단건 조회 후 certList 갱신
+                        const updated = await getCertificateById(
+                          cert.certificateId,
+                        );
+                        setCertList((prev) =>
+                          prev.map((row) =>
+                            row.certificateId === cert.certificateId
+                              ? updated
+                              : row,
+                          ),
+                        );
+                        processedCount++;
+                      } catch (e) {
+                        console.error(
+                          `증명서 ${cert.certificateId} 승인 실패:`,
+                          e,
+                        );
+                      }
+                    }
+
                     setSelectedCertIds([]);
+                    if (processedCount > 0) {
+                      setSuccessMessage(
+                        `${processedCount}개 증명서가 승인되었습니다.`,
+                      );
+                      setShowSuccessModal(true);
+                      // 승인 후 목록 자동 새로고침
+                      refreshCertList();
+                    }
                   } catch (e) {
-                    alert('승인 실패');
+                    alert('승인 처리 중 오류가 발생했습니다.');
                   }
                 }}
               >
@@ -1010,21 +1079,30 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 className={styles.deleteBtn}
                 style={{ marginLeft: 8 }}
                 disabled={selectedCertIds.length === 0}
-                onClick={async () => {
-                  try {
-                    for (const id of selectedCertIds) {
-                      await approvalService.rejectCertificate(id);
-                      // 단건 조회 후 certList 갱신
-                      const updated = await getCertificateById(id);
-                      setCertList((prev) =>
-                        prev.map((row) =>
-                          row.certificateId === id ? updated : row,
-                        ),
-                      );
+                onClick={() => {
+                  if (selectedCertIds.length > 1) {
+                    setSuccessMessage(
+                      '반려는 한 번에 하나씩만 가능합니다. 하나의 증명서만 선택해주세요.',
+                    );
+                    setShowSuccessModal(true);
+                    return;
+                  }
+
+                  if (selectedCertIds.length === 1) {
+                    // 선택된 증명서가 대기 상태인지 확인
+                    const selectedCert = certList.find((row) =>
+                      selectedCertIds.includes(row.certificateId),
+                    );
+
+                    if (
+                      selectedCert &&
+                      (selectedCert.status === 'REQUESTED' ||
+                        selectedCert.status === 'PENDING' ||
+                        selectedCert.status === '대기')
+                    ) {
+                      handleCertReject(selectedCertIds);
                     }
-                    setSelectedCertIds([]);
-                  } catch (e) {
-                    alert('반려 실패');
+                    // 이미 처리된 증명서면 조용히 무시
                   }
                 }}
               >
@@ -1032,95 +1110,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
               </button>
             </div>
           )}
-          {/* 증명서 신청 폼 */}
-          <div className={styles.certFormTitle}>증명서 발급</div>
-          <div className={styles.certFormWrap}>
-            <table
-              className={styles.certFormTable}
-              style={{ tableLayout: 'fixed' }}
-            >
-              <colgroup>
-                <col style={{ width: '140px' }} />
-                <col style={{ width: '260px' }} />
-                <col style={{ width: '140px' }} />
-                <col style={{ width: '260px' }} />
-              </colgroup>
-              <tbody>
-                <tr>
-                  <td>발급번호</td>
-                  <td>
-                    <input
-                      value={
-                        certId ||
-                        (certList.length > 0
-                          ? Math.max(...certList.map((c) => c.certificateId)) +
-                            1
-                          : 1)
-                      }
-                      readOnly
-                    />
-                  </td>
-                  <td>증명서구분</td>
-                  <td>
-                    <select
-                      value={certType}
-                      onChange={(e) => setCertType(e.target.value)}
-                    >
-                      <option value='EMPLOYMENT'>재직증명서</option>
-                      <option value='CAREER'>경력증명서</option>
-                    </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>발급일자</td>
-                  <td>
-                    <input
-                      type='date'
-                      value={certDate}
-                      onChange={(e) => setCertDate(e.target.value)}
-                    />
-                  </td>
-                  <td>용도</td>
-                  <td>
-                    <input
-                      value={certPurpose}
-                      onChange={(e) => setCertPurpose(e.target.value)}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div
-              className={styles.certFormBtnRow}
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px',
-                marginTop: '10px',
-              }}
-            >
-              {!editingCertRowId ? (
-                <>
-                  <button
-                    className={styles.printBtn}
-                    onClick={handlePrintSelected}
-                    disabled={selectedCertIds.length === 0}
-                  >
-                    인쇄
-                  </button>
-                  <button
-                    className={styles.approvalBtn}
-                    onClick={() => navigate('/approval?tab=certificate')}
-                  >
-                    전자결재
-                  </button>
-                  <button className={styles.saveBtn} onClick={handleFormSubmit}>
-                    제출
-                  </button>
-                </>
-              ) : null}
-            </div>
-          </div>
         </div>
       )}
       {/* 기타 정보 테이블 섹션 */}
@@ -1253,6 +1242,27 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 반려 사유 입력 모달 */}
+      <RejectModal
+        open={showRejectModal}
+        onClose={() => {
+          setShowRejectModal(false);
+          setRejectTargetId(null);
+        }}
+        onConfirm={handleRejectConfirm}
+        loading={rejectLoading}
+      />
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => setShowSuccessModal(false)}
+          autoClose={true}
+          autoCloseDelay={3000}
+        />
       )}
     </div>
   );
