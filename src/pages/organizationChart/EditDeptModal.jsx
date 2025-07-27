@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './OrgChart.module.scss';
 import { HexColorPicker } from 'react-colorful';
+import SuccessModal from '../../components/SuccessModal';
 
 function EditDeptModal({
   open,
@@ -19,6 +20,8 @@ function EditDeptModal({
   const pickerRef = useRef(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (open && initialDept) {
@@ -85,7 +88,8 @@ function EditDeptModal({
       } else if (e?.message) {
         msg = e.message;
       }
-      alert(msg);
+      setSuccessMessage(msg);
+      setShowSuccessModal(true);
       setErrors({ submit: msg });
     } finally {
       setIsSubmitting(false);
@@ -395,6 +399,17 @@ function EditDeptModal({
           </button>
         </div>
       </div>
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessMessage('');
+          }}
+        />
+      )}
     </div>
   );
 }

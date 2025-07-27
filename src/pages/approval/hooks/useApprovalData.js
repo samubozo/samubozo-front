@@ -86,18 +86,31 @@ export const useApprovalData = (
     sortOrder = 'desc',
     requestType = tab === 'leave' ? 'VACATION' : undefined, // 연차/반차 탭에서만 VACATION 타입 필터링
   } = {}) => {
+    console.log(
+      'fetchData 호출 - approvalStatus:',
+      approvalStatus,
+      'status:',
+      status,
+    );
     setLoading(true);
     try {
       let arr = [];
       if (tab === 'leave') {
         if (isHR) {
           // HR 사용자는 통합 API로 전체 결재 내역을 받아옴
+          console.log(
+            'HR 사용자 데이터 조회 - status:',
+            status,
+            'requestType:',
+            requestType,
+          );
           const res = await approvalService.getAllApprovals({
             status: status === 'all' ? undefined : status,
             sortBy,
             sortOrder,
             requestType,
           });
+          console.log('HR 사용자 조회 결과:', res);
           arr = Array.isArray(res) ? res : res?.result || [];
         } else {
           const res = await approvalService.getMyVacationRequests();

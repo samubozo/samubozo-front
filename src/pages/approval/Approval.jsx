@@ -190,7 +190,9 @@ function Approval() {
     try {
       await approvalService.approveHRVacation(approvalId);
       setToast({ message: '승인 처리 완료', type: 'success' });
-      // 승인 후 데이터만 새로고침 (상태 변경 없이)
+      // 승인 후 처리완료 탭으로 자동 이동
+      console.log('승인 처리 후 approvalStatus 변경: pending -> processed');
+      setApprovalStatus('processed');
       fetchData();
     } catch (err) {
       setToast({
@@ -223,13 +225,16 @@ function Approval() {
         }
       }
 
-      const message = `반려 처리 완료!\n\n처리 결과:\n• 반려: ${targetIds.length}건\n• 반려 사유: ${comment}\n\n처리자: ${user?.userName || '관리자'}\n처리 시간: ${new Date().toLocaleString()}`;
+      const message = `휴가 신청이 반려되었습니다.\n\n반려 완료: ${targetIds.length}건`;
       setSuccessMessage(message);
       setShowSuccessModal(true);
 
       setShowRejectModal(false);
       setRejectTargetId(null);
       setSelected([]);
+      // 반려 후 처리완료 탭으로 자동 이동
+      console.log('반려 처리 후 approvalStatus 변경: pending -> processed');
+      setApprovalStatus('processed');
       fetchData(); // 데이터 새로고침
     } catch (err) {
       setToast({
@@ -326,7 +331,7 @@ function Approval() {
     }
 
     if (successCount > 0) {
-      const message = `연차 차감 완료!\n\n처리 결과:\n• 성공: ${successCount}건\n• 실패: ${failCount}건\n\n처리자: ${user?.userName || '관리자'}\n처리 시간: ${new Date().toLocaleString()}`;
+      const message = `휴가 신청이 승인되었습니다.\n\n승인 완료: ${successCount}건`;
       setSuccessMessage(message);
       setShowSuccessModal(true);
     }
@@ -339,6 +344,9 @@ function Approval() {
     }
 
     setSelected([]);
+    // 승인 후 처리완료 탭으로 자동 이동
+    console.log('일괄 승인 처리 후 approvalStatus 변경: pending -> processed');
+    setApprovalStatus('processed');
     fetchData(); // hooks의 fetchData 사용
   };
 
@@ -611,281 +619,69 @@ function Approval() {
       {/* 상세 정보 모달 */}
       {showDetailModal && detailData && (
         <div className={styles.modalOverlay}>
-          <div
-            className={styles.modalContent}
-            style={{
-              maxWidth: '500px',
-              width: '90vw',
-              maxHeight: '80vh',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: '12px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-            }}
-          >
-            {/* 헤더 */}
-            <div
-              style={{
-                padding: '20px 24px',
-                borderBottom: '1px solid #e9ecef',
-                position: 'relative',
-                backgroundColor: 'white',
-                borderRadius: '12px 12px 0 0',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitleSection}>
+                <h3 className={styles.modalTitle}>
+                  {tab === 'leave' ? '휴가 신청 상세' : '증명서 신청 상세'}
+                </h3>
+                <div
+                  className={`${styles.statusBadge} ${
+                    detailData.status === '승인'
+                      ? styles.statusApproved
+                      : detailData.status === '반려'
+                        ? styles.statusRejected
+                        : styles.statusPending
+                  }`}
+                >
+                  <div className={styles.statusDot}></div>
+                  {detailData.status}
+                </div>
+              </div>
+              <button
+                className={styles.modalClose}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setDetailData(null);
                 }}
               >
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-                >
-                  <h3
-                    style={{
-                      margin: 0,
-                      color: '#2c3e50',
-                      fontSize: '18px',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {tab === 'leave' ? '휴가 신청 상세' : '증명서 신청 상세'}
-                  </h3>
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      backgroundColor:
-                        detailData.status === '승인'
-                          ? '#d4edda'
-                          : detailData.status === '반려'
-                            ? '#f8d7da'
-                            : '#fff3cd',
-                      color:
-                        detailData.status === '승인'
-                          ? '#155724'
-                          : detailData.status === '반려'
-                            ? '#721c24'
-                            : '#856404',
-                      fontWeight: '500',
-                      fontSize: '12px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        backgroundColor: 'currentColor',
-                        marginRight: '6px',
-                      }}
-                    ></div>
-                    {detailData.status}
-                  </div>
-                </div>
-                <button
-                  className={styles.modalClose}
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    setDetailData(null);
-                  }}
-                  style={{
-                    fontSize: '20px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#6c757d',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    transition: 'all 0.2s',
-                    width: '28px',
-                    height: '28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.color = '#495057';
-                    e.target.style.backgroundColor = '#f8f9fa';
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.color = '#6c757d';
-                    e.target.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  ×
-                </button>
-              </div>
+                ×
+              </button>
             </div>
 
-            {/* 컨텐츠 */}
-            <div
-              style={{
-                padding: '24px',
-                overflowY: 'auto',
-                flex: 1,
-                backgroundColor: 'white',
-                borderRadius: '0 0 12px 12px',
-              }}
-            >
+            <div className={styles.modalBody}>
               {/* 기본 정보 */}
-              <div style={{ marginBottom: '24px' }}>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '12px',
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: '8px',
-                      border: '1px solid #e9ecef',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '11px',
-                        color: '#6c757d',
-                        marginBottom: '4px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      신청자
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#2c3e50',
-                      }}
-                    >
+              <div className={styles.detailSection}>
+                <div className={styles.detailGrid}>
+                  <div className={styles.detailCard}>
+                    <div className={styles.detailLabel}>신청자</div>
+                    <div className={styles.detailValue}>
                       {detailData.applicant}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: '8px',
-                      border: '1px solid #e9ecef',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '11px',
-                        color: '#6c757d',
-                        marginBottom: '4px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      부서
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#2c3e50',
-                      }}
-                    >
+                  <div className={styles.detailCard}>
+                    <div className={styles.detailLabel}>부서</div>
+                    <div className={styles.detailValue}>
                       {detailData.applicantDepartment || detailData.department}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      padding: '12px 16px',
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: '8px',
-                      border: '1px solid #e9ecef',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '11px',
-                        color: '#6c757d',
-                        marginBottom: '4px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                      }}
-                    >
-                      신청일
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#2c3e50',
-                      }}
-                    >
+                  <div className={styles.detailCard}>
+                    <div className={styles.detailLabel}>신청일</div>
+                    <div className={styles.detailValue}>
                       {detailData.applyDate}
                     </div>
                   </div>
                   {tab === 'leave' ? (
-                    <div
-                      style={{
-                        padding: '12px 16px',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px',
-                        border: '1px solid #e9ecef',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: '#6c757d',
-                          marginBottom: '4px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        휴가 유형
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          color: '#2c3e50',
-                        }}
-                      >
+                    <div className={styles.detailCard}>
+                      <div className={styles.detailLabel}>휴가 유형</div>
+                      <div className={styles.detailValue}>
                         {detailData.type}
                       </div>
                     </div>
                   ) : (
-                    <div
-                      style={{
-                        padding: '12px 16px',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px',
-                        border: '1px solid #e9ecef',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: '#6c757d',
-                          marginBottom: '4px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                        }}
-                      >
-                        증명서 유형
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          color: '#2c3e50',
-                        }}
-                      >
+                    <div className={styles.detailCard}>
+                      <div className={styles.detailLabel}>증명서 유형</div>
+                      <div className={styles.detailValue}>
                         {detailData.type}
                       </div>
                     </div>
@@ -894,79 +690,33 @@ function Approval() {
               </div>
 
               {/* 기간/용도 */}
-              <div style={{ marginBottom: '24px' }}>
+              <div className={styles.detailSection}>
                 <div
-                  style={{
-                    padding: '12px 16px',
-                    backgroundColor:
-                      tab === 'certificate' && detailData.status === '반려'
-                        ? '#f8d7da'
-                        : tab === 'certificate' && detailData.status === '승인'
-                          ? '#d4edda'
-                          : tab === 'certificate' &&
-                              detailData.status === '대기'
-                            ? '#fff3cd'
-                            : '#f8f9fa',
-                    borderRadius: '8px',
-                    border:
-                      tab === 'certificate' && detailData.status === '반려'
-                        ? '1px solid #f5c6cb'
-                        : tab === 'certificate' && detailData.status === '승인'
-                          ? '1px solid #c3e6cb'
-                          : tab === 'certificate' &&
-                              detailData.status === '대기'
-                            ? '1px solid #ffeaa7'
-                            : '1px solid #e9ecef',
-                    borderLeft:
-                      tab === 'certificate' && detailData.status === '반려'
-                        ? '4px solid #dc3545'
-                        : tab === 'certificate' && detailData.status === '승인'
-                          ? '4px solid #28a745'
-                          : tab === 'certificate' &&
-                              detailData.status === '대기'
-                            ? '4px solid #ffc107'
-                            : 'none',
-                  }}
+                  className={`${styles.detailCard} ${
+                    tab === 'certificate' && detailData.status === '반려'
+                      ? styles.statusRejected
+                      : tab === 'certificate' && detailData.status === '승인'
+                        ? styles.statusApproved
+                        : tab === 'certificate' && detailData.status === '대기'
+                          ? styles.statusPending
+                          : ''
+                  }`}
                 >
                   <div
-                    style={{
-                      fontSize: '11px',
-                      color:
-                        tab === 'certificate' && detailData.status === '반려'
-                          ? '#721c24'
-                          : tab === 'certificate' &&
-                              detailData.status === '승인'
-                            ? '#155724'
-                            : tab === 'certificate' &&
-                                detailData.status === '대기'
-                              ? '#856404'
-                              : '#6c757d',
-                      marginBottom: '4px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      fontWeight:
-                        tab === 'certificate' && detailData.status !== '대기'
-                          ? '600'
-                          : '400',
-                    }}
+                    className={`${styles.detailLabel} ${
+                      tab === 'certificate' && detailData.status !== '대기'
+                        ? styles.detailLabelBold
+                        : ''
+                    }`}
                   >
                     {tab === 'leave' ? '기간' : '용도'}
                   </div>
                   <div
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color:
-                        tab === 'certificate' && detailData.status === '반려'
-                          ? '#721c24'
-                          : tab === 'certificate' &&
-                              detailData.status === '승인'
-                            ? '#155724'
-                            : tab === 'certificate' &&
-                                detailData.status === '대기'
-                              ? '#856404'
-                              : '#2c3e50',
-                    }}
+                    className={`${styles.detailValue} ${
+                      tab === 'certificate' && detailData.status !== '대기'
+                        ? ''
+                        : ''
+                    }`}
                   >
                     {tab === 'leave'
                       ? detailData.period
@@ -1043,51 +793,25 @@ function Approval() {
               {tab === 'leave' &&
                 detailData.status === '반려' &&
                 detailData.rejectComment && (
-                  <div style={{ marginBottom: '24px' }}>
+                  <div className={styles.detailSection}>
                     <div
-                      style={{
-                        padding: '16px',
-                        backgroundColor: '#f8d7da',
-                        border: '1px solid #f5c6cb',
-                        borderRadius: '8px',
-                        borderLeft: '4px solid #dc3545',
-                      }}
+                      className={`${styles.statusInfo} ${styles.statusRejected}`}
                     >
-                      <div
-                        style={{
-                          marginBottom: '8px',
-                          fontWeight: '600',
-                          color: '#721c24',
-                          fontSize: '13px',
-                        }}
-                      >
-                        반려 사유
-                      </div>
-                      <div
-                        style={{
-                          marginBottom: '12px',
-                          color: '#721c24',
-                          fontSize: '13px',
-                          lineHeight: '1.4',
-                        }}
-                      >
+                      <div className={styles.statusInfoTitle}>반려 사유</div>
+                      <div className={styles.statusInfoText}>
                         {detailData.rejectComment}
                       </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '16px',
-                          fontSize: '12px',
-                          color: '#721c24',
-                          opacity: 0.8,
-                        }}
-                      >
-                        <div>
-                          <span style={{ fontWeight: '500' }}>결재자:</span>{' '}
+                      <div className={styles.statusInfoContent}>
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            결재자:
+                          </span>
                           {detailData.approver || '결재자 정보 없음'}
                         </div>
-                        <div>
-                          <span style={{ fontWeight: '500' }}>처리일:</span>{' '}
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            처리일:
+                          </span>
                           {detailData.processedAt || '처리일 정보 없음'}
                         </div>
                       </div>
@@ -1099,40 +823,22 @@ function Approval() {
               {tab === 'leave' &&
                 detailData.status === '승인' &&
                 detailData.approver && (
-                  <div style={{ marginBottom: '24px' }}>
+                  <div className={styles.detailSection}>
                     <div
-                      style={{
-                        padding: '16px',
-                        backgroundColor: '#d4edda',
-                        border: '1px solid #c3e6cb',
-                        borderRadius: '8px',
-                        borderLeft: '4px solid #28a745',
-                      }}
+                      className={`${styles.statusInfo} ${styles.statusApproved}`}
                     >
-                      <div
-                        style={{
-                          marginBottom: '8px',
-                          fontWeight: '600',
-                          color: '#155724',
-                          fontSize: '13px',
-                        }}
-                      >
-                        승인 정보
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '16px',
-                          fontSize: '12px',
-                          color: '#155724',
-                        }}
-                      >
-                        <div>
-                          <span style={{ fontWeight: '500' }}>결재자:</span>{' '}
+                      <div className={styles.statusInfoTitle}>승인 정보</div>
+                      <div className={styles.statusInfoContent}>
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            결재자:
+                          </span>
                           {detailData.approver || '결재자 정보 없음'}
                         </div>
-                        <div>
-                          <span style={{ fontWeight: '500' }}>처리일:</span>{' '}
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            처리일:
+                          </span>
                           {detailData.processedAt || '처리일 정보 없음'}
                         </div>
                       </div>
@@ -1144,51 +850,25 @@ function Approval() {
               {tab === 'certificate' &&
                 detailData.status === '반려' &&
                 detailData.rejectComment && (
-                  <div style={{ marginBottom: '24px' }}>
+                  <div className={styles.detailSection}>
                     <div
-                      style={{
-                        padding: '16px',
-                        backgroundColor: '#f8d7da',
-                        border: '1px solid #f5c6cb',
-                        borderRadius: '8px',
-                        borderLeft: '4px solid #dc3545',
-                      }}
+                      className={`${styles.statusInfo} ${styles.statusRejected}`}
                     >
-                      <div
-                        style={{
-                          marginBottom: '8px',
-                          fontWeight: '600',
-                          color: '#721c24',
-                          fontSize: '13px',
-                        }}
-                      >
-                        반려 사유
-                      </div>
-                      <div
-                        style={{
-                          marginBottom: '12px',
-                          color: '#721c24',
-                          fontSize: '13px',
-                          lineHeight: '1.4',
-                        }}
-                      >
+                      <div className={styles.statusInfoTitle}>반려 사유</div>
+                      <div className={styles.statusInfoText}>
                         {detailData.rejectComment}
                       </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '16px',
-                          fontSize: '12px',
-                          color: '#721c24',
-                          opacity: 0.8,
-                        }}
-                      >
-                        <div>
-                          <span style={{ fontWeight: '500' }}>결재자:</span>{' '}
+                      <div className={styles.statusInfoContent}>
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            결재자:
+                          </span>
                           {detailData.approver || '결재자 정보 없음'}
                         </div>
-                        <div>
-                          <span style={{ fontWeight: '500' }}>처리일:</span>{' '}
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            처리일:
+                          </span>
                           {detailData.processedAt || '처리일 정보 없음'}
                         </div>
                       </div>
@@ -1200,40 +880,22 @@ function Approval() {
               {tab === 'certificate' &&
                 detailData.status === '승인' &&
                 detailData.approver && (
-                  <div style={{ marginBottom: '24px' }}>
+                  <div className={styles.detailSection}>
                     <div
-                      style={{
-                        padding: '16px',
-                        backgroundColor: '#d4edda',
-                        border: '1px solid #c3e6cb',
-                        borderRadius: '8px',
-                        borderLeft: '4px solid #28a745',
-                      }}
+                      className={`${styles.statusInfo} ${styles.statusApproved}`}
                     >
-                      <div
-                        style={{
-                          marginBottom: '8px',
-                          fontWeight: '600',
-                          color: '#155724',
-                          fontSize: '13px',
-                        }}
-                      >
-                        승인 정보
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '16px',
-                          fontSize: '12px',
-                          color: '#155724',
-                        }}
-                      >
-                        <div>
-                          <span style={{ fontWeight: '500' }}>결재자:</span>{' '}
+                      <div className={styles.statusInfoTitle}>승인 정보</div>
+                      <div className={styles.statusInfoContent}>
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            결재자:
+                          </span>
                           {detailData.approver || '결재자 정보 없음'}
                         </div>
-                        <div>
-                          <span style={{ fontWeight: '500' }}>처리일:</span>{' '}
+                        <div className={styles.statusInfoItem}>
+                          <span className={styles.detailLabelBold}>
+                            처리일:
+                          </span>
                           {detailData.processedAt || '처리일 정보 없음'}
                         </div>
                       </div>
@@ -1260,6 +922,10 @@ function Approval() {
           onClose={() => {
             setShowSuccessModal(false);
             setSuccessMessage('');
+            // 성공 모달 닫힐 때 처리완료 탭으로 이동
+            if (isHR && tab === 'leave') {
+              setApprovalStatus('processed');
+            }
           }}
         />
       )}

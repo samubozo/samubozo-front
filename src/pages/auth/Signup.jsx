@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Signup.module.scss';
+import SuccessModal from '../../components/SuccessModal';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../assets/samubozo-logo.png';
 import axiosInstance from '../../configs/axios-config';
@@ -79,6 +80,8 @@ const Signup = () => {
   const [departments, setDepartments] = useState([]);
   const [positions, setPositions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
   // 부서와 직책 데이터 불러오기
@@ -247,12 +250,14 @@ const Signup = () => {
     setIsSubmitting(true);
     try {
       await axiosInstance.post(`${API_BASE_URL}${HR}/users/signup`, form);
-      alert('직원 등록이 완료되었습니다!');
+      setSuccessMessage('직원 등록이 완료되었습니다!');
+      setShowSuccessModal(true);
       navigate('/employee');
     } catch (error) {
-      alert(
+      setSuccessMessage(
         '직원 등록 실패: ' + (error.response?.data?.message || error.message),
       );
+      setShowSuccessModal(true);
     }
     setIsSubmitting(false);
   };
@@ -282,9 +287,10 @@ const Signup = () => {
           openPostcode();
         } else if (retry > 5) {
           clearInterval(interval);
-          alert(
+          setSuccessMessage(
             '주소찾기 API 로딩에 실패했습니다. 새로고침 후 다시 시도해 주세요.',
           );
+          setShowSuccessModal(true);
         }
       }, 500);
     }
@@ -518,6 +524,17 @@ const Signup = () => {
           </form>
         </div>
       </div>
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessMessage('');
+          }}
+        />
+      )}
     </div>
   );
 };

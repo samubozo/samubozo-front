@@ -5,6 +5,7 @@ import '@toast-ui/editor/dist/toastui-editor.css';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, MESSAGE, HR } from '../../configs/host-config';
 import { useLocation } from 'react-router-dom';
+import SuccessModal from '../../components/SuccessModal';
 
 const periodOptions = [
   { value: 'all', label: '전체기간' },
@@ -339,13 +340,17 @@ function MessageWriteModal({
     const validFiles = [];
     for (const file of newFiles) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        alert(
+        setSuccessMessage(
           `허용되지 않은 파일 형식입니다.\n(이미지, PDF, 문서, 엑셀, 텍스트, ZIP만 첨부 가능)`,
         );
+        setShowSuccessModal(true);
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
-        alert(`파일 "${file.name}"은(는) 50MB를 초과하여 첨부할 수 없습니다.`);
+        setSuccessMessage(
+          `파일 "${file.name}"은(는) 50MB를 초과하여 첨부할 수 없습니다.`,
+        );
+        setShowSuccessModal(true);
         continue;
       }
       validFiles.push(file);
@@ -373,15 +378,18 @@ function MessageWriteModal({
 
   const handleSend = async () => {
     if (receivers.length === 0) {
-      alert('받는사람을 선택해주세요.');
+      setSuccessMessage('받는사람을 선택해주세요.');
+      setShowSuccessModal(true);
       return;
     }
     if (!subject.trim()) {
-      alert('제목을 입력해주세요.');
+      setSuccessMessage('제목을 입력해주세요.');
+      setShowSuccessModal(true);
       return;
     }
     if (!content.trim()) {
-      alert('내용을 입력해주세요.');
+      setSuccessMessage('내용을 입력해주세요.');
+      setShowSuccessModal(true);
       return;
     }
 
@@ -637,6 +645,8 @@ const Message = () => {
   // 데이터 상태
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -935,7 +945,8 @@ const Message = () => {
     console.log('쪽지 전송 완료:', messageData);
     // API 응답 데이터 확인
     if (messageData && messageData.success !== false) {
-      alert('쪽지가 성공적으로 전송되었습니다.');
+      setSuccessMessage('쪽지가 성공적으로 전송되었습니다.');
+      setShowSuccessModal(true);
       setShowWrite(false);
       setReplyData(null); // 답장 데이터 초기화
       console.log('모달 닫기 및 답장 데이터 초기화 완료');
@@ -1337,6 +1348,17 @@ const Message = () => {
           initialReceiver={replyData?.receiver}
           initialSubject={replyData?.subject}
         />
+
+        {/* 성공 모달 */}
+        {showSuccessModal && (
+          <SuccessModal
+            message={successMessage}
+            onClose={() => {
+              setShowSuccessModal(false);
+              setSuccessMessage('');
+            }}
+          />
+        )}
       </div>
     </div>
   );

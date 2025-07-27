@@ -3,6 +3,7 @@ import styles from './AttendanceDashboard.module.scss';
 import VacationRequest from './VacationRequest';
 import AbsenceRegistrationModal from './AbsenceRegistrationModal';
 import AbsenceEditModal from './AbsenceEditModal';
+import CheckoutConfirmModal from '../../components/CheckoutConfirmModal';
 import { attendanceService } from '../../services/attendanceService';
 
 function pad(num) {
@@ -79,6 +80,7 @@ export default function AttendanceDashboard() {
   const [editAbsence, setEditAbsence] = useState(null);
   const [todayRowIdx, setTodayRowIdx] = useState(today.getDate() - 1);
   const [memo, setMemo] = useState(localStorage.getItem('todayMemo') || '');
+  const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false); // 퇴근 확인 모달
   const handleMemoChange = (e) => {
     setMemo(e.target.value);
     localStorage.setItem('todayMemo', e.target.value);
@@ -139,7 +141,14 @@ export default function AttendanceDashboard() {
     }
   };
 
-  const handleCheckOut = async () => {
+  // 퇴근 확인 모달 열기
+  const handleCheckOutClick = () => {
+    setShowCheckoutConfirm(true);
+  };
+
+  // 퇴근 확인 후 실제 퇴근 처리
+  const handleCheckOutConfirm = async () => {
+    setShowCheckoutConfirm(false);
     const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
     if (!userId) {
       setError('사용자 정보를 찾을 수 없습니다.');
@@ -164,6 +173,11 @@ export default function AttendanceDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 퇴근 확인 모달 취소
+  const handleCheckOutCancel = () => {
+    setShowCheckoutConfirm(false);
   };
 
   // 출근 상태를 attendanceData로 통합
@@ -430,7 +444,7 @@ export default function AttendanceDashboard() {
               <div className={styles.cardValue}>{getTimeStr(checkOut)}</div>
               <button
                 className={styles.cardButton}
-                onClick={handleCheckOut}
+                onClick={handleCheckOutClick}
                 disabled={loading || !checkIn || checkOut}
               >
                 {loading ? '처리중...' : checkOut ? '퇴근완료' : '퇴근하기'}
@@ -594,6 +608,13 @@ export default function AttendanceDashboard() {
         onClose={closeEditAbsence}
         absence={editAbsence}
         onSubmit={handleUpdateAbsence}
+      />
+      {/* 퇴근 확인 모달 */}
+      <CheckoutConfirmModal
+        isOpen={showCheckoutConfirm}
+        onConfirm={handleCheckOutConfirm}
+        onCancel={handleCheckOutCancel}
+        currentTime={getTimeStrWithSec(currentTime)}
       />
     </div>
   );

@@ -21,6 +21,7 @@ import OrgNode from './OrgNode';
 import MemberDetailModal from './MemberDetailModal';
 import EditDeptModal from './EditDeptModal';
 import { MessageWriteModal } from '../message/Message'; // 쪽지 쓰기 모달 import (named import)
+import SuccessModal from '../../components/SuccessModal';
 
 // 더미 데이터 완전 삭제 - 실제 API 연동 데이터만 사용
 const COLOR_OPTIONS = [
@@ -97,6 +98,8 @@ const OrgChart = () => {
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
   const [showMessageWriteModal, setShowMessageWriteModal] = useState(false);
   const [messageReceiver, setMessageReceiver] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 실제 API에서 받아온 부서 목록 기반 팀 옵션 생성
   const teamOptions = [
@@ -301,15 +304,17 @@ const OrgChart = () => {
       await axiosInstance.delete(
         `${API_BASE_URL}${HR}/departments/${deptView.departmentId || deptView.id}`,
       );
-      alert('부서가 삭제되었습니다.');
+      setSuccessMessage('부서가 삭제되었습니다.');
+      setShowSuccessModal(true);
       setDeptView(null);
       await loadDepartments();
     } catch (e) {
-      alert(
+      setSuccessMessage(
         e.response?.status === 400
           ? '해당 부서에 소속된 직원이 있어 삭제할 수 없습니다.'
           : '부서 삭제 중 오류가 발생했습니다.',
       );
+      setShowSuccessModal(true);
     }
   };
 
@@ -327,7 +332,8 @@ const OrgChart = () => {
   const handleEditDept = async (e) => {
     e.preventDefault();
     if (!editDeptForm.name.trim()) {
-      alert('부서명을 입력하세요.');
+      setSuccessMessage('부서명을 입력하세요.');
+      setShowSuccessModal(true);
       return;
     }
     const formData = new FormData();
@@ -342,7 +348,8 @@ const OrgChart = () => {
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } },
       );
-      alert('부서 정보가 수정되었습니다.');
+      setSuccessMessage('부서 정보가 수정되었습니다.');
+      setShowSuccessModal(true);
       setShowEditModal(false);
       await loadDepartments();
       // 상세 뷰 갱신
@@ -355,12 +362,13 @@ const OrgChart = () => {
           },
       );
     } catch (e) {
-      // 서버에서 statusMessage가 오면 그대로 alert로 안내
+      // 서버에서 statusMessage가 오면 그대로 SuccessModal로 안내
       if (e.response && e.response.data && e.response.data.statusMessage) {
-        alert(e.response.data.statusMessage);
+        setSuccessMessage(e.response.data.statusMessage);
       } else {
-        alert('부서 정보 수정 중 오류가 발생했습니다.');
+        setSuccessMessage('부서 정보 수정 중 오류가 발생했습니다.');
       }
+      setShowSuccessModal(true);
     }
   };
 
@@ -798,7 +806,8 @@ const OrgChart = () => {
 
             // 성공 시 부서 목록 새로고침
             await loadDepartments();
-            alert('부서가 추가되었습니다.'); // 추가 성공 시 alert
+            setSuccessMessage('부서가 추가되었습니다.'); // 추가 성공 시 SuccessModal
+            setShowSuccessModal(true);
             setShowAddDeptModal(false); // 성공 시에만 닫기
           } catch (error) {
             console.error('부서 추가 실패:', error);
@@ -820,7 +829,8 @@ const OrgChart = () => {
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } },
               );
-              alert('부서 정보가 수정되었습니다.'); // 수정 성공 시 alert
+              setSuccessMessage('부서 정보가 수정되었습니다.'); // 수정 성공 시 SuccessModal
+              setShowSuccessModal(true);
               setShowEditModal(false); // 성공 시에만 닫기
               await loadDepartments();
               await loadMembers(); // ← 멤버 목록도 최신화
@@ -833,21 +843,33 @@ const OrgChart = () => {
                   },
               );
             } catch (e) {
-              // 서버에서 statusMessage가 오면 그대로 alert로 안내 (중복 방지)
+              // 서버에서 statusMessage가 오면 그대로 SuccessModal로 안내 (중복 방지)
               if (
                 e.response &&
                 e.response.data &&
                 e.response.data.statusMessage
               ) {
-                alert(e.response.data.statusMessage);
+                setSuccessMessage(e.response.data.statusMessage);
               } else {
-                alert('부서 정보 수정 중 오류가 발생했습니다.');
+                setSuccessMessage('부서 정보 수정 중 오류가 발생했습니다.');
               }
+              setShowSuccessModal(true);
               // throw e; // 중복 alert 방지를 위해 throw 제거
             }
           }}
           initialDept={deptView}
           existingDepartments={departments}
+        />
+      )}
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessMessage('');
+          }}
         />
       )}
     </div>

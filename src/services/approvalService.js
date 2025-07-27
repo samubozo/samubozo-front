@@ -269,6 +269,50 @@ export const approvalService = {
     if (requestType) params.requestType = requestType;
     if (sortBy) params.sortBy = sortBy;
     if (sortOrder) params.sortOrder = sortOrder;
+
+    // 휴가 신청인 경우 HR용 휴가 조회 API 사용
+    if (requestType === 'VACATION') {
+      if (status === 'pending') {
+        // 대기 중인 휴가 신청 조회
+        const response = await axiosInstance.get(
+          `${API_BASE_URL}${APPROVAL}/pending`,
+        );
+        return response.data;
+      } else if (status === 'processed') {
+        // 처리된 휴가 신청 조회 - 기존 API 사용
+        console.log('처리된 휴가 신청 조회 API 호출: getProcessedApprovals');
+        const response = await axiosInstance.get(
+          `${API_BASE_URL}${APPROVAL}/processed-by-me`,
+        );
+        console.log('처리된 휴가 신청 조회 결과:', response.data);
+
+        // 휴가 신청만 필터링 (requestType이 'VACATION'인 것만)
+        const vacationData = Array.isArray(response.data)
+          ? response.data.filter((item) => item.requestType === 'VACATION')
+          : [];
+        console.log('휴가 신청만 필터링된 결과:', vacationData);
+
+        return vacationData;
+      } else {
+        // 전체 휴가 신청 조회 (대기 + 처리된)
+        const [pendingRes, processedRes] = await Promise.all([
+          axiosInstance.get(`${API_BASE_URL}${APPROVAL}/pending`),
+          axiosInstance.get(`${API_BASE_URL}${APPROVAL}/processed-by-me`),
+        ]);
+
+        // 휴가 신청만 필터링
+        const pendingVacations = Array.isArray(pendingRes.data)
+          ? pendingRes.data.filter((item) => item.requestType === 'VACATION')
+          : [];
+        const processedVacations = Array.isArray(processedRes.data)
+          ? processedRes.data.filter((item) => item.requestType === 'VACATION')
+          : [];
+
+        return [...pendingVacations, ...processedVacations];
+      }
+    }
+
+    // 증명서 신청인 경우 approval-service에서 조회
     const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`, {
       params,
     });

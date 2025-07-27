@@ -5,6 +5,7 @@ import VacationRequest from './VacationRequest';
 import AbsenceRegistrationModal from './AbsenceRegistrationModal';
 import AbsenceEditModal from './AbsenceEditModal';
 import SuccessModal from '../../components/SuccessModal';
+import CheckoutConfirmModal from '../../components/CheckoutConfirmModal';
 import { attendanceService } from '../../services/attendanceService';
 
 function pad(num) {
@@ -91,6 +92,7 @@ export default function AttendanceDashboard() {
   const [showSuccessModal, setShowSuccessModal] = useState(false); // 성공 메시지 모달
   const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 내용
   const [todayHighlight, setTodayHighlight] = useState(false);
+  const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false); // 퇴근 확인 모달
 
   // 1. 월별 근태 데이터 상태 추가
   const [monthlyAttendance, setMonthlyAttendance] = useState([]);
@@ -197,8 +199,14 @@ export default function AttendanceDashboard() {
     }
   };
 
-  // 퇴근 버튼
-  const handleCheckOut = async () => {
+  // 퇴근 확인 모달 열기
+  const handleCheckOutClick = () => {
+    setShowCheckoutConfirm(true);
+  };
+
+  // 퇴근 확인 후 실제 퇴근 처리
+  const handleCheckOutConfirm = async () => {
+    setShowCheckoutConfirm(false);
     setLoading(true);
     setError(null);
     try {
@@ -208,11 +216,18 @@ export default function AttendanceDashboard() {
       attendanceService.getMonthlyAttendance(year, month).then((res) => {
         setMonthlyAttendance(res.result || res.data?.result || []);
       });
+      setSuccessMessage('퇴근이 완료되었습니다.');
+      setShowSuccessModal(true);
     } catch (error) {
       setError('퇴근 처리 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // 퇴근 확인 모달 취소
+  const handleCheckOutCancel = () => {
+    setShowCheckoutConfirm(false);
   };
 
   // 오늘 근태 정보 불러오기 함수
@@ -588,7 +603,7 @@ export default function AttendanceDashboard() {
                   </div>
                   <button
                     className={styles.cardButton}
-                    onClick={handleCheckOut}
+                    onClick={handleCheckOutClick}
                     disabled={
                       loading ||
                       !attendanceData.checkInTime ||
@@ -1108,6 +1123,13 @@ export default function AttendanceDashboard() {
             autoCloseDelay={3000}
           />
         )}
+        {/* 퇴근 확인 모달 */}
+        <CheckoutConfirmModal
+          isOpen={showCheckoutConfirm}
+          onConfirm={handleCheckOutConfirm}
+          onCancel={handleCheckOutCancel}
+          currentTime={getTimeStrWithSec(currentTime)}
+        />
       </div>
     );
   }

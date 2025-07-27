@@ -5,6 +5,7 @@ import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, SCHEDULE } from '../../configs/host-config';
 import { HexColorPicker } from 'react-colorful';
 import debounce from 'lodash/debounce';
+import SuccessModal from '../../components/SuccessModal';
 
 // 색상 대비 계산 함수
 function getContrastColor(backgroundColor) {
@@ -93,6 +94,8 @@ function Schedule() {
   const [editEvent, setEditEvent] = useState(null); // 수정할 일정 상태
   const [popupHover, setPopupHover] = useState(false);
   const hideTimerRef = useRef(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 카테고리 데이터 처리 함수 (checked 필드 기본값 설정)
   const processCategoriesData = (categoriesData) => {
@@ -188,7 +191,8 @@ function Schedule() {
             checked: prevMap.has(cat.id) ? prevMap.get(cat.id) : true,
           }));
         });
-        alert('카테고리가 정상적으로 추가되었습니다.');
+        setSuccessMessage('카테고리가 정상적으로 추가되었습니다.');
+        setShowSuccessModal(true);
       })
       .catch(() => {});
     setShowCategoryModal(null);
@@ -200,7 +204,8 @@ function Schedule() {
       .then(() => axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/categories`))
       .then((res) => {
         setCategories(processCategoriesData(res.data));
-        alert('카테고리가 정상적으로 삭제되었습니다.');
+        setSuccessMessage('카테고리가 정상적으로 삭제되었습니다.');
+        setShowSuccessModal(true);
       })
       .catch((err) => {
         // 에러 응답 구조 전체 출력(디버깅용)
@@ -223,11 +228,13 @@ function Schedule() {
             (typeof msg === 'string' &&
               msg.includes('일정이 존재하여 삭제할 수 없습니다')))
         ) {
-          alert(
+          setSuccessMessage(
             '해당 카테고리에 속한 일정이 남아있어 삭제할 수 없습니다. 먼저 일정을 모두 삭제해 주세요.',
           );
+          setShowSuccessModal(true);
         } else {
-          alert('카테고리 삭제 중 오류가 발생했습니다.');
+          setSuccessMessage('카테고리 삭제 중 오류가 발생했습니다.');
+          setShowSuccessModal(true);
         }
         console.error('카테고리 삭제 에러:', err);
       });
@@ -265,7 +272,8 @@ function Schedule() {
             .get(`${API_BASE_URL}${SCHEDULE}/events/all-day`)
             .then((res) => setRightTodos(res.data || []));
         }
-        alert('일정이 정상적으로 추가되었습니다.');
+        setSuccessMessage('일정이 정상적으로 추가되었습니다.');
+        setShowSuccessModal(true);
       })
       .catch((err) => {
         console.error('일정 추가 에러:', err);
@@ -413,10 +421,12 @@ function Schedule() {
       })
       .then((res) => {
         setRightTodos(res.data || []);
-        alert('일정이 정상적으로 삭제되었습니다.');
+        setSuccessMessage('일정이 정상적으로 삭제되었습니다.');
+        setShowSuccessModal(true);
       })
       .catch((err) => {
-        alert('일정 삭제 중 오류가 발생했습니다.');
+        setSuccessMessage('일정 삭제 중 오류가 발생했습니다.');
+        setShowSuccessModal(true);
         console.error('일정 삭제 에러:', err);
       });
   };
@@ -441,11 +451,13 @@ function Schedule() {
       })
       .then((res) => {
         setRightTodos(res.data || []);
-        alert('일정이 정상적으로 수정되었습니다.');
+        setSuccessMessage('일정이 정상적으로 수정되었습니다.');
+        setShowSuccessModal(true);
         setEditEvent(null);
       })
       .catch((err) => {
-        alert('일정 수정 중 오류가 발생했습니다.');
+        setSuccessMessage('일정 수정 중 오류가 발생했습니다.');
+        setShowSuccessModal(true);
         console.error('일정 수정 에러:', err);
       });
   };
@@ -1216,6 +1228,17 @@ function Schedule() {
           defaultEvent={editEvent}
         />
       )}
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessMessage('');
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1468,7 +1491,10 @@ function CategoryModal({ onClose, onAdd, defaultType = 'PERSONAL' }) {
                     userDeptId === 'null' ||
                     userDeptId === 'undefined')
                 ) {
-                  alert('부서 정보가 없습니다. 다시 로그인 해주세요.');
+                  setSuccessMessage(
+                    '부서 정보가 없습니다. 다시 로그인 해주세요.',
+                  );
+                  setShowSuccessModal(true);
                   return;
                 }
                 const data =

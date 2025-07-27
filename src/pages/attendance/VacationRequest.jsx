@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import styles from './VacationRequest.module.scss';
 import { approvalService } from '../../services/approvalService';
 import AuthContext from '../../context/UserContext';
+import SuccessModal from '../../components/SuccessModal';
 
 // 한국 시간으로 오늘 날짜 가져오기
 const today = new Date();
@@ -49,6 +50,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const [reasonError, setReasonError] = useState('');
   const [overlapError, setOverlapError] = useState('');
   const [myVacations, setMyVacations] = useState([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 내 휴가 목록 불러오기
   useEffect(() => {
@@ -180,7 +183,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
     console.log('최종 중복 여부:', hasOverlap);
 
     if (hasOverlap) {
-      alert('이미 처리 중인 휴가 신청이 있습니다.');
+      setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
+      setShowSuccessModal(true);
       return;
     }
 
@@ -196,9 +200,10 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
       vacationBalance &&
       days > vacationBalance.remainingDays
     ) {
-      alert(
+      setSuccessMessage(
         `보유 연차(${vacationBalance.remainingDays}일)보다 많이 신청할 수 없습니다.`,
       );
+      setShowSuccessModal(true);
       return;
     }
 
@@ -248,7 +253,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
 
       if (hasLatestOverlap) {
         console.log('최신 데이터에서 중복 발견');
-        alert('이미 처리 중인 휴가 신청이 있습니다.');
+        setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
+        setShowSuccessModal(true);
         setLoading(false);
         return;
       }
@@ -271,7 +277,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
           endDate: reqEnd,
           reason,
         });
-        alert('휴가 신청이 수정되었습니다.');
+        setSuccessMessage('휴가 신청이 수정되었습니다.');
+        setShowSuccessModal(true);
       } else {
         // 신규 신청 모드 - 백엔드 변경사항에 맞게 수정
         await approvalService.requestVacation({
@@ -281,7 +288,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
           reason,
           requested_at: new Date(requestDate + 'T00:00:00').toISOString(), // 신청일자 추가
         });
-        alert('휴가 신청이 완료되었습니다.');
+        setSuccessMessage('휴가 신청이 완료되었습니다.');
+        setShowSuccessModal(true);
       }
 
       if (onClose) onClose();
@@ -319,7 +327,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
           errorText &&
           errorText.includes('결재 서비스 통신 중 오류가 발생했습니다')
         ) {
-          alert('이미 처리 중인 휴가 신청이 있습니다.');
+          setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
+          setShowSuccessModal(true);
         } else if (
           errorText &&
           (errorText.includes('이미') ||
@@ -327,18 +336,21 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
             errorText.includes('처리 중') ||
             errorText.includes('신청된'))
         ) {
-          alert(errorText);
+          setSuccessMessage(errorText);
+          setShowSuccessModal(true);
         } else {
           // 400 에러인 경우 모두 중복으로 간주하고 명확한 메시지 표시
-          alert('이미 처리 중인 휴가 신청이 있습니다.');
+          setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
+          setShowSuccessModal(true);
         }
       } else {
-        alert(
+        setSuccessMessage(
           err.message ||
             (editData
               ? '휴가 신청 수정에 실패했습니다.'
               : '휴가 신청에 실패했습니다.'),
         );
+        setShowSuccessModal(true);
       }
     } finally {
       setLoading(false);
@@ -450,6 +462,18 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
           </button>
         </div>
       </form>
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessMessage('');
+            if (onClose) onClose();
+          }}
+        />
+      )}
     </div>
   );
 };

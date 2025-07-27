@@ -188,10 +188,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const [rejectLoading, setRejectLoading] = useState(false);
 
-  // 성공 모달 상태
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-
   // 증명서 내역 불러오기 (GET /list 또는 /list/all)
   useEffect(() => {
     const loadCertList = () => {
@@ -366,7 +362,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           headers: { 'Content-Type': 'multipart/form-data' },
         },
       );
-      alert('프로필 이미지가 업로드되었습니다.');
+      setSuccessMessage('프로필 이미지가 업로드되었습니다.');
+      setShowSuccessModal(true);
       // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
       if (
         user?.employeeNo &&
@@ -378,7 +375,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         window.location.reload();
       }
     } catch {
-      alert('프로필 이미지 업로드 실패');
+      setSuccessMessage('프로필 이미지 업로드 실패');
+      setShowSuccessModal(true);
     }
   };
 
@@ -424,7 +422,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           },
         },
       );
-      alert('저장되었습니다.');
+      setSuccessMessage('저장되었습니다.');
+      setShowSuccessModal(true);
       // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
       if (
         user?.employeeNo &&
@@ -440,7 +439,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
           window.location.reload();
         } catch (err) {
-          alert('저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.');
+          setSuccessMessage(
+            '저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.',
+          );
+          setShowSuccessModal(true);
         }
       }
     } catch {
@@ -536,7 +538,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       await axiosInstance.patch(
         `${API_BASE_URL}${HR}/users/retire/${selectedEmployee.id}`,
       );
-      alert('퇴사자 등록이 완료되었습니다.');
+      setSuccessMessage('퇴사자 등록이 완료되었습니다.');
+      setShowSuccessModal(true);
       // 상세정보 새로고침
       const res = await axiosInstance.get(
         `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
@@ -554,7 +557,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       if (typeof onRetireSuccess === 'function')
         onRetireSuccess(selectedEmployee.id); // id 명시적 전달
     } catch (e) {
-      alert('퇴사자 등록에 실패했습니다.');
+      setSuccessMessage('퇴사자 등록에 실패했습니다.');
+      setShowSuccessModal(true);
     }
   };
 
