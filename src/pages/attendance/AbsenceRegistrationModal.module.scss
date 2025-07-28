@@ -50,7 +50,8 @@
 .row input[type='date'],
 .row input[type='time'],
 .row input[type='text'],
-.row select {
+.row select,
+.row textarea {
   border: 1px solid #b7d7c2;
   border-radius: 4px;
   padding: 0.3rem 0.7rem;
@@ -59,6 +60,14 @@
   background: #fff;
   min-width: 120px;
   box-sizing: border-box;
+}
+
+.row textarea {
+  padding: 0.5rem 0.7rem;
+  font-weight: 500;
+  resize: vertical;
+  min-height: 80px;
+  flex: 1;
 }
 
 .row select {
@@ -73,6 +82,27 @@
   justify-content: flex-end;
   gap: 16px;
   margin-top: 1.2rem;
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  &:hover {
+    background: linear-gradient(135deg, #388e3c, #2e7d32);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .confirmBtn {

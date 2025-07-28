@@ -101,9 +101,7 @@ export const approvalService = {
     }
   },
 
-  // === HR 담당자용 API ===
-
-  // 7. HR 담당자용 결재 대기 목록 조회
+  // 7. HR용 결재 대기 목록 조회
   async getHRPendingApprovals() {
     try {
       const response = await axiosInstance.get(
@@ -115,7 +113,7 @@ export const approvalService = {
     }
   },
 
-  // 8. HR 담당자용 휴가 요청 승인
+  // 8. HR 휴가 신청 승인
   async approveHRVacation(approvalId) {
     try {
       await axiosInstance.put(
@@ -128,7 +126,7 @@ export const approvalService = {
     }
   },
 
-  // 9. HR 담당자용 휴가 요청 반려
+  // 9. HR 휴가 신청 반려
   async rejectHRVacation(approvalId, comment) {
     try {
       await axiosInstance.put(
@@ -142,7 +140,7 @@ export const approvalService = {
     }
   },
 
-  // 10. HR 담당자용 처리한 결재 요청 목록 조회 (신규 API)
+  // 10. 처리된 결재 목록 조회
   async getProcessedApprovals() {
     try {
       const response = await axiosInstance.get(
@@ -154,11 +152,11 @@ export const approvalService = {
     }
   },
 
-  // 11. HR 담당자용 처리한 휴가 신청 내역 조회 (신규 API)
+  // 11. 처리된 휴가 신청 목록 조회
   async getProcessedVacations() {
     try {
       const response = await axiosInstance.get(
-        `${API_BASE_URL}${VACATION}/processed-approvals`,
+        `${API_BASE_URL}${VACATION}/processed`,
       );
       return response.data;
     } catch (error) {
@@ -166,34 +164,26 @@ export const approvalService = {
     }
   },
 
-  // 증명서 신청
+  // 12. 증명서 신청
   async applyCertificate({ type, requestDate, purpose }) {
     try {
       const response = await axiosInstance.post(
         `${API_BASE_URL}${CERTIFICATE}/application`,
         {
-          type, // 필드명 수정
+          type,
           requestDate,
           purpose,
-          approverId: 1, // 기본 HR 담당자 ID (실제로는 동적으로 설정해야 함)
         },
         { withCredentials: true },
       );
-
-      // 응답 상태 확인
-      if (response.status >= 200 && response.status < 300) {
-        return true;
-      } else {
-        throw new Error('증명서 신청에 실패했습니다.');
-      }
+      return response.data;
     } catch (error) {
-      const msg =
-        error.response?.data?.message || error.message || '증명서 신청 실패';
+      const msg = error.response?.data?.message || '증명서 신청 실패';
       throw new Error(msg);
     }
   },
 
-  // HR 전체 증명서 신청 내역 조회
+  // 13. 모든 증명서 조회 (HR용)
   async getAllCertificates() {
     try {
       const response = await axiosInstance.get(
@@ -202,11 +192,12 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      throw error;
+      const msg = error.response?.data?.message || '증명서 목록 조회 실패';
+      throw new Error(msg);
     }
   },
 
-  // 일반 사용자 본인 증명서 신청 내역 조회
+  // 14. 내 증명서 조회
   async getMyCertificates() {
     try {
       const response = await axiosInstance.get(
@@ -215,11 +206,12 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      throw error;
+      const msg = error.response?.data?.message || '내 증명서 조회 실패';
+      throw new Error(msg);
     }
   },
 
-  // HR 증명서 승인
+  // 15. HR 증명서 승인
   async approveCertificate(id) {
     try {
       await axiosInstance.put(
@@ -234,7 +226,7 @@ export const approvalService = {
     }
   },
 
-  // HR 증명서 반려
+  // 16. HR 증명서 반려
   async rejectCertificate(id, rejectComment) {
     try {
       await axiosInstance.put(
@@ -249,7 +241,7 @@ export const approvalService = {
     }
   },
 
-  // 증명서 상세 조회
+  // 17. 증명서 상세 조회
   async getCertificateById(id) {
     try {
       const response = await axiosInstance.get(
@@ -259,6 +251,143 @@ export const approvalService = {
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.message || '증명서 상세 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // ===== 부재 관련 API 메서드들 추가 =====
+
+  // 18. 부재 결재 요청 생성
+  async requestAbsenceApproval(absenceData) {
+    try {
+      const response = await axiosInstance.post(
+        `${API_BASE_URL}${APPROVAL}/absence`,
+        absenceData,
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '부재 결재 요청 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 19. HR 부재 결재 승인
+  async approveHRAbsence(absenceId) {
+    try {
+      await axiosInstance.put(
+        `${API_BASE_URL}${APPROVAL}/absence/${absenceId}/approve`,
+      );
+      return true;
+    } catch (error) {
+      const msg = error.response?.data?.message || '부재 승인 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 20. HR 부재 결재 반려
+  async rejectHRAbsence(absenceId, comment) {
+    try {
+      await axiosInstance.put(
+        `${API_BASE_URL}${APPROVAL}/absence/${absenceId}/reject`,
+        { rejectComment: comment },
+      );
+      return true;
+    } catch (error) {
+      const msg = error.response?.data?.message || '부재 반려 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 21. 부재 결재 요청 목록 조회 (페이징)
+  async getAbsenceApprovals(page = 0, size = 10) {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${APPROVAL}/absence`,
+        {
+          params: { page, size },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '부재 결재 목록 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 22. 대기 중인 부재 결재 요청 조회 (HR용)
+  async getPendingAbsenceApprovals(page = 0, size = 10) {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${APPROVAL}/absence/pending`,
+        {
+          params: { page, size },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      const msg =
+        error.response?.data?.message || '대기 중인 부재 결재 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 23. 처리된 부재 결재 요청 조회
+  async getProcessedAbsenceApprovals(page = 0, size = 10) {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${APPROVAL}/absence/processed`,
+        {
+          params: { page, size },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '처리된 부재 결재 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 24. 내 부재 결재 요청 조회
+  async getMyAbsenceApprovals(page = 0, size = 10) {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${APPROVAL}/absence/my`,
+        {
+          params: { page, size },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '내 부재 결재 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 25. 내가 처리한 부재 결재 요청 조회
+  async getAbsenceApprovalsProcessedByMe(page = 0, size = 10) {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${APPROVAL}/absence/processed-by-me`,
+        {
+          params: { page, size },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '처리한 부재 결재 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 26. 부재 결재 통계 조회
+  async getAbsenceApprovalStatistics() {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${APPROVAL}/absence/statistics`,
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '부재 결재 통계 조회 실패';
       throw new Error(msg);
     }
   },
@@ -309,6 +438,19 @@ export const approvalService = {
           : [];
 
         return [...pendingVacations, ...processedVacations];
+      }
+    }
+
+    // requestType이 명시적으로 지정된 경우 getAllApprovalRequests 사용
+    if (requestType) {
+      try {
+        const response = await axiosInstance.get(
+          `${API_BASE_URL}${APPROVAL}/requests/${requestType}`,
+        );
+        return response.data;
+      } catch (error) {
+        console.error(`requestType ${requestType} 조회 실패:`, error);
+        return [];
       }
     }
 

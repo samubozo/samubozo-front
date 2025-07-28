@@ -292,7 +292,7 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
         setShowSuccessModal(true);
       }
 
-      if (onClose) onClose();
+      // 성공 시 모달은 SuccessModal에서 처리하도록 onClose() 호출 제거
     } catch (err) {
       console.error('휴가 신청 에러:', err);
       console.error('에러 전체 객체:', JSON.stringify(err, null, 2));
@@ -421,8 +421,7 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
         {/* 사유 */}
         <div className={styles.row}>
           <label>사유</label>
-          <input
-            type='text'
+          <textarea
             value={reason}
             onChange={(e) => {
               setReason(e.target.value);
@@ -432,6 +431,18 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
             }}
             required
             className={reasonError ? styles.errorInput : ''}
+            style={{
+              width: '100%',
+              height: '80px',
+              resize: 'vertical',
+              border: '1px solid #b7d7c2',
+              borderRadius: '4px',
+              padding: '0.5rem 0.7rem',
+              fontSize: '1rem',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
+              flex: '1',
+            }}
           />
           {reasonError && (
             <span className={styles.errorMessage}>{reasonError}</span>
@@ -450,7 +461,7 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
                 : '신청 중...'
               : editData
                 ? '수정'
-                : '등록'}
+                : '신청'}
           </button>
           <button
             type='button'
@@ -472,6 +483,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
             setSuccessMessage('');
             if (onClose) onClose();
           }}
+          autoClose={true}
+          autoCloseDelay={2000}
         />
       )}
     </div>

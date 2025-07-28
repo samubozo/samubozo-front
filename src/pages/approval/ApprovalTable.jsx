@@ -14,6 +14,7 @@ function ApprovalTable({
   onPrintCert, // 추가
   typeToKor, // 추가
   statusToKor, // 추가
+  urgencyToKor, // 긴급도 변환 함수 추가
   onRowClick, // 행 클릭 이벤트 추가
 }) {
   const toggle = (id) => {
@@ -64,9 +65,11 @@ function ApprovalTable({
               <td key={`${row.id}-${col.key}`}>
                 {col.key === 'type' && typeToKor
                   ? typeToKor(row[col.key])
-                  : col.key === 'status' && statusToKor
-                    ? statusToKor(row[col.key])
-                    : row[col.key]}
+                  : col.key === 'urgency' && urgencyToKor
+                    ? urgencyToKor(row[col.key])
+                    : col.key === 'status' && statusToKor
+                      ? statusToKor(row[col.key])
+                      : row[col.key]}
               </td>
             ))}
             {/* 작업 버튼 칼럼 제거 */}

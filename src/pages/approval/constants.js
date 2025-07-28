@@ -8,9 +8,8 @@ export const leaveOptions = [
 // 증명서 유형 옵션
 export const certOptions = [
   { value: 'all', label: '전체' },
-  { value: '재직', label: '재직' },
-  { value: '경력', label: '경력' },
-  { value: '퇴직', label: '퇴직' },
+  { value: '재직증명서', label: '재직증명서' },
+  { value: '경력증명서', label: '경력증명서' },
 ];
 
 // 상태 옵션
@@ -71,4 +70,49 @@ export const statusMap = {
   APPROVED: '승인',
   REJECTED: '반려',
   PENDING_APPROVAL: '대기',
+};
+
+// 부재 유형 옵션
+export const absenceOptions = [
+  { value: 'all', label: '전체' },
+  { value: '병가', label: '병가' },
+  { value: '공가', label: '공가' },
+  { value: '기타', label: '기타' },
+];
+
+// 긴급도 옵션
+export const urgencyOptions = [
+  { value: 'all', label: '전체' },
+  { value: '긴급', label: '긴급' },
+  { value: '일반', label: '일반' },
+];
+
+// 부재 필터 타입 (통합 검색용)
+export const absenceFilterTypes = [{ value: 'all', label: '전체' }];
+
+// 부재 테이블 컬럼
+export const absenceColumns = [
+  { key: 'type', label: '항목' },
+  { key: 'urgency', label: '긴급도' },
+  { key: 'reason', label: '사유' },
+  { key: 'applicant', label: '신청자' },
+  { key: 'applicantDepartment', label: '부서' },
+  { key: 'applyDate', label: '신청일자' },
+  { key: 'period', label: '기간' },
+  { key: 'approver', label: '결재자' },
+  { key: 'processedAt', label: '처리일자' },
+  { key: 'status', label: '상태' },
+];
+
+// 부재 유형 매핑
+export const absenceTypeMap = {
+  SICK_LEAVE: '병가',
+  OFFICIAL_LEAVE: '공가',
+  ETC: '기타',
+};
+
+// 긴급도 매핑
+export const urgencyMap = {
+  URGENT: '긴급',
+  NORMAL: '일반',
 };

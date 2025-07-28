@@ -94,6 +94,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const { user } = React.useContext(AuthContext);
   const isHR = user?.hrRole === 'Y';
 
+  // 성공 모달 상태
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
   // 부서/직책 목록 불러오기
   useEffect(() => {
     const fetchMeta = async () => {

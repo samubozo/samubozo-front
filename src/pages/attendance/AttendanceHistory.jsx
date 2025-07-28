@@ -457,7 +457,7 @@ export default function AttendanceDashboard() {
                   className={styles.cardButtonSub}
                   onClick={handleAbsence}
                 >
-                  부재 등록
+                  부재 신청
                 </button>
                 <button
                   className={styles.cardButtonSub}
@@ -597,7 +597,7 @@ export default function AttendanceDashboard() {
       <Modal open={showVacation} onClose={closeModal}>
         <VacationRequest onClose={closeModal} />
       </Modal>
-      {/* 부재등록 모달 */}
+      {/* 부재신청 모달 */}
       <AbsenceRegistrationModal
         open={showAbsence}
         onClose={closeAbsenceModal}

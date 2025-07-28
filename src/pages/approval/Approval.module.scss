@@ -384,7 +384,6 @@
   height: 6px;
   border-radius: 50%;
   background-color: currentColor;
-  margin-right: 6px;
 }
 
 .modalBody {
@@ -589,9 +588,160 @@
 
 .statusPending {
   background-color: #fff3cd;
-  border: 1px solid #ffeaa7;
-  border-left: 4px solid #ffc107;
   color: #856404;
+  border: 1px solid #ffeaa7;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusApproved {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusRejected {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rejectComment {
+  color: #dc3545;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.approvalInfo {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.approverInfo {
+  font-size: 11px;
+  color: #28a745;
+  font-weight: 500;
+}
+
+// 승인 정보 스타일
+.approvalCard {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.1);
+}
+
+.approvalCard .detailValue {
+  color: #155724;
+  font-weight: 600;
+}
+
+.approvalCard .detailLabel {
+  color: #155724;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+// 반려사유 라벨 강조
+.rejectLabel {
+  color: #dc3545;
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// 승인 정보 라벨 강조
+.approvalLabel {
+  color: #28a745;
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rejectInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6c757d;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.approvalInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6c757d;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.rejectInfo span,
+.approvalInfo span {
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rejectInfo span::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  background-color: #dc3545;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.approvalInfo span::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  background-color: #28a745;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.rejectReason {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #2c3e50;
+  padding: 12px 0;
+  margin: 0;
+  min-height: 60px;
+  display: flex;
+  align-items: flex-start;
 }
 
 .statusInfo {
