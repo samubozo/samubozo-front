@@ -83,7 +83,7 @@ const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
-const PayrollDetail = ({ employee, onClose }) => {
+const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
   const [form, setForm] = useState({
     payMonthStr: '',
     basePayroll: '',
@@ -122,15 +122,34 @@ const PayrollDetail = ({ employee, onClose }) => {
         userId: employee.id,
         payYear: year,
         payMonth: month,
-        basePayroll: Number(form.basePayroll.replace(/,/g, '')),
-        positionAllowance: Number(form.positionAllowance.replace(/,/g, '')),
-        mealAllowance: Number(form.mealAllowance.replace(/,/g, '')),
-        bonus: Number(form.bonus.replace(/,/g, '')),
+        basePayroll:
+          form.basePayroll.trim() === ''
+            ? null
+            : Number(form.basePayroll.replace(/,/g, '')),
+        positionAllowance:
+          form.positionAllowance.trim() === ''
+            ? null
+            : Number(form.positionAllowance.replace(/,/g, '')),
+        mealAllowance:
+          form.mealAllowance.trim() === ''
+            ? null
+            : Number(form.mealAllowance.replace(/,/g, '')),
+        bonus:
+          form.bonus.trim() === ''
+            ? null
+            : Number(form.bonus.replace(/,/g, '')),
+
+        positionName: employee.position,
       };
 
       console.log('🚀 급여 저장 요청 payload:', payload);
 
       await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
+
+      // ✅ 저장 성공 후 급여 다시 조회
+      if (fetchPayroll) {
+        fetchPayroll(year, month, employee.id);
+      }
       setMessage('저장되었습니다.');
       setForm({
         payMonthStr: '',
@@ -193,7 +212,7 @@ const PayrollDetail = ({ employee, onClose }) => {
                   value={form.basePayroll}
                   onChange={handleChange}
                   autoComplete='off'
-                  required
+                  // required
                 />
               </td>
             </tr>
@@ -210,7 +229,7 @@ const PayrollDetail = ({ employee, onClose }) => {
                   value={form.positionAllowance}
                   onChange={handleChange}
                   autoComplete='off'
-                  required
+                  // required
                 />
               </td>
             </tr>
@@ -225,7 +244,7 @@ const PayrollDetail = ({ employee, onClose }) => {
                   value={form.mealAllowance}
                   onChange={handleChange}
                   autoComplete='off'
-                  required
+                  // required
                 />
               </td>
             </tr>
@@ -331,6 +350,7 @@ const PayrollManagement = () => {
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
             bonus: Number(result?.bonus ?? 0),
+            overtimePay: Number(result?.overtimePay ?? 0),
           });
         })
         .catch((err) => {
@@ -353,6 +373,7 @@ const PayrollManagement = () => {
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
             bonus: Number(result?.bonus ?? 0),
+            overtimePay: Number(result?.overtimePay ?? 0),
           });
         })
         .catch(() => {
@@ -479,6 +500,10 @@ const PayrollManagement = () => {
   const netPay = total - totalDeduction;
 
   const printRef = useRef(null);
+
+  const handleOvertimeCalculation = () => {
+    alert('야근수당 계산 로직이 아직 구현되지 않았습니다.');
+  };
 
   const handlePrintPayroll = () => {
     if (!selectedEmployee) return;
@@ -708,6 +733,18 @@ const PayrollManagement = () => {
         </div>
         <div className={styles['button-group']}>
           <button
+            onClick={handleOvertimeCalculation}
+            disabled={!selectedEmployee}
+            style={
+              !selectedEmployee
+                ? { background: '#ccc', cursor: 'not-allowed' }
+                : {}
+            }
+          >
+            야근수당 계산
+          </button>
+
+          <button
             onClick={handlePrintPayroll}
             disabled={!selectedEmployee}
             style={
@@ -790,6 +827,10 @@ const PayrollManagement = () => {
                 <tr>
                   <td>성과급</td>
                   <td>{bonus ? bonus.toLocaleString() : ''}</td>
+                </tr>
+                <tr>
+                  <td>야근수당</td>
+                  <td>{payrollData.overtimePay?.toLocaleString() || '0'}</td>
                 </tr>
               </tbody>
             </table>
@@ -898,6 +939,7 @@ const PayrollManagement = () => {
         <PayrollDetail
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
+          fetchPayroll={fetchPayroll}
         />
       )}
     </div>
