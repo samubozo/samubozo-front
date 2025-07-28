@@ -72,7 +72,9 @@
   border-radius: 18px 18px 18px 6px;
   padding: 15px 20px;
   font-size: 19px;
-  max-width: 85%;
+  word-break: break-all;
+  white-space: pre-line;
+  max-width: 80%;
   box-shadow: 0 2px 8px rgba(60, 179, 113, 0.07);
 }
 .userMsg {
@@ -82,7 +84,9 @@
   border-radius: 18px 18px 6px 18px;
   padding: 15px 20px;
   font-size: 19px;
-  max-width: 85%;
+  word-break: break-all;
+  white-space: pre-line;
+  max-width: 80%;
   box-shadow: 0 2px 8px rgba(60, 179, 113, 0.13);
 }
 .inputBox {
@@ -145,8 +149,8 @@
   background: #3cb371;
   color: #fff;
   font-weight: 700;
-  padding: 22px 28px;
-  font-size: 23px;
+  padding: 12px 16px;
+  font-size: 19px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -155,9 +159,9 @@
   background: none;
   border: none;
   color: #fff;
-  font-size: 32px;
+  font-size: 22px;
   cursor: pointer;
-  margin-left: 12px;
+  margin-left: 6px;
 }
 .headerChatbotWrap {
   position: relative;
@@ -166,9 +170,10 @@
 }
 .headerChatWindow {
   position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 14px;
+  top: 0;
+  left: 130%;
+  right: auto;
+  margin-top: 0;
   width: 420px;
   max-width: 90vw;
   background: #fff;
@@ -229,8 +234,8 @@
 .chatbotTooltip {
   position: absolute;
   top: 50%;
-  left: auto;
-  right: 110%;
+  left: 130%;
+  right: auto;
   transform: translateY(-50%);
   background: #3cb371;
   color: #fff;
@@ -248,11 +253,12 @@
   content: '';
   position: absolute;
   top: 50%;
-  left: 100%;
+  right: 100%;
+  left: auto;
   transform: translateY(-50%);
   border-width: 8px;
   border-style: solid;
-  border-color: transparent transparent transparent #3cb371;
+  border-color: transparent #3cb371 transparent transparent;
 }
 .loadingBubble {
   display: inline-flex;

@@ -93,6 +93,7 @@ function Schedule() {
   const [editEvent, setEditEvent] = useState(null); // 수정할 일정 상태
   const [popupHover, setPopupHover] = useState(false);
   const hideTimerRef = useRef(null);
+  const [highlightedEventId, setHighlightedEventId] = useState(null);
 
   // 카테고리 데이터 처리 함수 (checked 필드 기본값 설정)
   const processCategoriesData = (categoriesData) => {
@@ -138,7 +139,6 @@ function Schedule() {
         saveCategoryCheckStates(categoriesWithChecked);
       })
       .catch((err) => {
-        console.error('카테고리 조회 에러:', err);
         setCategories([]);
       });
   }, []);
@@ -150,12 +150,9 @@ function Schedule() {
         params: { year: currentYear, month: currentMonth + 1 },
       })
       .then((res) => {
-        console.log('일정 조회 응답:', res.data);
-        console.log('일정 조회 res.data.result:', res.data.result);
         setEvents(res.data || []); // res.data.result 대신 res.data 사용
       })
       .catch((err) => {
-        console.error('일정 조회 에러:', err);
         setEvents([]);
       });
   }, [currentYear, currentMonth]);
@@ -165,11 +162,9 @@ function Schedule() {
     axiosInstance
       .get(`${API_BASE_URL}${SCHEDULE}/events/all-day`)
       .then((res) => {
-        console.log('all-day 일정:', res.data);
         setRightTodos(res.data || []);
       })
       .catch((err) => {
-        console.error('기한 없는 할일 조회 에러:', err);
         setRightTodos([]);
       });
   }, []);
@@ -195,42 +190,36 @@ function Schedule() {
   };
   // 카테고리 삭제
   const handleCategoryDelete = (id) => {
+    // 1. 해당 카테고리의 남은 일정 찾기
+    const eventsInCategory = events.filter((e) => e.categoryId === id);
+    if (eventsInCategory.length > 0) {
+      // 2. 가장 과거 일정 찾기 (startDate 기준)
+      const oldestEvent = eventsInCategory.reduce((min, e) =>
+        new Date(e.startDate) < new Date(min.startDate) ? e : min,
+      );
+      // 3. 달력 이동 + 하이라이트
+      const start = new Date(oldestEvent.startDate);
+      setCurrentYear(start.getFullYear());
+      setCurrentMonth(start.getMonth());
+      setHighlightedEventId(oldestEvent.id);
+      setTimeout(() => setHighlightedEventId(null), 2000);
+      // 4. 안내 메시지
+      alert(
+        '해당 카테고리에 속한 일정이 남아있어 삭제할 수 없습니다. 먼저 일정을 모두 삭제해 주세요.',
+      );
+      return;
+    }
+    // 5. 실제 카테고리 삭제 로직 실행
+    if (!window.confirm('정말로 이 카테고리를 삭제하시겠습니까?')) return;
     axiosInstance
       .delete(`${API_BASE_URL}${SCHEDULE}/categories/${id}`)
       .then(() => axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/categories`))
       .then((res) => {
-        setCategories(processCategoriesData(res.data));
+        setCategories((prev) => prev.filter((cat) => cat.id !== id));
         alert('카테고리가 정상적으로 삭제되었습니다.');
       })
-      .catch((err) => {
-        // 에러 응답 구조 전체 출력(디버깅용)
-        if (err.response && err.response.data) {
-          console.error(
-            '카테고리 삭제 에러 응답:',
-            JSON.stringify(err.response.data),
-          );
-        }
-        // 다양한 필드에서 메시지 체크
-        const msg =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.response?.data?.detail ||
-          '';
-        if (
-          err.response &&
-          (err.response.status === 400 ||
-            err.response.status === 409 ||
-            (typeof msg === 'string' &&
-              msg.includes('일정이 존재하여 삭제할 수 없습니다')))
-        ) {
-          alert(
-            '해당 카테고리에 속한 일정이 남아있어 삭제할 수 없습니다. 먼저 일정을 모두 삭제해 주세요.',
-          );
-        } else {
-          alert('카테고리 삭제 중 오류가 발생했습니다.');
-        }
-        console.error('카테고리 삭제 에러:', err);
-      });
+      .catch(() => {});
+    setShowCategoryModal(null);
   };
   // 카테고리 체크박스 토글 (프론트 상태만 변경)
   const handleCategoryCheck = (id) => {
@@ -246,7 +235,6 @@ function Schedule() {
 
   // 일정 추가
   const handleEventAdd = (event) => {
-    console.log('일정 추가 전송 데이터:', event);
     axiosInstance
       .post(`${API_BASE_URL}${SCHEDULE}/events`, event)
       .then(() =>
@@ -282,14 +270,6 @@ function Schedule() {
     visibleCategoryIds.includes(e.categoryId),
   );
 
-  console.log('전체 일정:', events);
-  console.log(
-    '카테고리 상태:',
-    categories.map((c) => ({ id: c.id, name: c.name, checked: c.checked })),
-  );
-  console.log('체크된 카테고리 IDs:', visibleCategoryIds);
-  console.log('필터링된 일정:', visibleEvents);
-
   // 1. 현재 달의 시작/끝 구하기
   const monthStart = new Date(currentYear, currentMonth, 1);
   const monthEnd = new Date(currentYear, currentMonth + 1, 0);
@@ -301,9 +281,6 @@ function Schedule() {
     // 일정이 이번 달에 걸쳐 있으면 표시
     return end >= monthStart && start <= monthEnd;
   });
-
-  console.log('현재 달력 월:', currentYear, currentMonth + 1);
-  console.log('월별 필터링된 일정:', filteredEvents);
 
   // 3. 오늘 기준 분류
   const now = new Date();
@@ -365,8 +342,6 @@ function Schedule() {
     visibleEvents,
   );
   const eventBarIds = new Set(eventBars.map((bar) => bar.id));
-  console.log('연속 일정 바:', eventBars);
-  console.log('연속 일정 바 IDs:', Array.from(eventBarIds));
 
   // 달력 네비게이션 함수 복구
   const handlePrevMonth = () => {
@@ -556,11 +531,24 @@ function Schedule() {
     const start = new Date(ev.startDate);
     setCurrentYear(start.getFullYear());
     setCurrentMonth(start.getMonth());
-    // 해당 날짜 셀에 hover 효과(선택된 일정 강조 등 추가 가능)
+    setHighlightedEventId(ev.id);
+    setTimeout(() => setHighlightedEventId(null), 2000);
     setTimeout(() => {
       setHoveredEvent({ ...ev, type: 'single', dateStr: ev.startDate });
       setPopupPos({ left: 0, top: 100 });
     }, 300);
+  };
+
+  // 달력 셀 렌더링 부분에서, 해당 셀 날짜가 하이라이트할 일정 구간에 포함되면 하이라이트 클래스 추가
+  const isCellHighlighted = (date) => {
+    if (!highlightedEventId) return false;
+    // visibleEvents에서 해당 일정 찾기
+    const event = visibleEvents.find((e) => e.id === highlightedEventId);
+    if (!event || !event.startDate || !event.endDate) return false;
+    const cellDate = toDateOnly(date).getTime();
+    const start = toDateOnly(new Date(event.startDate)).getTime();
+    const end = toDateOnly(new Date(event.endDate)).getTime();
+    return cellDate >= start && cellDate <= end;
   };
 
   return (
@@ -721,12 +709,6 @@ function Schedule() {
                   const end = toDateOnly(new Date(e.endDate));
                   const cellDate = toDateOnly(date);
                   const isInRange = cellDate >= start && cellDate <= end;
-                  console.log(`날짜 ${dateStr} 일정 ${e.title}:`, {
-                    start: e.startDate,
-                    end: e.endDate,
-                    cellDate: dateStr,
-                    isInRange,
-                  });
                   return isInRange;
                 });
                 cells.push(
@@ -742,6 +724,9 @@ function Schedule() {
                           (highlightTodayCell
                             ? ' ' + styles.todayCellHighlight
                             : '')
+                        : '') +
+                      (isCellHighlighted(date)
+                        ? ' ' + styles.highlightedCell
                         : '')
                     }
                   >
@@ -770,7 +755,7 @@ function Schedule() {
                               handleEventMouseEnter(
                                 ev,
                                 {
-                                  left: rect.left,
+                                  left: rect.right, // 오른쪽 끝
                                   top: rect.bottom + 4,
                                 },
                                 'single',
@@ -821,7 +806,7 @@ function Schedule() {
                             handleEventMouseEnter(
                               bar,
                               {
-                                left: rect.left,
+                                left: rect.right, // 오른쪽 끝
                                 top: rect.bottom + 4,
                               },
                               'bar',
@@ -957,7 +942,10 @@ function Schedule() {
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   setRightHoveredEvent(ev);
-                  setRightPopupPos({ left: rect.left - 350, top: rect.top });
+                  setRightPopupPos({
+                    left: rect.left - 230,
+                    top: rect.top + 5,
+                  });
                 }}
                 onMouseLeave={() => {
                   setRightHoveredEvent(null);
@@ -1004,7 +992,10 @@ function Schedule() {
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   setRightHoveredEvent(ev);
-                  setRightPopupPos({ left: rect.left - 350, top: rect.top });
+                  setRightPopupPos({
+                    left: rect.left - 230,
+                    top: rect.top + 5,
+                  });
                 }}
                 onMouseLeave={() => {
                   setRightHoveredEvent(null);
@@ -1047,7 +1038,10 @@ function Schedule() {
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   setRightHoveredEvent(ev);
-                  setRightPopupPos({ left: rect.left - 350, top: rect.top });
+                  setRightPopupPos({
+                    left: rect.left - 230,
+                    top: rect.top + 5,
+                  });
                 }}
                 onMouseLeave={() => {
                   setRightHoveredEvent(null);
@@ -1090,7 +1084,10 @@ function Schedule() {
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   setRightHoveredEvent(ev);
-                  setRightPopupPos({ left: rect.left - 350, top: rect.top });
+                  setRightPopupPos({
+                    left: rect.left - 230,
+                    top: rect.top + 5,
+                  });
                 }}
                 onMouseLeave={() => {
                   setRightHoveredEvent(null);
@@ -1130,7 +1127,6 @@ function Schedule() {
             >
               기한 없는 할일 <span>({rightTodos.length})</span>
             </div>
-            {console.log('rightTodos:', rightTodos)}
             {rightTodos.map((ev) => (
               <div
                 className={styles.eventListItem}
@@ -1138,7 +1134,10 @@ function Schedule() {
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   setRightHoveredEvent(ev);
-                  setRightPopupPos({ left: rect.left - 350, top: rect.top });
+                  setRightPopupPos({
+                    left: rect.left - 230,
+                    top: rect.top + 5,
+                  });
                 }}
                 onMouseLeave={() => {
                   setRightHoveredEvent(null);

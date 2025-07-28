@@ -334,6 +334,17 @@ function MessageWriteModal({
     }
   }, [open, initialReceiver, initialSubject]);
 
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   const handleFileAdd = (e) => {
     const newFiles = Array.from(e.target.files);
     const validFiles = [];
@@ -460,6 +471,18 @@ function MessageWriteModal({
         <div
           className={styles.modalBox}
           style={{ maxWidth: 600, maxHeight: '80vh' }}
+          onWheel={(e) => {
+            const el = e.currentTarget;
+            if (el.scrollHeight > el.clientHeight) {
+              const { scrollTop, scrollHeight, clientHeight } = el;
+              if (
+                (e.deltaY > 0 && scrollTop + clientHeight < scrollHeight) ||
+                (e.deltaY < 0 && scrollTop > 0)
+              ) {
+                e.stopPropagation();
+              }
+            }
+          }}
         >
           <div className={styles.modalHeader}>
             <span className={styles.modalTitle}>쪽지 쓰기</span>
