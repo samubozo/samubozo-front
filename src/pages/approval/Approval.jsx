@@ -52,7 +52,6 @@ function Approval() {
   const [status, setStatus] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [filterType, setFilterType] = useState('all');
   const [filterValue, setFilterValue] = useState('');
   const [selected, setSelected] = useState([]);
   const [page, setPage] = useState(1);
@@ -114,19 +113,10 @@ function Approval() {
     mapLeaveData,
   } = useApprovalData(tab, isHR, user, approvalStatus);
 
-  // 필터/탭 변경 시 page를 1로 리셋
+  // 필터 조건 변경 시 페이지 리셋
   useEffect(() => {
     setPage(1);
-  }, [
-    item,
-    status,
-    dateFrom,
-    dateTo,
-    filterType,
-    filterValue,
-    tab,
-    approvalStatus,
-  ]);
+  }, [item, status, dateFrom, dateTo, filterValue, approvalStatus]);
 
   // 탭 변경 시 필터값 모두 초기화
   useEffect(() => {
@@ -134,7 +124,6 @@ function Approval() {
     setStatus('all');
     setDateFrom('');
     setDateTo('');
-    setFilterType('all');
     setFilterValue('');
     setSelected([]);
   }, [tab]);
@@ -246,27 +235,96 @@ function Approval() {
     }
   };
 
-  // 필터링 (간단 예시)
+  // 검색 버튼 클릭 핸들러
+  const handleSearch = () => {
+    // 검색 시 페이지를 1로 리셋
+    setPage(1);
+  };
+
+  // Enter 키로 검색 실행
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  // 실시간 검색 (검색어 입력 시 자동 필터링)
+  const handleFilterValueChange = (e) => {
+    setFilterValue(e.target.value);
+    // 실시간 필터링을 위해 페이지는 1로 유지
+    setPage(1);
+  };
+
+  // 날짜 비교 헬퍼 함수
+  const compareDates = (date1, date2) => {
+    if (!date1 || !date2) return 0;
+
+    // 날짜 형식 정규화 (YYYY-MM-DD 형태로)
+    const normalizeDate = (dateStr) => {
+      if (!dateStr) return '';
+
+      // YYYY.MM.DD 형태를 YYYY-MM-DD로 변환
+      if (dateStr.includes('.')) {
+        return dateStr.replace(/\./g, '-');
+      }
+
+      // 이미 YYYY-MM-DD 형태인 경우
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return dateStr;
+      }
+
+      return dateStr;
+    };
+
+    const normalizedDate1 = normalizeDate(date1);
+    const normalizedDate2 = normalizeDate(date2);
+
+    console.log('날짜 비교:', {
+      date1,
+      date2,
+      normalizedDate1,
+      normalizedDate2,
+    });
+
+    return normalizedDate1.localeCompare(normalizedDate2);
+  };
+
+  // 필터링 (개선된 버전)
   const filteredLeave = leaveData
     .filter((row) => {
-      if (item !== 'all' && row.type !== item) return false;
+      // 항목 필터링 (실제 데이터 값과 매칭)
+      if (item !== 'all') {
+        if (item === '연차' && row.type !== '연차') return false;
+        if (item === '반차' && (!row.type || !row.type.includes('반차')))
+          return false;
+      }
+
+      // 상태 필터링 (실제 데이터 값과 매칭)
       if (status !== 'all' && row.status !== status) return false;
-      if (dateFrom && row.applyDate < dateFrom.replace(/-/g, '.')) return false;
-      if (dateTo && row.applyDate > dateTo.replace(/-/g, '.')) return false;
-      if (filterType !== 'all' && filterValue) {
-        if (filterType === 'applicant' && !row.applicant.includes(filterValue))
-          return false;
-        if (filterType === 'approver' && !row.approver.includes(filterValue))
-          return false;
-        if (filterType === 'reason' && !row.reason.includes(filterValue))
-          return false;
-        if (filterType === 'period' && !row.period.includes(filterValue))
-          return false;
-        if (
-          filterType === 'applicantDepartment' &&
-          !row.applicantDepartment.includes(filterValue)
-        )
-          return false;
+
+      // 날짜 범위 필터링 (개선된 버전)
+      if (dateFrom && compareDates(row.applyDate, dateFrom) < 0) return false;
+      if (dateTo && compareDates(row.applyDate, dateTo) > 0) return false;
+
+      // 검색어 필터링 (통합 검색 - 모든 필드에서 검색)
+      if (filterValue.trim()) {
+        const searchValue = filterValue.trim().toLowerCase();
+
+        // 모든 필드에서 검색
+        const searchFields = [
+          row.applicant,
+          row.approver,
+          row.reason,
+          row.period,
+          row.applicantDepartment,
+        ].filter((field) => field); // null/undefined 제거
+
+        // 하나라도 검색어를 포함하면 통과
+        const hasMatch = searchFields.some((field) =>
+          field.toLowerCase().includes(searchValue),
+        );
+
+        if (!hasMatch) return false;
       }
       return true;
     })
@@ -280,26 +338,66 @@ function Approval() {
       }
       return true;
     });
+
   const filteredCert = certData.filter((row) => {
-    if (item !== 'all' && row.type !== item) return false;
+    // 항목 필터링 (실제 데이터 값과 매칭)
+    if (item !== 'all') {
+      if (item === '재직' && (!row.type || !row.type.includes('재직')))
+        return false;
+      if (item === '경력' && (!row.type || !row.type.includes('경력')))
+        return false;
+      if (item === '퇴직' && (!row.type || !row.type.includes('퇴직')))
+        return false;
+    }
+
+    // 상태 필터링 (실제 데이터 값과 매칭)
     if (status !== 'all' && row.status !== status) return false;
-    if (dateFrom && row.applyDate < dateFrom.replace(/-/g, '.')) return false;
-    if (dateTo && row.applyDate > dateTo.replace(/-/g, '.')) return false;
-    if (filterType !== 'all' && filterValue) {
-      if (filterType === 'applicant' && !row.applicant.includes(filterValue))
-        return false;
-      if (filterType === 'approver' && !row.approver.includes(filterValue))
-        return false;
-      if (filterType === 'purpose' && !row.purpose.includes(filterValue))
-        return false;
-      if (
-        filterType === 'applicantDepartment' &&
-        !row.applicantDepartment.includes(filterValue)
-      )
-        return false;
+
+    // 날짜 범위 필터링 (개선된 버전)
+    if (dateFrom && compareDates(row.applyDate, dateFrom) < 0) return false;
+    if (dateTo && compareDates(row.applyDate, dateTo) > 0) return false;
+
+    // 검색어 필터링 (통합 검색 - 모든 필드에서 검색)
+    if (filterValue.trim()) {
+      const searchValue = filterValue.trim().toLowerCase();
+
+      // 모든 필드에서 검색
+      const searchFields = [
+        row.applicant,
+        row.approver,
+        row.purpose,
+        row.applicantDepartment,
+      ].filter((field) => field); // null/undefined 제거
+
+      // 하나라도 검색어를 포함하면 통과
+      const hasMatch = searchFields.some((field) =>
+        field.toLowerCase().includes(searchValue),
+      );
+
+      if (!hasMatch) return false;
     }
     return true;
   });
+
+  // 필터링 상태 로깅
+  console.log('필터링 상태:', {
+    item,
+    status,
+    dateFrom,
+    dateTo,
+    filterValue,
+    approvalStatus,
+    totalData: tab === 'leave' ? leaveData.length : certData.length,
+    filteredData: tab === 'leave' ? filteredLeave.length : filteredCert.length,
+  });
+
+  // 실제 데이터 구조 확인 (첫 번째 항목만)
+  if (tab === 'leave' && leaveData.length > 0) {
+    console.log('첫 번째 휴가 데이터:', leaveData[0]);
+  }
+  if (tab === 'certificate' && certData.length > 0) {
+    console.log('첫 번째 증명서 데이터:', certData[0]);
+  }
 
   // 버튼 핸들러 (삭제/반려/승인)
 
@@ -466,51 +564,72 @@ function Approval() {
         <DatePicker value={dateFrom} onChange={setDateFrom} />
         <span>~</span>
         <DatePicker value={dateTo} onChange={setDateTo} />
-        <label className={styles.filterLabel}>
-          {tab === 'leave' ? '검색' : '검색'}
-        </label>
-        <Dropdown
-          options={tab === 'leave' ? leaveFilterTypes : certFilterTypes}
-          value={filterType}
-          onChange={setFilterType}
-        />
         <input
           className={styles.filterInput}
           value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-          placeholder='검색어 입력'
+          onChange={handleFilterValueChange}
+          onKeyPress={handleKeyPress}
+          placeholder='검색어 입력 (신청자, 결재자, 사유, 기간, 부서)'
         />
-        <button className={styles.searchBtn}>검색</button>
+        <button className={styles.searchBtn} onClick={handleSearch}>
+          검색
+        </button>
       </div>
+
+      {/* 건수 표시 */}
+      <div className={styles.resultCount}>
+        총 {tab === 'leave' ? filteredLeave.length : filteredCert.length}건
+        {(item !== 'all' ||
+          status !== 'all' ||
+          dateFrom ||
+          dateTo ||
+          filterValue.trim()) && (
+          <span className={styles.filterApplied}> (필터 적용됨)</span>
+        )}
+      </div>
+
       <div className={styles.tableArea}>
-        <ApprovalTable
-          columns={tab === 'leave' ? leaveColumns : certColumns}
-          data={tab === 'leave' ? pagedLeave : pagedCert}
-          selected={selected}
-          setSelected={setSelected}
-          onEditVacation={tab === 'leave' && !isHR ? handleEditVacation : null}
-          onApprove={
-            tab === 'leave' && isHR && approvalStatus === 'pending'
-              ? handleHRApprove
-              : null
-          }
-          onReject={
-            tab === 'leave' && isHR && approvalStatus === 'pending'
-              ? handleHRReject
-              : null
-          }
-          isHR={isHR}
-          // 증명서 탭에서만 인쇄 버튼 활성화
-          onEditCert={null}
-          onPrintCert={
-            tab === 'certificate'
-              ? (row) => {
-                  /* 추후 구현 */
-                }
-              : null
-          }
-          onRowClick={handleRowClick}
-        />
+        {tab === 'leave' ? (
+          filteredLeave.length > 0 ? (
+            <ApprovalTable
+              columns={leaveColumns}
+              data={pagedLeave}
+              selected={selected}
+              setSelected={setSelected}
+              onEditVacation={!isHR ? handleEditVacation : null}
+              onApprove={
+                isHR && approvalStatus === 'pending' ? handleHRApprove : null
+              }
+              onReject={
+                isHR && approvalStatus === 'pending' ? handleHRReject : null
+              }
+              isHR={isHR}
+              onEditCert={null}
+              onPrintCert={null}
+              onRowClick={handleRowClick}
+            />
+          ) : (
+            <div className={styles.noData}>검색 결과가 없습니다.</div>
+          )
+        ) : filteredCert.length > 0 ? (
+          <ApprovalTable
+            columns={certColumns}
+            data={pagedCert}
+            selected={selected}
+            setSelected={setSelected}
+            onEditVacation={null}
+            onApprove={null}
+            onReject={null}
+            isHR={isHR}
+            onEditCert={null}
+            onPrintCert={(row) => {
+              /* 추후 구현 */
+            }}
+            onRowClick={handleRowClick}
+          />
+        ) : (
+          <div className={styles.noData}>검색 결과가 없습니다.</div>
+        )}
       </div>
       <div className={styles.pagination}>
         {Array.from({ length: totalPages }).map((_, idx) => (

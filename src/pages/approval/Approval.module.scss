@@ -291,7 +291,6 @@
   border-color: #388e3c;
   font-weight: 700;
 }
-
 // 모달 스타일 추가
 .modalOverlay {
   position: fixed;
@@ -622,4 +621,29 @@
 .statusInfoText {
   margin-bottom: 12px;
   line-height: 1.4;
+}
+
+.resultCount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.filterApplied {
+  color: #48b96c;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.noData {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+  font-size: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
 }

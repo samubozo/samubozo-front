@@ -16,20 +16,13 @@ export const certOptions = [
 // 상태 옵션
 export const statusOptions = [
   { value: 'all', label: '전체' },
-  { value: '요청', label: '요청' },
+  { value: '대기', label: '대기' },
   { value: '승인', label: '승인' },
   { value: '반려', label: '반려' },
 ];
 
-// 휴가 필터 타입
-export const leaveFilterTypes = [
-  { value: 'all', label: '전체' },
-  { value: 'applicant', label: '신청자' },
-  { value: 'approver', label: '결재자' },
-  { value: 'reason', label: '사유' },
-  { value: 'period', label: '기간' },
-  { value: 'applicantDepartment', label: '부서' },
-];
+// 휴가 필터 타입 (통합 검색용)
+export const leaveFilterTypes = [{ value: 'all', label: '전체' }];
 
 // HR용 결재 상태 필터
 export const hrApprovalStatusOptions = [
@@ -37,14 +30,8 @@ export const hrApprovalStatusOptions = [
   { value: 'processed', label: '처리 완료' },
 ];
 
-// 증명서 필터 타입
-export const certFilterTypes = [
-  { value: 'all', label: '전체' },
-  { value: 'applicant', label: '신청자' },
-  { value: 'approver', label: '결재자' },
-  { value: 'purpose', label: '용도' },
-  { value: 'applicantDepartment', label: '부서' },
-];
+// 증명서 필터 타입 (통합 검색용)
+export const certFilterTypes = [{ value: 'all', label: '전체' }];
 
 // 휴가 테이블 컬럼
 export const leaveColumns = [
