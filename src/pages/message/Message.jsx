@@ -218,7 +218,7 @@ function MessageModal({ open, onClose, onReply, message }) {
         </div>
         <div className={styles.modalField}>
           <label>보낸사람</label>
-          <input value={`사용자 ${message.senderId}`} readOnly />
+          <input value={message.senderName || '보낸사람 없음'} readOnly />
         </div>
         <div className={styles.modalField}>
           <label>받은일시</label>
@@ -1001,11 +1001,8 @@ const Message = () => {
     }
 
     const receiver = {
-      id: message.senderId || message.sender?.employeeNo,
-      name:
-        message.senderName ||
-        message.sender?.userName ||
-        `사용자 ${message.senderId}`,
+      id: message.senderId,
+      name: message.senderName || '보낸사람 없음',
       dept: deptName,
     };
 
@@ -1265,14 +1262,8 @@ const Message = () => {
                   </td>
                   <td>
                     {tab === 'received'
-                      ? msg.senderName ||
-                        msg.sender?.userName ||
-                        `사용자 ${msg.senderId}` ||
-                        '보낸사람 없음'
-                      : msg.receiverName ||
-                        msg.receiver?.userName ||
-                        `사용자 ${msg.receiverId}` ||
-                        '받는사람 없음'}
+                      ? msg.senderName || '보낸사람 없음'
+                      : msg.receiverName || '받는사람 없음'}
                   </td>
                   <td>{msg.subject || '제목 없음'}</td>
                   <td>
