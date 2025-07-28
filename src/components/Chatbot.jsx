@@ -181,7 +181,10 @@ const Chatbot = ({ inHeader }) => {
       <div style={{ position: 'relative', display: 'inline-block' }}>
         <button
           className={inHeader ? styles.headerFab : styles.fab}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            setOpen((o) => !o);
+            setShowTooltip(false);
+          }}
           aria-label='사무보조 챗봇 열기'
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}

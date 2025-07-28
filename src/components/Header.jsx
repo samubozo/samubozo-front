@@ -652,6 +652,7 @@ const Header = ({ showChatbot }) => {
                 className={styles.headerLogo}
                 style={{ cursor: 'pointer', position: 'relative', zIndex: 1 }}
               />
+
               {/* 맑음일 때만 해바라기 표시 (로고에 겹치게) */}
               {(() => {
                 // 디버깅을 위한 로그
@@ -702,11 +703,11 @@ const Header = ({ showChatbot }) => {
                   alt='해바라기'
                   className={styles.sunflowerAppear}
                   style={{
-                    width: '100px',
-                    height: '100px',
+                    width: '50px',
+                    height: '50px',
                     position: 'absolute',
-                    left: '210px', // 오른쪽으로 30px 더 이동
-                    top: '10px', // 아래로 10px 내림
+                    left: '245px', // 오른쪽으로 30px 더 이동
+                    top: '5px', // 아래로 10px 내림
                     margin: 0,
                     padding: 0,
                     background: 'none',
@@ -718,10 +719,28 @@ const Header = ({ showChatbot }) => {
             </div>
           </div>
           {showChatbot && (
-            <div className={styles.headerMainRight}>
+            <span className={styles.userInfo + ' ' + styles.userInfoBottomLeft}>
               <Chatbot inHeader />
-            </div>
+            </span>
           )}
+          <div className={styles.headerMainRight}>
+            {userInfoText}
+            {isHR && (
+              <span
+                style={{
+                  background: '#48b96c',
+                  color: '#fff',
+                  fontSize: '12px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  marginLeft: '8px',
+                  fontWeight: '600',
+                }}
+              >
+                HR
+              </span>
+            )}
+          </div>
           <div className={styles.headerRight}>
             {/* 홈 버튼: 로그인 상태면 /dashboard, 아니면 / */}
             <button
@@ -826,24 +845,6 @@ const Header = ({ showChatbot }) => {
               )}
             </div>
           </div>
-          <span className={styles.userInfo + ' ' + styles.userInfoBottomLeft}>
-            {userInfoText}
-            {isHR && (
-              <span
-                style={{
-                  background: '#48b96c',
-                  color: '#fff',
-                  fontSize: '12px',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  marginLeft: '8px',
-                  fontWeight: '600',
-                }}
-              >
-                HR
-              </span>
-            )}
-          </span>
         </div>
 
         <nav className={styles.headerNav}>
