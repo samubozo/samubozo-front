@@ -341,6 +341,12 @@
 .employee-list table tr {
   transition: background 0.18s;
 }
+.retired-row {
+  color: #aaa !important;
+  background-color: #f6f6f6 !important;
+  font-style: italic;
+}
+
 .employee-list table tr:hover {
   background: #eafaf1;
 }
