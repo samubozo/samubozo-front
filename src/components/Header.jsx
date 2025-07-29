@@ -4,6 +4,7 @@ import Logo from '../assets/samubozo-logo2.png';
 import sunflowerImg from '../assets/Gemini_Generated_Image_8m3t3l8m3t3l8m3t2.png';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/UserContext';
+import { useWeather } from '../context/WeatherContext';
 import Chatbot from './Chatbot';
 import ToastNotification from './ToastNotification';
 import axiosInstance from '../configs/axios-config';
@@ -20,10 +21,10 @@ const Header = ({ showChatbot }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoggedIn, user } = useContext(AuthContext);
+  const { todayWeatherState } = useWeather();
   const [userName, setUserName] = useState('');
   const [userPosition, setUserPosition] = useState('');
   const [userDepartment, setUserDepartment] = useState('');
-  const [todayWeatherState, setTodayWeatherState] = useState(null);
 
   // 알림 관련 상태
   const [showNotificationDropdown, setShowNotificationDropdown] =
@@ -35,6 +36,7 @@ const Header = ({ showChatbot }) => {
 
   // 토스트 알림 관련 상태
   const [toastNotifications, setToastNotifications] = useState([]);
+  const [notificationTab, setNotificationTab] = useState('unread'); // 'unread' | 'all'
 
   // 테스트용 토스트 알림 추가
   const addTestToast = (notification) => {
@@ -366,6 +368,7 @@ const Header = ({ showChatbot }) => {
         sessionStorage.setItem('USER_DEPARTMENT', departmentName);
         sessionStorage.setItem('USER_POSITION', userInfo.positionName || '');
         sessionStorage.setItem('USER_EMPLOYEE_NO', userInfo.employeeNo || '');
+        sessionStorage.setItem('HR_ROLE', userInfo.hrRole || '');
 
         setUserName(userInfo.userName || '');
         setUserDepartment(departmentName);
@@ -551,42 +554,69 @@ const Header = ({ showChatbot }) => {
   };
 
   // 알림 드롭다운 UI
-  const NotificationDropdown = () => (
-    <div className={styles.notificationDropdown} ref={notificationDropdownRef}>
-      <div className={styles.notificationHeader}>
-        🔔 알림{' '}
-        {unreadCount > 0 ? `(${unreadCount}개 읽지 않음)` : '(모두 읽음)'}
-      </div>
-      {notifications.length === 0 ? (
-        <div className={styles.noNotification}>📭 알림이 없습니다</div>
-      ) : (
-        <div className={styles.notificationList}>
-          {notifications.map((n) => (
-            <div
-              key={n.notificationId}
-              className={n.isRead ? styles.read : styles.unread}
-              onClick={() => handleNotificationClick(n)}
+  const NotificationDropdown = () => {
+    // 현재 탭에 따라 표시할 알림 필터링
+    const filteredNotifications =
+      notificationTab === 'unread'
+        ? notifications.filter((n) => !n.isRead)
+        : notifications;
+
+    return (
+      <div
+        className={styles.notificationDropdown}
+        ref={notificationDropdownRef}
+      >
+        <div className={styles.notificationHeader}>
+          <div className={styles.notificationTabs}>
+            <button
+              className={`${styles.notificationTab} ${notificationTab === 'unread' ? styles.active : ''}`}
+              onClick={() => setNotificationTab('unread')}
             >
-              <div className={styles.message}>{n.message}</div>
-              <div className={styles.time}>
-                {new Date(n.createdAt).toLocaleString()}
+              읽지 않은 알림 {unreadCount > 0 && `(${unreadCount})`}
+            </button>
+            <button
+              className={`${styles.notificationTab} ${notificationTab === 'all' ? styles.active : ''}`}
+              onClick={() => setNotificationTab('all')}
+            >
+              모든 알림 ({notifications.length})
+            </button>
+          </div>
+        </div>
+        {filteredNotifications.length === 0 ? (
+          <div className={styles.noNotification}>
+            {notificationTab === 'unread'
+              ? '📭 읽지 않은 알림이 없습니다'
+              : '📭 알림이 없습니다'}
+          </div>
+        ) : (
+          <div className={styles.notificationList}>
+            {filteredNotifications.map((n) => (
+              <div
+                key={n.notificationId}
+                className={n.isRead ? styles.read : styles.unread}
+                onClick={() => handleNotificationClick(n)}
+              >
+                <div className={styles.message}>{n.message}</div>
+                <div className={styles.time}>
+                  {new Date(n.createdAt).toLocaleString()}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {unreadCount > 0 && (
-        <div className={styles.notificationFooter}>
-          <button
-            className={styles.markAllReadBtn}
-            onClick={handleMarkAllAsRead}
-          >
-            모든 알림 읽음 처리
-          </button>
-        </div>
-      )}
-    </div>
-  );
+            ))}
+          </div>
+        )}
+        {unreadCount > 0 && notificationTab === 'unread' && (
+          <div className={styles.notificationFooter}>
+            <button
+              className={styles.markAllReadBtn}
+              onClick={handleMarkAllAsRead}
+            >
+              모든 알림 읽음 처리
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // 날씨 아이콘 결정 함수
   function getWeatherIcon(sky, pty) {
@@ -652,6 +682,7 @@ const Header = ({ showChatbot }) => {
                 className={styles.headerLogo}
                 style={{ cursor: 'pointer', position: 'relative', zIndex: 1 }}
               />
+
               {/* 맑음일 때만 해바라기 표시 (로고에 겹치게) */}
               {(() => {
                 // 디버깅을 위한 로그
@@ -702,26 +733,45 @@ const Header = ({ showChatbot }) => {
                   alt='해바라기'
                   className={styles.sunflowerAppear}
                   style={{
-                    width: '100px',
-                    height: '100px',
+                    width: '50px',
+                    height: '50px',
                     position: 'absolute',
-                    left: '210px', // 오른쪽으로 30px 더 이동
-                    top: '10px', // 아래로 10px 내림
+                    left: '245px',
+                    top: '5px',
                     margin: 0,
                     padding: 0,
                     background: 'none',
                     objectFit: 'contain',
-                    zIndex: 2,
+                    zIndex: 10, // 더 높은 z-index로 설정
+                    pointerEvents: 'none', // 클릭 이벤트 방지
                   }}
                 />
               )}
             </div>
           </div>
           {showChatbot && (
-            <div className={styles.headerMainRight}>
+            <span className={styles.userInfo + ' ' + styles.userInfoBottomLeft}>
               <Chatbot inHeader />
-            </div>
+            </span>
           )}
+          <div className={styles.headerMainRight}>
+            {userInfoText}
+            {isHR && (
+              <span
+                style={{
+                  background: '#48b96c',
+                  color: '#fff',
+                  fontSize: '12px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  marginLeft: '8px',
+                  fontWeight: '600',
+                }}
+              >
+                HR
+              </span>
+            )}
+          </div>
           <div className={styles.headerRight}>
             {/* 홈 버튼: 로그인 상태면 /dashboard, 아니면 / */}
             <button
@@ -826,24 +876,6 @@ const Header = ({ showChatbot }) => {
               )}
             </div>
           </div>
-          <span className={styles.userInfo + ' ' + styles.userInfoBottomLeft}>
-            {userInfoText}
-            {isHR && (
-              <span
-                style={{
-                  background: '#48b96c',
-                  color: '#fff',
-                  fontSize: '12px',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  marginLeft: '8px',
-                  fontWeight: '600',
-                }}
-              >
-                HR
-              </span>
-            )}
-          </span>
         </div>
 
         <nav className={styles.headerNav}>

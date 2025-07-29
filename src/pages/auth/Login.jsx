@@ -144,13 +144,16 @@ const Login = () => {
           res.data.result.accessToken || res.data.result.token;
         const refreshToken = res.data.result.refreshToken;
         const id = res.data.result.id;
+        const employeeNo = res.data.result.employeeNo;
         const role = res.data.result.role;
         const provider = res.data.result.provider;
         console.log('로그인 응답 accessToken:', accessToken);
         console.log('로그인 응답 refreshToken:', refreshToken);
         console.log('로그인 응답 id:', id);
+        console.log('로그인 응답 employeeNo:', employeeNo);
         console.log('로그인 응답 role:', role);
         console.log('로그인 응답 provider:', provider);
+        console.log('전체 로그인 응답 result:', res.data.result);
         if (typeof onLogin === 'function') {
           await onLogin({ accessToken, refreshToken, id, role, provider });
         }

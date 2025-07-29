@@ -46,6 +46,8 @@ const fetchEmployees = async ({
           position: emp.positionName,
           department: emp.department?.name || '',
           imageUrl: emp.profileImage || '',
+          activated: emp.activate || 'Y',
+          isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // ✅ 퇴사자 표시 필드 추가
         },
       ];
     }
@@ -72,7 +74,8 @@ const fetchEmployees = async ({
       name: emp.userName,
       position: emp.positionName,
       department: emp.department?.name || '',
-      imageUrl: emp.profileImage || '',
+      activated: emp.activate || 'Y', // ✅ 재직 여부 (원본)
+      isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // ✅ 퇴직 여부 (EmployeeTable 호환)
     }));
   } catch (err) {
     console.error('직원 불러오기 실패:', err);
@@ -80,18 +83,11 @@ const fetchEmployees = async ({
   }
 };
 
-const departmentOptions = [
-  '전체',
-  '경영지원',
-  '영업부',
-  '기획부',
-  '마케팅',
-  '디자인',
-];
+const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '영업팀'];
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
-const PayrollDetail = ({ employee, onClose }) => {
+const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
   const [form, setForm] = useState({
     payMonthStr: '',
     basePayroll: '',
@@ -130,15 +126,34 @@ const PayrollDetail = ({ employee, onClose }) => {
         userId: employee.id,
         payYear: year,
         payMonth: month,
-        basePayroll: Number(form.basePayroll.replace(/,/g, '')),
-        positionAllowance: Number(form.positionAllowance.replace(/,/g, '')),
-        mealAllowance: Number(form.mealAllowance.replace(/,/g, '')),
-        bonus: Number(form.bonus.replace(/,/g, '')),
+        basePayroll:
+          form.basePayroll.trim() === ''
+            ? null
+            : Number(form.basePayroll.replace(/,/g, '')),
+        positionAllowance:
+          form.positionAllowance.trim() === ''
+            ? null
+            : Number(form.positionAllowance.replace(/,/g, '')),
+        mealAllowance:
+          form.mealAllowance.trim() === ''
+            ? null
+            : Number(form.mealAllowance.replace(/,/g, '')),
+        bonus:
+          form.bonus.trim() === ''
+            ? null
+            : Number(form.bonus.replace(/,/g, '')),
+
+        positionName: employee.position,
       };
 
       console.log('🚀 급여 저장 요청 payload:', payload);
 
       await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
+
+      // ✅ 저장 성공 후 급여 다시 조회
+      if (fetchPayroll) {
+        fetchPayroll(year, month, employee.id);
+      }
       setMessage('저장되었습니다.');
       setForm({
         payMonthStr: '',
@@ -158,7 +173,7 @@ const PayrollDetail = ({ employee, onClose }) => {
   // 예시: employee에 계좌, 이미지 등 추가 정보가 있다고 가정
   const bankName = employee.bankName || '';
   const accountNumber = employee.accountNumber || '';
-  const accountHolder = employee.accountHolder || employee.name;
+  const accountHolder = employee.accountHolder;
   const employeeNo = employee.id;
   const imageUrl = employee.imageUrl || defaultImg;
   const department = employee.department || '';
@@ -201,7 +216,6 @@ const PayrollDetail = ({ employee, onClose }) => {
                   value={form.basePayroll}
                   onChange={handleChange}
                   autoComplete='off'
-                  required
                 />
               </td>
             </tr>
@@ -218,7 +232,6 @@ const PayrollDetail = ({ employee, onClose }) => {
                   value={form.positionAllowance}
                   onChange={handleChange}
                   autoComplete='off'
-                  required
                 />
               </td>
             </tr>
@@ -233,7 +246,6 @@ const PayrollDetail = ({ employee, onClose }) => {
                   value={form.mealAllowance}
                   onChange={handleChange}
                   autoComplete='off'
-                  required
                 />
               </td>
             </tr>
@@ -266,7 +278,7 @@ const PayrollDetail = ({ employee, onClose }) => {
             style={{ minWidth: 180 }}
             className={styles['save-button']}
           >
-            {loading ? '저장 중...' : '저장'}
+            {loading ? '등록/수정 중...' : '등록 / 수정'}
           </button>
           {message && (
             <div
@@ -296,7 +308,10 @@ const PayrollManagement = () => {
     mealAllowance: '',
     bonus: '',
   });
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
   const [selectedDepartment, setSelectedDepartment] = useState('전체');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
@@ -310,6 +325,17 @@ const PayrollManagement = () => {
     const payload = parseJwt(token);
     console.log('✅ JWT payload:', payload); // 추가
     setIsHR(payload?.role === 'Y');
+  }, []);
+
+  useEffect(() => {
+    if (selectedMonth && user) {
+      const [year, month] = selectedMonth.split('-');
+      if (isHR && selectedEmployee) {
+        fetchPayroll(year, month, selectedEmployee.id);
+      } else {
+        fetchPayroll(year, month);
+      }
+    }
   }, []);
 
   const fetchPayroll = (year, month, employeeId = null) => {
@@ -341,6 +367,7 @@ const PayrollManagement = () => {
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
             bonus: Number(result?.bonus ?? 0),
+            overtimePay: Number(result?.overtimePay ?? 0),
           });
         })
         .catch((err) => {
@@ -363,6 +390,7 @@ const PayrollManagement = () => {
             positionAllowance: Number(result?.positionAllowance ?? 0),
             mealAllowance: Number(result?.mealAllowance ?? 0),
             bonus: Number(result?.bonus ?? 0),
+            overtimePay: Number(result?.overtimePay ?? 0),
           });
         })
         .catch(() => {
@@ -379,7 +407,7 @@ const PayrollManagement = () => {
   useEffect(() => {
     const loadEmployees = async () => {
       console.log('🚀 isHR 전달됨:', isHR); // 확인
-      const employees = await fetchEmployees({ isHR });
+      const employees = await fetchEmployees({ isHR, includeRetired: true });
       console.log('📦 직원 목록:', employees); // 확인
       setEmployeeData(employees);
     };
@@ -424,7 +452,7 @@ const PayrollManagement = () => {
     );
   };
 
-  const handleEmployeeClick = (emp) => {
+  const handleEmployeeClick = async (emp) => {
     const isSame = selectedEmployeeId === emp.id;
 
     if (isSame) {
@@ -432,11 +460,32 @@ const PayrollManagement = () => {
       setSelectedEmployee(null);
     } else {
       setSelectedEmployeeId(emp.id);
-      setSelectedEmployee(emp);
 
-      if (isHR && selectedMonth) {
-        const [year, month] = selectedMonth.split('-');
-        fetchPayroll(year, month, emp.id);
+      try {
+        const res = await axiosInstance.get(
+          `${API_BASE_URL}${HR}/user/${emp.id}`,
+        );
+        const data = res.data.result;
+
+        setSelectedEmployee({
+          id: data.employeeNo,
+          name: data.userName,
+          department: data.department?.name || '',
+          position: data.positionName || '',
+          imageUrl: data.profileImage || '',
+          bankName: data.bankName || '',
+          accountNumber: data.accountNumber || '',
+          accountHolder: data.accountHolder || data.userName,
+          isRetired: data.activate !== 'Y' ? 'Y' : 'N', // ✅ 추가!
+        });
+
+        if (isHR && selectedMonth) {
+          const [year, month] = selectedMonth.split('-');
+          fetchPayroll(year, month, data.employeeNo);
+        }
+      } catch (err) {
+        console.error('직원 상세 조회 실패:', err);
+        alert('직원 정보를 불러올 수 없습니다.');
       }
     }
   };
@@ -469,6 +518,34 @@ const PayrollManagement = () => {
   const netPay = total - totalDeduction;
 
   const printRef = useRef(null);
+
+  const handleOvertimeCalculation = async () => {
+    if (!selectedEmployee || !selectedMonth) return;
+
+    const [yearStr, monthStr] = selectedMonth.split('-');
+    const year = parseInt(yearStr);
+    const month = parseInt(monthStr);
+
+    const payload = {
+      userId: selectedEmployee.id,
+      payYear: year,
+      payMonth: month,
+      basePayroll: payrollData.basePayroll,
+      positionAllowance: payrollData.positionAllowance,
+      mealAllowance: payrollData.mealAllowance,
+      bonus: payrollData.bonus,
+      positionName: selectedEmployee.position,
+    };
+
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
+      alert('야근수당이 계산되어 저장되었습니다.');
+      fetchPayroll(year, month, selectedEmployee.id); // 화면 반영
+    } catch (err) {
+      console.error('야근수당 계산 실패:', err);
+      alert('야근수당 계산에 실패했습니다.');
+    }
+  };
 
   const handlePrintPayroll = () => {
     if (!selectedEmployee) return;
@@ -590,6 +667,9 @@ const PayrollManagement = () => {
     <body>
       <h2>${formattedMonth} 급여명세서</h2>
 
+      ${emp.isRetired === 'Y' ? `<p style="text-align:center; color:red; font-weight:bold;">[퇴사자]</p>` : ''}
+
+
       <!-- 직원 정보 -->
       <table class="info-table">
         <tr>
@@ -699,6 +779,18 @@ const PayrollManagement = () => {
         </div>
         <div className={styles['button-group']}>
           <button
+            onClick={handleOvertimeCalculation}
+            disabled={!selectedEmployee}
+            style={
+              !selectedEmployee
+                ? { background: '#ccc', cursor: 'not-allowed' }
+                : {}
+            }
+          >
+            야근수당 계산
+          </button>
+
+          <button
             onClick={handlePrintPayroll}
             disabled={!selectedEmployee}
             style={
@@ -729,8 +821,10 @@ const PayrollManagement = () => {
               {filteredEmployees.map((emp, idx) => (
                 <tr
                   key={emp.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleEmployeeClick(emp)} // ✅ 수정
+                  className={`${selectedEmployeeId === emp.id ? styles.selected : ''} ${
+                    emp.isRetired === 'Y' ? styles['retired-row'] : ''
+                  }`}
+                  onClick={() => handleEmployeeClick(emp)}
                 >
                   <td>
                     <input
@@ -750,8 +844,22 @@ const PayrollManagement = () => {
           <div className={styles['employee-summary-spacer']} />
           {/* 하단 인원(퇴직) 요약 */}
           <div className={styles['employee-summary']}>
-            <span>인원 (퇴직)</span>
-            <span>{filteredEmployees.length}</span>
+            {(() => {
+              const total = filteredEmployees.length;
+              const retiredCount = filteredEmployees.filter(
+                (emp) => emp.isRetired === 'Y', // ✅ 고친 부분
+              ).length;
+              const activeCount = total - retiredCount;
+
+              return (
+                <>
+                  <span>인원 (퇴직)</span>
+                  <span>
+                    {activeCount}명 ({retiredCount}명)
+                  </span>
+                </>
+              );
+            })()}
           </div>
         </div>
 
@@ -781,6 +889,10 @@ const PayrollManagement = () => {
                 <tr>
                   <td>성과급</td>
                   <td>{bonus ? bonus.toLocaleString() : ''}</td>
+                </tr>
+                <tr>
+                  <td>야근수당</td>
+                  <td>{payrollData.overtimePay?.toLocaleString() || '0'}</td>
                 </tr>
               </tbody>
             </table>
@@ -889,6 +1001,7 @@ const PayrollManagement = () => {
         <PayrollDetail
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
+          fetchPayroll={fetchPayroll}
         />
       )}
 

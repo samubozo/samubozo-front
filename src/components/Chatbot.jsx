@@ -79,16 +79,26 @@ const Chatbot = ({ inHeader }) => {
     }
   }, [messages, open]);
 
+  // input 상태 디버깅용 (개발 중에만 사용)
+  useEffect(() => {
+    if (input === '') {
+      console.log('Input cleared successfully');
+    }
+  }, [input]);
+
   const handleSend = async (msg) => {
-    // msg가 문자열이 아니면 input을 사용
-    const messageToSend = typeof msg === 'string' ? msg : input;
-    if (!messageToSend.trim() || isLoading) return;
+    if (!msg || !msg.trim() || isLoading) return;
+
+    const messageToSend = msg.trim();
     const req = {
       message: messageToSend,
     };
     const userMsg = { from: 'user', text: messageToSend };
     setMessages((msgs) => [...msgs, userMsg]);
+
+    // input 비우기 (엔터키든 버튼이든 상관없이)
     setInput('');
+
     setIsLoading(true);
     try {
       const res = await axiosInstance.post(
@@ -117,14 +127,12 @@ const Chatbot = ({ inHeader }) => {
     setIsLoading(false);
   };
 
-  // 엔터키로 메시지 전송 (입력값이 남는 현상 방지)
+  // 엔터키로 메시지 전송
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault(); // 반드시 가장 먼저 호출
       if (input.trim() && !isLoading) {
-        const msg = input;
-        setInput(''); // 먼저 input을 비움
-        handleSend(msg); // input 값을 인자로 넘김
+        handleSend(input); // input 값을 그대로 전달
       }
     }
   };
@@ -170,7 +178,7 @@ const Chatbot = ({ inHeader }) => {
             />
             <button
               className={styles.sendBtn}
-              onClick={() => handleSend()}
+              onClick={() => handleSend(input)}
               type='button'
             >
               전송
@@ -181,7 +189,10 @@ const Chatbot = ({ inHeader }) => {
       <div style={{ position: 'relative', display: 'inline-block' }}>
         <button
           className={inHeader ? styles.headerFab : styles.fab}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            setOpen((o) => !o);
+            setShowTooltip(false);
+          }}
           aria-label='사무보조 챗봇 열기'
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}

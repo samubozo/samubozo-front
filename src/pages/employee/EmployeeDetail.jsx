@@ -84,6 +84,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [birthDate, setBirthDate] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // 성공 메시지 모달
+  const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 내용
 
   const handleAccountNumberChange = (e) => {
     let value = e.target.value;
@@ -286,10 +288,65 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setCertPurpose('');
       setCertApproveDate('');
     } catch (e) {
-      alert('증명서 신청 실패');
+      setSuccessMessage('증명서 신청 실패');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
     }
   };
 
+<<<<<<< HEAD
+=======
+  // 증명서 수정 (PUT /certificate/{id})
+  const handleEditCertRow = (row) => {
+    if (row.status !== 'REQUESTED') return; // 요청됨만 수정 가능
+    setEditForm({
+      type: row.type,
+      purpose: row.purpose,
+      requestDate: row.requestDate,
+    });
+    setEditingCertRowId(row.certificateId);
+  };
+  const handleEditSave = async (id) => {
+    try {
+      await axiosInstance.put(
+        `${API_BASE_URL}${CERTIFICATE}/certificate/${id}`,
+        {
+          type: editForm.type,
+          purpose: editForm.purpose,
+          requestDate: editForm.requestDate,
+        },
+      );
+      setEditingCertRowId(null);
+      // 목록 갱신
+      const res = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
+      );
+      setCertList(res.data.result?.content || []);
+    } catch (e) {
+      setSuccessMessage('증명서 수정 실패');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
+    }
+  };
+
+  // 증명서 삭제 (DELETE /delete/{id})
+  const handleDeleteCert = async (id) => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      await axiosInstance.delete(`${API_BASE_URL}${CERTIFICATE}/delete/${id}`);
+      // 목록 갱신
+      const res = await axiosInstance.get(
+        `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
+      );
+      setCertList(res.data.result?.content || []);
+    } catch (e) {
+      setSuccessMessage('증명서 삭제 실패');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
+    }
+  };
+
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
   // 모달 열기
   const openAddModal = () => {
     setNewOrder('');
@@ -368,6 +425,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       );
       setSuccessMessage('프로필 이미지가 업로드되었습니다.');
       setShowSuccessModal(true);
+<<<<<<< HEAD
+=======
+      setTimeout(() => setShowSuccessModal(false), 2000);
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
       // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
       if (
         user?.employeeNo &&
@@ -381,6 +442,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     } catch {
       setSuccessMessage('프로필 이미지 업로드 실패');
       setShowSuccessModal(true);
+<<<<<<< HEAD
+=======
+      setTimeout(() => setShowSuccessModal(false), 2000);
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
     }
   };
 
@@ -428,6 +493,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       );
       setSuccessMessage('저장되었습니다.');
       setShowSuccessModal(true);
+<<<<<<< HEAD
+=======
+      setTimeout(() => setShowSuccessModal(false), 2000);
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
       // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
       if (
         user?.employeeNo &&
@@ -447,6 +516,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
             '저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.',
           );
           setShowSuccessModal(true);
+<<<<<<< HEAD
+=======
+          setTimeout(() => setShowSuccessModal(false), 2000);
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
         }
       }
     } catch {
@@ -535,35 +608,43 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   };
 
   // 직원 퇴사자 등록
-  const handleRetire = async () => {
+  const [showRetireConfirm, setShowRetireConfirm] = useState(false);
+
+  // 퇴사자 등록 실제 실행
+  const doRetire = async () => {
     if (!selectedEmployee?.id) return;
-    if (!window.confirm('정말 퇴사자로 등록하시겠습니까?')) return;
     try {
       await axiosInstance.patch(
         `${API_BASE_URL}${HR}/users/retire/${selectedEmployee.id}`,
       );
       setSuccessMessage('퇴사자 등록이 완료되었습니다.');
       setShowSuccessModal(true);
+<<<<<<< HEAD
+=======
+      setTimeout(() => setShowSuccessModal(false), 2000);
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
       // 상세정보 새로고침
       const res = await axiosInstance.get(
         `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
       );
       const data = res.data.result;
       setStatus(data.activate || 'N');
-      setLeaveDate(data.retireDate || '');
-      // 필요시 다른 상태도 갱신
-      // 퇴사자 등록 후 증명서 리스트도 새로고침
-      const certRes = await axiosInstance.get(
-        `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
-      );
-      setCertList(certRes.data.result?.content || []);
-      // 퇴사자 등록 후 리스트 새로고침
-      if (typeof onRetireSuccess === 'function')
-        onRetireSuccess(selectedEmployee.id); // id 명시적 전달
+      if (onRetireSuccess) onRetireSuccess(selectedEmployee.id);
     } catch (e) {
+<<<<<<< HEAD
       setSuccessMessage('퇴사자 등록에 실패했습니다.');
       setShowSuccessModal(true);
+=======
+      setSuccessMessage('퇴사자 등록 실패');
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
     }
+  };
+
+  // 퇴사자 등록 버튼 클릭 시
+  const handleRetire = () => {
+    setShowRetireConfirm(true);
   };
 
   const isRetired = status === 'N'; // activate === 'N'이면 true
@@ -1251,6 +1332,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           </div>
         </div>
       )}
+<<<<<<< HEAD
 
       {/* 반려 사유 입력 모달 */}
       <RejectModal
@@ -1271,6 +1353,59 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           autoClose={true}
           autoCloseDelay={3000}
         />
+=======
+      {/* 퇴사자 등록 확인 모달 */}
+      {showRetireConfirm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.successModal}>
+            <div
+              className={styles.successMessage}
+              style={{ marginBottom: 24, fontWeight: 600, fontSize: '1.1rem' }}
+            >
+              정말 퇴사자로 등록하시겠습니까?
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+              <button
+                className={styles.successCloseBtn}
+                style={{ minWidth: 80 }}
+                onClick={() => {
+                  setShowRetireConfirm(false);
+                  doRetire();
+                }}
+              >
+                확인
+              </button>
+              <button
+                className={styles.successCloseBtn}
+                style={{
+                  minWidth: 80,
+                  background: '#f3f3f3',
+                  color: '#333',
+                  border: '1px solid #bbb',
+                }}
+                onClick={() => setShowRetireConfirm(false)}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 성공 메시지 모달 */}
+      {showSuccessModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.successModal}>
+            <div className={styles.successIcon}>✓</div>
+            <div className={styles.successMessage}>{successMessage}</div>
+            <button
+              className={styles.successCloseBtn}
+              onClick={() => setShowSuccessModal(false)}
+            >
+              확인
+            </button>
+          </div>
+        </div>
+>>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
       )}
     </div>
   );

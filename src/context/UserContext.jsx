@@ -46,9 +46,6 @@ export const AuthContextProvider = (props) => {
     localStorage.setItem('REFRESH_TOKEN', loginData.refreshToken);
     sessionStorage.setItem('USER_ID', loginData.id);
     sessionStorage.setItem('USER_ROLE', loginData.role);
-    if (loginData.provider) {
-      sessionStorage.setItem('PROVIDER', loginData.provider);
-    }
 
     // 로그인 후 유저 상세정보를 불러와서 sessionStorage에 저장
     try {

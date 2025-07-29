@@ -227,14 +227,13 @@
 }
 
 .calendarCell {
-  height: 160px;
+  height: 140px;
   vertical-align: top;
   border-bottom: 1px solid #e0e0e0;
   border-right: 1px solid #e0e0e0;
   border-top: 1px solid #e0e0e0;
-  padding: 10px 8px 4px 12px;
+  padding: 10px 0 4px 0;
   position: relative;
-  overflow-y: auto;
   box-sizing: border-box;
 }
 
@@ -265,8 +264,8 @@
   color: #222;
   font-size: 13px;
   font-weight: 500;
-  padding: 4px 12px;
-  min-height: 28px;
+  padding: 2px 8px;
+  min-height: 18px;
   display: flex;
   align-items: center;
   white-space: nowrap;
@@ -283,6 +282,9 @@
 .eventBar {
   border-radius: 8px;
   overflow: visible !important;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
 }
 .continuousEventBarStart {
   border-radius: 8px 0 0 8px;
@@ -473,6 +475,70 @@
   box-sizing: border-box;
 }
 
+.dateTypeSelector {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.dateTypeSelector label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  margin-bottom: 0;
+  min-width: auto;
+}
+
+.dateTypeSelector input[type='radio'] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.dateInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.dateInputs input[type='date'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.dateInputs span {
+  font-weight: 500;
+  color: #666;
+  margin: 0 4px;
+}
+
+.dateFieldContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.noDueCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.noDueCheckbox input[type='checkbox'] {
+  margin: 0;
+  cursor: pointer;
+}
+
 .modalBtnRow {
   display: flex;
   justify-content: flex-end;
@@ -516,31 +582,34 @@
   z-index: 99999 !important;
   background: #fff;
   border: 1.5px solid #e0e0e0;
-  border-radius: 16px;
-  padding: 24px 28px 22px 28px;
-  font-size: 21px;
-  width: 340px;
-  min-width: 340px;
-  box-shadow: 0 6px 32px rgba(72, 185, 108, 0.13);
+  border-radius: 14px;
+  padding: 14px 14px 12px 14px;
+  font-size: 16px;
+  width: 260px;
+  min-width: 180px;
+  max-width: 95vw;
+  box-shadow: 0 4px 16px rgba(72, 185, 108, 0.13);
   color: #222;
+  box-sizing: border-box;
 
   .eventDetailTitle {
-    font-size: 1.25em;
-    font-weight: 800;
+    font-size: 1.08em;
+    font-weight: 700;
     color: #222;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     text-align: center;
     letter-spacing: -0.5px;
-    border-bottom: 1.5px solid #e0e0e0;
-    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
   }
 
   .eventDetailRow {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 16px;
-    line-height: 1.6;
+    margin-bottom: 10px;
+    line-height: 1.4;
     word-break: keep-all;
+    font-size: 0.98em;
     &:last-child {
       margin-bottom: 0;
     }
@@ -549,10 +618,10 @@
   .eventDetailLabel {
     font-weight: 600;
     color: #888;
-    min-width: 90px;
-    margin-right: 10px;
+    min-width: 60px;
+    margin-right: 6px;
     text-align: left;
-    font-size: 0.98em;
+    font-size: 0.95em;
     letter-spacing: -0.5px;
   }
 
@@ -561,7 +630,8 @@
     font-weight: 500;
     flex: 1;
     text-align: left;
-    font-size: 1em;
+    font-size: 0.97em;
+    word-break: break-all;
   }
 }
 
@@ -636,4 +706,11 @@
 .firstDayCell {
   border-left: 1px solid #e0e0e0;
   border-top: 1px solid #e0e0e0;
+}
+
+.highlightedCell {
+  border: 2.5px solid #48b96c !important;
+  box-shadow: 0 0 0 3px #e8f5e9;
+  border-radius: 10px;
+  z-index: 2;
 }

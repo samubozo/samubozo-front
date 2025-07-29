@@ -74,14 +74,16 @@
   flex: 0 0 auto;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   gap: 14px;
   margin: 0 auto;
   overflow: visible;
 }
 
 .headerLogo {
-  width: 240px;
-  height: 130px;
+  width: 120px;
+  height: 65px;
   object-fit: contain;
   display: block;
   margin: 0 auto;
@@ -110,10 +112,13 @@
 }
 
 .headerMainRight {
-  flex: 1;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: auto;
   display: flex;
   justify-content: flex-end;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .headerRight {
@@ -163,7 +168,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 55px;
+  height: 44px;
 }
 
 .headerNavList {
@@ -175,9 +180,9 @@
 }
 
 .navLink {
-  font-size: 25px;
+  font-size: 20px;
   padding: 0 40px;
-  height: 55px;
+  height: 44px;
   display: flex;
   align-items: center;
   color: white;
@@ -295,14 +300,41 @@
 }
 
 .notificationHeader {
-  padding: 16px 20px;
+  padding: 0;
   border-bottom: 1px solid #f0f0f0;
-  font-weight: 600;
-  font-size: 16px;
-  color: #333;
   background: #fafafa;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
+}
+
+.notificationTabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.notificationTab {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.notificationTab:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.notificationTab.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: #fff;
+  font-weight: 600;
 }
 
 .notificationList {
@@ -359,8 +391,8 @@
 }
 
 .logoWeatherWrap {
-  width: 240px;
-  height: 130px;
+  width: 400px;
+  height: 65px;
   position: relative;
   display: inline-block;
   overflow: visible;
@@ -386,6 +418,34 @@
 
 .cloud-move-float {
   animation: cloudMoveFloat 8s ease-in-out infinite;
+}
+
+.cloudButtonMove {
+  animation: cloudButtonMove 6s ease-in-out infinite;
+  position: absolute;
+  x: 195;
+  y: -5;
+  width: 45px;
+  height: 45px;
+  z-index: 3;
+}
+
+@keyframes cloudButtonMove {
+  0% {
+    transform: translateX(0px);
+  }
+  25% {
+    transform: translateX(8px);
+  }
+  50% {
+    transform: translateX(15px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
 }
 
 .sunAnimated {
