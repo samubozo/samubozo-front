@@ -190,6 +190,7 @@
   border-spacing: 0;
   margin-bottom: 18px;
   overflow: hidden;
+  table-layout: fixed;
 }
 
 .table th {
@@ -199,6 +200,7 @@
   font-weight: 700;
   padding: 10px 0;
   border-bottom: 1.5px solid #c8e6c9;
+  text-align: center;
 }
 
 .table td {
@@ -207,6 +209,60 @@
   padding: 10px 0;
   text-align: center;
   border-bottom: 1px solid #e0e0e0;
+  word-break: break-word;
+  vertical-align: middle;
+}
+
+// 체크박스 컬럼 너비 조정
+.table th:first-child,
+.table td:first-child {
+  width: 50px;
+  min-width: 50px;
+}
+
+// 보낸사람/받는사람 컬럼 너비 조정
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 20%;
+}
+
+// 제목 컬럼 너비 조정 (가장 넓게)
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 50%;
+}
+
+// 일시 컬럼 너비 조정
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 20%;
+}
+
+// 수신여부 컬럼 너비 조정 (보낸 쪽지함에서만)
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 10%;
+}
+
+// 보낸 쪽지함일 때 컬럼 너비 재조정
+.table.sentTable th:nth-child(2),
+.table.sentTable td:nth-child(2) {
+  width: 18%;
+}
+
+.table.sentTable th:nth-child(3),
+.table.sentTable td:nth-child(3) {
+  width: 45%;
+}
+
+.table.sentTable th:nth-child(4),
+.table.sentTable td:nth-child(4) {
+  width: 18%;
+}
+
+.table.sentTable th:nth-child(5),
+.table.sentTable td:nth-child(5) {
+  width: 9%;
 }
 
 .noData {
@@ -217,15 +273,31 @@
 }
 
 .unreadRow {
-  background: #f1f8e9;
+  background: #f8f9fa;
   font-weight: 700;
+}
+
+.noticeRow {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  font-weight: 600;
 }
 
 .bottomBar {
   display: flex;
-  justify-content: center; // 가운데 정렬로 변경
+  justify-content: center; // 페이징은 가운데 유지
   align-items: center;
   margin-bottom: 24px;
+  position: relative; // 상대 위치 설정
+}
+
+.bottomBarRight {
+  position: absolute; // 절대 위치로 우측 배치
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
 }
 
 .pagination {
