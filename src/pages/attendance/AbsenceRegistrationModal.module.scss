@@ -14,10 +14,10 @@
 .modalContent {
   background: #fff;
   border-radius: 10px;
-  padding: 2rem 2.5rem 1.5rem 2.5rem;
-  min-width: 420px;
-  max-width: 500px;
-  width: 550px;
+  padding: 2.5rem 3rem 2rem 3rem;
+  min-width: 520px;
+  max-width: 580px;
+  width: 580px;
   box-sizing: border-box;
   font-family: 'Noto Sans KR', sans-serif;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
@@ -27,7 +27,7 @@
   text-align: center;
   font-size: 1.3rem;
   font-weight: 700;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.8rem;
   border-bottom: 1px solid #e0e0e0;
   padding-bottom: 0.7rem;
   letter-spacing: -1px;
@@ -35,16 +35,24 @@
 
 .row {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 1.1rem;
+  width: 100%;
 }
 
 .row label {
   min-width: 90px;
+  max-width: 90px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   font-size: 1rem;
   color: #222;
   font-weight: 500;
+  text-align: right;
+  margin-right: 4px;
 }
 
 .row input[type='date'],
@@ -52,13 +60,15 @@
 .row input[type='text'],
 .row select,
 .row textarea {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 1rem;
+  padding: 0.2rem 0.5rem;
   border: 1px solid #b7d7c2;
   border-radius: 4px;
-  padding: 0.3rem 0.7rem;
-  font-size: 1rem;
   font-weight: 700;
   background: #fff;
-  min-width: 120px;
   box-sizing: border-box;
 }
 
@@ -66,8 +76,8 @@
   padding: 0.5rem 0.7rem;
   font-weight: 500;
   resize: vertical;
-  min-height: 80px;
-  flex: 1;
+  min-height: 120px;
+  height: 120px;
 }
 
 .row select {
@@ -75,13 +85,22 @@
   font-weight: 700;
   font-size: 1rem;
   background: #fff;
+  flex: 1;
+}
+
+.errorMessage {
+  color: #e74c3c;
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: 12px;
+  margin-top: 8px;
 }
 
 .buttonRow {
   display: flex;
   justify-content: flex-end;
   gap: 16px;
-  margin-top: 1.2rem;
+  margin-top: 1.8rem;
 }
 
 .submitBtn {

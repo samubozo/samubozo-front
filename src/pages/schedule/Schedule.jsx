@@ -95,12 +95,9 @@ function Schedule() {
   const [editEvent, setEditEvent] = useState(null); // 수정할 일정 상태
   const [popupHover, setPopupHover] = useState(false);
   const hideTimerRef = useRef(null);
-<<<<<<< HEAD
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-=======
   const [highlightedEventId, setHighlightedEventId] = useState(null);
->>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
 
   // 카테고리 데이터 처리 함수 (checked 필드 기본값 설정)
   const processCategoriesData = (categoriesData) => {
@@ -224,49 +221,11 @@ function Schedule() {
       .delete(`${API_BASE_URL}${SCHEDULE}/categories/${id}`)
       .then(() => axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/categories`))
       .then((res) => {
-<<<<<<< HEAD
-        setCategories(processCategoriesData(res.data));
-        setSuccessMessage('카테고리가 정상적으로 삭제되었습니다.');
-        setShowSuccessModal(true);
-      })
-      .catch((err) => {
-        // 에러 응답 구조 전체 출력(디버깅용)
-        if (err.response && err.response.data) {
-          console.error(
-            '카테고리 삭제 에러 응답:',
-            JSON.stringify(err.response.data),
-          );
-        }
-        // 다양한 필드에서 메시지 체크
-        const msg =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.response?.data?.detail ||
-          '';
-        if (
-          err.response &&
-          (err.response.status === 400 ||
-            err.response.status === 409 ||
-            (typeof msg === 'string' &&
-              msg.includes('일정이 존재하여 삭제할 수 없습니다')))
-        ) {
-          setSuccessMessage(
-            '해당 카테고리에 속한 일정이 남아있어 삭제할 수 없습니다. 먼저 일정을 모두 삭제해 주세요.',
-          );
-          setShowSuccessModal(true);
-        } else {
-          setSuccessMessage('카테고리 삭제 중 오류가 발생했습니다.');
-          setShowSuccessModal(true);
-        }
-        console.error('카테고리 삭제 에러:', err);
-      });
-=======
         setCategories((prev) => prev.filter((cat) => cat.id !== id));
         alert('카테고리가 정상적으로 삭제되었습니다.');
       })
       .catch(() => {});
     setShowCategoryModal(null);
->>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
   };
   // 카테고리 체크박스 토글 (프론트 상태만 변경)
   const handleCategoryCheck = (id) => {

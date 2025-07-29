@@ -1,20 +1,33 @@
+.vacationOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .vacationRequest {
-  background: none;
-  border-radius: 0;
-  padding: 0;
-  min-width: 0;
-  max-width: none;
-  width: 100%;
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  min-width: 520px;
+  max-width: 580px;
+  width: 580px;
   box-sizing: border-box;
   font-family: 'Noto Sans KR', sans-serif;
-  box-shadow: none;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
 }
 
 .vacationRequest h2 {
   text-align: center;
   font-size: 1.3rem;
   font-weight: 700;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
   border-bottom: 1px solid #e0e0e0;
   padding-bottom: 0.7rem;
   letter-spacing: -1px;
@@ -23,7 +36,7 @@
 .vacationRequest form {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
 .vacationRequest label {
@@ -44,7 +57,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
   width: 100%;
 }
 
@@ -115,7 +128,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 16px;
-  margin-top: 1.2rem;
+  margin-top: 1rem;
 }
 
 .vacationRequest .confirm-btn {

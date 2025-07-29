@@ -187,7 +187,6 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
             <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              style={{ width: 120 }}
             >
               {timeOptions.map((t) => (
                 <option key={t} value={t}>
@@ -199,7 +198,6 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
             <select
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              style={{ width: 120 }}
             >
               {timeOptions.map((t) => (
                 <option key={t} value={t}>
@@ -214,23 +212,17 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder='부재 사유를 입력하세요'
-              style={{
-                flex: '1',
-                height: '80px',
-                resize: 'vertical',
-                border: '1px solid #b7d7c2',
-                borderRadius: '4px',
-                padding: '0.5rem 0.7rem',
-                fontSize: '1rem',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-              }}
             />
           </div>
           {duplicateError && (
             <div
-              className={styles.errorMessage}
-              style={{ color: 'red', fontSize: '0.9rem', marginBottom: '1rem' }}
+              style={{
+                marginLeft: '105px',
+                marginTop: '4px',
+                color: '#e74c3c',
+                fontSize: '14px',
+                fontWeight: 400,
+              }}
             >
               {duplicateError}
             </div>

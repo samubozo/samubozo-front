@@ -168,6 +168,9 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
             />
           </div>
           <div className={styles.buttonRow}>
+            <button type='submit' className={styles.submitBtn}>
+              수정
+            </button>
             <button
               type='button'
               onClick={handleDelete}
@@ -175,24 +178,20 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
             >
               삭제
             </button>
-            <button
-              type='button'
-              onClick={onClose}
-              className={styles.cancelBtn}
-            >
-              취소
-            </button>
-            <button type='submit' className={styles.submitBtn}>
-              수정
-            </button>
           </div>
         </form>
+      </div>
 
-        {showDeleteConfirm && (
-          <div className={styles.deleteConfirm}>
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <div className={styles.deleteConfirmOverlay}>
+          <div className={styles.deleteConfirmModal}>
+            <h3>삭제 확인</h3>
             <p>정말 삭제하시겠습니까?</p>
             <div className={styles.deleteConfirmButtons}>
-              <button onClick={cancelDelete}>취소</button>
+              <button onClick={cancelDelete} className={styles.cancelBtn}>
+                취소
+              </button>
               <button
                 onClick={confirmDelete}
                 className={styles.confirmDeleteBtn}
@@ -201,8 +200,8 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

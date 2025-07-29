@@ -249,7 +249,15 @@ function CertificateModal({
               />
             </div>
             {error && (
-              <div style={{ color: '#e74c3c', fontSize: 15, marginTop: -8 }}>
+              <div
+                style={{
+                  color: '#e74c3c',
+                  fontSize: '14px',
+                  fontWeight: 400,
+                  marginTop: '4px',
+                  marginBottom: '8px',
+                }}
+              >
                 {error}
               </div>
             )}

@@ -296,6 +296,8 @@ function MessageWriteModal({
   const [files, setFiles] = useState([]);
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [isNotice, setIsNotice] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const editorRef = React.useRef();
 
   // JWT에서 권한 추출 함수
@@ -416,14 +418,8 @@ function MessageWriteModal({
   };
 
   const handleSend = async () => {
-<<<<<<< HEAD
-    if (receivers.length === 0) {
-      setSuccessMessage('받는사람을 선택해주세요.');
-      setShowSuccessModal(true);
-=======
     if (!isNotice && receivers.length === 0) {
       alert('받는사람을 선택해주세요.');
->>>>>>> 3ad959089582b9700a68d880a571076b586c61fa
       return;
     }
     if (!subject.trim()) {
@@ -688,6 +684,17 @@ function MessageWriteModal({
         onClose={() => setShowUserSearch(false)}
         onSelect={handleAddReceiver}
       />
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessMessage('');
+          }}
+        />
+      )}
     </>
   );
 }

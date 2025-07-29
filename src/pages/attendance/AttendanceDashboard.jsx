@@ -335,9 +335,6 @@ export default function AttendanceDashboard() {
         };
 
         await approvalService.requestAbsenceApproval(approvalData);
-        console.log('부재 결재 요청 생성 완료');
-
-        // 성공 메시지를 간단하게 수정
         setSuccessMessage('부재 신청이 완료되었습니다.');
       } catch (approvalError) {
         console.error('부재 결재 요청 생성 실패:', approvalError);
@@ -438,8 +435,6 @@ export default function AttendanceDashboard() {
 
         // 기존 결재 요청이 있는지 확인하고 업데이트
         // (실제로는 absence-service에서 처리하거나 별도 API 필요)
-        console.log('부재 수정에 따른 결재 요청 업데이트 필요:', approvalData);
-
         setSuccessMessage('부재 신청 수정이 완료되었습니다.');
       } catch (approvalError) {
         console.error('부재 결재 요청 업데이트 실패:', approvalError);
@@ -471,8 +466,6 @@ export default function AttendanceDashboard() {
       try {
         // 기존 결재 요청이 있는지 확인하고 삭제
         // (실제로는 absence-service에서 처리하거나 별도 API 필요)
-        console.log('부재 삭제에 따른 결재 요청 삭제 필요:', absenceId);
-
         setSuccessMessage('부재 신청이 삭제되었습니다.');
       } catch (approvalError) {
         console.error('부재 결재 요청 삭제 실패:', approvalError);
@@ -1001,149 +994,164 @@ export default function AttendanceDashboard() {
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: 15 }).map((_, i) => {
-                // 왼쪽(1~15일)
-                const d1 = new Date(year, month - 1, i + 1);
-                const d1str = getDateStrLocal(d1);
-                const att1 = getAttendanceByDate(d1str);
-                const absence1 = absences.find(
-                  (a) => a.startDate <= d1str && a.endDate >= d1str,
-                );
-                // 오른쪽(16~말일)
-                const d2 = new Date(year, month - 1, i + 16);
-                const d2str = getDateStrLocal(d2);
-                const att2 = getAttendanceByDate(d2str);
-                const absence2 = absences.find(
-                  (a) => a.startDate <= d2str && a.endDate >= d2str,
-                );
-                return (
-                  <tr key={i}>
-                    {/* 날짜/출근/퇴근/부재 */}
-                    <td
-                      className={
-                        year === today.getFullYear() &&
-                        month === today.getMonth() + 1 &&
-                        today.getDate() === i + 1 &&
-                        todayHighlight
-                          ? styles.todayRow
-                          : getDayColor(d1.getDay())
-                      }
-                    >
-                      {i + 1}({getDayName(d1)})
-                    </td>
-                    <td>
-                      {formatTime(
-                        att1?.checkInTime || att1?.workStatus?.checkInTime,
-                      )}
-                    </td>
-                    <td>
-                      {formatTime(
-                        att1?.checkOutTime || att1?.workStatus?.checkOutTime,
-                      )}
-                    </td>
-                    <td>
-                      {absence1 && (
-                        <span
-                          className={styles.absenceBtn}
-                          style={{
-                            cursor: 'pointer',
-                            display: 'inline-block',
-                            position: 'relative',
-                          }}
-                          onClick={() => handleEditAbsence(absence1)}
-                          title='수정'
-                          onMouseEnter={(e) => {
-                            setHoveredAbsence(absence1);
-                            const rect = e.target.getBoundingClientRect();
-                            setTooltipPos({
-                              x: rect.right + window.scrollX,
-                              y: rect.top + window.scrollY,
-                            });
-                          }}
-                          onMouseLeave={() => setHoveredAbsence(null)}
-                        >
-                          {typeToKorean[absence1.type] || absence1.type}
-                        </span>
-                      )}
-                    </td>
-                    {/* 합계/정상/연장/심야 */}
-                    <td>{att1?.totalWorkTime || ''}</td>
-                    <td>{att1?.normalWorkTime || ''}</td>
-                    <td>{att1?.overtimeWorkTime || ''}</td>
-                    <td>{att1?.nightWorkTime || ''}</td>
-                    {/* 오른쪽 날짜/출근/퇴근/부재 */}
-                    <td
-                      className={
-                        year === today.getFullYear() &&
-                        month === today.getMonth() + 1 &&
-                        today.getDate() === i + 16 &&
-                        todayHighlight
-                          ? styles.todayRow
-                          : getDayColor(d2.getDay())
-                      }
-                    >
-                      {i + 16 <= days.length
-                        ? `${i + 16}(${getDayName(d2)})`
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length
-                        ? formatTime(
-                            att2?.checkInTime || att2?.workStatus?.checkInTime,
-                          )
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length
-                        ? formatTime(
-                            att2?.checkOutTime ||
-                              att2?.workStatus?.checkOutTime,
-                          )
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length && absence2 && (
-                        <span
-                          className={styles.absenceBtn}
-                          style={{
-                            cursor: 'pointer',
-                            display: 'inline-block',
-                            position: 'relative',
-                          }}
-                          onClick={() => handleEditAbsence(absence2)}
-                          title='수정'
-                          onMouseEnter={(e) => {
-                            setHoveredAbsence(absence2);
-                            const rect = e.target.getBoundingClientRect();
-                            setTooltipPos({
-                              x: rect.right + window.scrollX,
-                              y: rect.top + window.scrollY,
-                            });
-                          }}
-                          onMouseLeave={() => setHoveredAbsence(null)}
-                        >
-                          {typeToKorean[absence2.type] || absence2.type}
-                        </span>
-                      )}
-                    </td>
-                    {/* 합계/정상/연장/심야 */}
-                    <td>
-                      {i + 16 <= days.length ? att2?.totalWorkTime || '' : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length ? att2?.normalWorkTime || '' : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length
-                        ? att2?.overtimeWorkTime || ''
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length ? att2?.nightWorkTime || '' : ''}
-                    </td>
-                  </tr>
-                );
-              })}
+              {Array.from({ length: Math.ceil(days.length / 2) }).map(
+                (_, i) => {
+                  // 왼쪽(1~15일)
+                  const d1 = new Date(year, month - 1, i + 1);
+                  const d1str = getDateStrLocal(d1);
+                  const att1 = getAttendanceByDate(d1str);
+                  const absence1 = absences.find(
+                    (a) => a.startDate <= d1str && a.endDate >= d1str,
+                  );
+                  // 오른쪽(16~말일)
+                  const d2 = new Date(
+                    year,
+                    month - 1,
+                    i + Math.ceil(days.length / 2) + 1,
+                  );
+                  const d2str = getDateStrLocal(d2);
+                  const att2 = getAttendanceByDate(d2str);
+                  const absence2 = absences.find(
+                    (a) => a.startDate <= d2str && a.endDate >= d2str,
+                  );
+                  return (
+                    <tr key={i}>
+                      {/* 날짜/출근/퇴근/부재 */}
+                      <td
+                        className={
+                          year === today.getFullYear() &&
+                          month === today.getMonth() + 1 &&
+                          today.getDate() === i + 1 &&
+                          todayHighlight
+                            ? styles.todayRow
+                            : getDayColor(d1.getDay())
+                        }
+                      >
+                        {i + 1}({getDayName(d1)})
+                      </td>
+                      <td>
+                        {formatTime(
+                          att1?.checkInTime || att1?.workStatus?.checkInTime,
+                        )}
+                      </td>
+                      <td>
+                        {formatTime(
+                          att1?.checkOutTime || att1?.workStatus?.checkOutTime,
+                        )}
+                      </td>
+                      <td>
+                        {absence1 && (
+                          <span
+                            className={styles.absenceBtn}
+                            style={{
+                              cursor: 'pointer',
+                              display: 'inline-block',
+                              position: 'relative',
+                            }}
+                            onClick={() => handleEditAbsence(absence1)}
+                            title='수정'
+                            onMouseEnter={(e) => {
+                              setHoveredAbsence(absence1);
+                              const rect = e.target.getBoundingClientRect();
+                              setTooltipPos({
+                                x: rect.right + window.scrollX,
+                                y: rect.top + window.scrollY,
+                              });
+                            }}
+                            onMouseLeave={() => setHoveredAbsence(null)}
+                          >
+                            {typeToKorean[absence1.type] || absence1.type}
+                          </span>
+                        )}
+                      </td>
+                      {/* 합계/정상/연장/심야 */}
+                      <td>{att1?.totalWorkTime || ''}</td>
+                      <td>{att1?.normalWorkTime || ''}</td>
+                      <td>{att1?.overtimeWorkTime || ''}</td>
+                      <td>{att1?.nightWorkTime || ''}</td>
+                      {/* 오른쪽 날짜/출근/퇴근/부재 */}
+                      <td
+                        className={
+                          year === today.getFullYear() &&
+                          month === today.getMonth() + 1 &&
+                          today.getDate() ===
+                            i + Math.ceil(days.length / 2) + 1 &&
+                          todayHighlight
+                            ? styles.todayRow
+                            : getDayColor(d2.getDay())
+                        }
+                      >
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? `${i + Math.ceil(days.length / 2) + 1}(${getDayName(d2)})`
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? formatTime(
+                              att2?.checkInTime ||
+                                att2?.workStatus?.checkInTime,
+                            )
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? formatTime(
+                              att2?.checkOutTime ||
+                                att2?.workStatus?.checkOutTime,
+                            )
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length &&
+                          absence2 && (
+                            <span
+                              className={styles.absenceBtn}
+                              style={{
+                                cursor: 'pointer',
+                                display: 'inline-block',
+                                position: 'relative',
+                              }}
+                              onClick={() => handleEditAbsence(absence2)}
+                              title='수정'
+                              onMouseEnter={(e) => {
+                                setHoveredAbsence(absence2);
+                                const rect = e.target.getBoundingClientRect();
+                                setTooltipPos({
+                                  x: rect.right + window.scrollX,
+                                  y: rect.top + window.scrollY,
+                                });
+                              }}
+                              onMouseLeave={() => setHoveredAbsence(null)}
+                            >
+                              {typeToKorean[absence2.type] || absence2.type}
+                            </span>
+                          )}
+                      </td>
+                      {/* 합계/정상/연장/심야 */}
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.totalWorkTime || ''
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.normalWorkTime || ''
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.overtimeWorkTime || ''
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.nightWorkTime || ''
+                          : ''}
+                      </td>
+                    </tr>
+                  );
+                },
+              )}
             </tbody>
           </table>
           {/* === 부재 툴팁 === */}

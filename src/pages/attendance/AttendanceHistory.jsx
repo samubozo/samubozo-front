@@ -513,9 +513,13 @@ export default function AttendanceDashboard() {
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: 15 }).map((_, i) => {
+            {Array.from({ length: Math.ceil(days.length / 2) }).map((_, i) => {
               const d1 = new Date(year, month - 1, i + 1);
-              const d2 = new Date(year, month - 1, i + 16);
+              const d2 = new Date(
+                year,
+                month - 1,
+                i + Math.ceil(days.length / 2) + 1,
+              );
               const d1str = d1.toISOString().slice(0, 10);
               const d2str = d2.toISOString().slice(0, 10);
               const absence1 = absences.find(
@@ -561,12 +565,12 @@ export default function AttendanceDashboard() {
                       year === today.getFullYear() &&
                       month === today.getMonth() + 1 &&
                       todayRowIdx === i &&
-                      today.getDate() > 15
+                      today.getDate() > Math.ceil(days.length / 2)
                         ? styles.todayRow
                         : getDayColor(d2.getDay())
                     }
                   >
-                    {i + 16}({getDayName(d2)})
+                    {i + Math.ceil(days.length / 2) + 1}({getDayName(d2)})
                   </td>
                   <td></td>
                   <td></td>

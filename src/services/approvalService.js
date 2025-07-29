@@ -183,7 +183,26 @@ export const approvalService = {
     }
   },
 
-  // 13. 모든 증명서 조회 (HR용)
+  // 13. 증명서 수정
+  async updateCertificate(id, { type, requestDate, purpose }) {
+    try {
+      const response = await axiosInstance.put(
+        `${API_BASE_URL}${CERTIFICATE}/my-certificate/${id}`,
+        {
+          type,
+          requestDate,
+          purpose,
+        },
+        { withCredentials: true },
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '증명서 수정 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 14. 모든 증명서 조회 (HR용)
   async getAllCertificates() {
     try {
       const response = await axiosInstance.get(
@@ -197,7 +216,7 @@ export const approvalService = {
     }
   },
 
-  // 14. 내 증명서 조회
+  // 15. 내 증명서 조회
   async getMyCertificates() {
     try {
       const response = await axiosInstance.get(
@@ -211,7 +230,7 @@ export const approvalService = {
     }
   },
 
-  // 15. HR 증명서 승인
+  // 16. HR 증명서 승인
   async approveCertificate(id) {
     try {
       await axiosInstance.put(
@@ -226,7 +245,7 @@ export const approvalService = {
     }
   },
 
-  // 16. HR 증명서 반려
+  // 17. HR 증명서 반려
   async rejectCertificate(id, rejectComment) {
     try {
       await axiosInstance.put(
@@ -241,7 +260,7 @@ export const approvalService = {
     }
   },
 
-  // 17. 증명서 상세 조회
+  // 18. 증명서 상세 조회
   async getCertificateById(id) {
     try {
       const response = await axiosInstance.get(
@@ -257,7 +276,7 @@ export const approvalService = {
 
   // ===== 부재 관련 API 메서드들 추가 =====
 
-  // 18. 부재 결재 요청 생성
+  // 19. 부재 결재 요청 생성
   async requestAbsenceApproval(absenceData) {
     try {
       const response = await axiosInstance.post(
@@ -271,7 +290,7 @@ export const approvalService = {
     }
   },
 
-  // 19. HR 부재 결재 승인
+  // 20. HR 부재 결재 승인
   async approveHRAbsence(absenceId) {
     try {
       await axiosInstance.put(
@@ -284,7 +303,7 @@ export const approvalService = {
     }
   },
 
-  // 20. HR 부재 결재 반려
+  // 21. HR 부재 결재 반려
   async rejectHRAbsence(absenceId, comment) {
     try {
       await axiosInstance.put(
@@ -298,7 +317,7 @@ export const approvalService = {
     }
   },
 
-  // 21. 부재 결재 요청 목록 조회 (페이징)
+  // 22. 부재 결재 요청 목록 조회 (페이징)
   async getAbsenceApprovals(page = 0, size = 10) {
     try {
       const response = await axiosInstance.get(
@@ -314,7 +333,7 @@ export const approvalService = {
     }
   },
 
-  // 22. 대기 중인 부재 결재 요청 조회 (HR용)
+  // 23. 대기 중인 부재 결재 요청 조회 (HR용)
   async getPendingAbsenceApprovals(page = 0, size = 10) {
     try {
       const response = await axiosInstance.get(
@@ -331,7 +350,7 @@ export const approvalService = {
     }
   },
 
-  // 23. 처리된 부재 결재 요청 조회
+  // 24. 처리된 부재 결재 요청 조회
   async getProcessedAbsenceApprovals(page = 0, size = 10) {
     try {
       const response = await axiosInstance.get(
@@ -347,7 +366,7 @@ export const approvalService = {
     }
   },
 
-  // 24. 내 부재 결재 요청 조회
+  // 25. 내 부재 결재 요청 조회
   async getMyAbsenceApprovals(page = 0, size = 10) {
     try {
       const response = await axiosInstance.get(
@@ -363,7 +382,7 @@ export const approvalService = {
     }
   },
 
-  // 25. 내가 처리한 부재 결재 요청 조회
+  // 26. 내가 처리한 부재 결재 요청 조회
   async getAbsenceApprovalsProcessedByMe(page = 0, size = 10) {
     try {
       const response = await axiosInstance.get(
@@ -379,7 +398,7 @@ export const approvalService = {
     }
   },
 
-  // 26. 부재 결재 통계 조회
+  // 27. 부재 결재 통계 조회
   async getAbsenceApprovalStatistics() {
     try {
       const response = await axiosInstance.get(

@@ -6,6 +6,7 @@ import ToastNotification from '../../components/ToastNotification';
 import VacationRequest from '../attendance/VacationRequest';
 import AuthContext from '../../context/UserContext';
 import axiosInstance from '../../configs/axios-config';
+import { API_BASE_URL, CERTIFICATE } from '../../configs/host-config';
 import SuccessModal from '../../components/SuccessModal';
 
 // 분리된 컴포넌트들
@@ -101,16 +102,33 @@ function Approval() {
     setCertModalLoading(true);
     try {
       // 신청(POST)
-      console.log('증명서 신청 시작:', form);
-      await approvalService.applyCertificate(form);
-      console.log('증명서 신청 완료, 데이터 새로고침 시작');
-      fetchData();
-      console.log('증명서 신청 후 fetchData 완료');
-      return true; // 성공 시 true 반환
-    } catch (e) {
-      console.error('증명서 신청 실패:', e);
+      const response = await approvalService.applyCertificate(form);
+      await fetchData();
+      // 모달은 CertificateModal에서 성공 후에 닫도록 함
+      return true; // 성공 시 true 반환 (CertificateModal에서 성공 모달 표시)
+    } catch (error) {
+      console.error('증명서 신청 에러:', error);
+      throw error; // 에러를 다시 던져서 CertificateModal에서 처리하도록 함
+    } finally {
       setCertModalLoading(false);
-      return false; // 실패 시 false 반환
+    }
+  };
+
+  // 증명서 수정 핸들러
+  const handleCertEdit = async (certificateId, form) => {
+    setCertModalLoading(true);
+    try {
+      const response = await approvalService.updateCertificate(
+        certificateId,
+        form,
+      );
+      await fetchData();
+      return true;
+    } catch (error) {
+      console.error('증명서 수정 에러:', error);
+      throw error;
+    } finally {
+      setCertModalLoading(false);
     }
   };
 
@@ -200,7 +218,6 @@ function Approval() {
 
       setToast({ message: '승인 처리 완료', type: 'success' });
       // 승인 후 처리완료 탭으로 자동 이동
-      console.log('승인 처리 후 approvalStatus 변경: pending -> processed');
       setApprovalStatus('processed');
       fetchData();
     } catch (err) {
@@ -341,24 +358,16 @@ function Approval() {
     const normalizedDate1 = normalizeDate(date1);
     const normalizedDate2 = normalizeDate(date2);
 
-    console.log('날짜 비교:', {
-      date1,
-      date2,
-      normalizedDate1,
-      normalizedDate2,
-    });
-
     return normalizedDate1.localeCompare(normalizedDate2);
   };
 
   // 필터링 (개선된 버전)
   const filteredLeave = leaveData.filter((row) => {
-    // 항목 필터링
+    // 항목 필터링 (휴가 탭에서만)
     if (item !== 'all') {
+      console.log('휴가 필터링:', { item, rowType: row.type, row });
       if (item === '연차' && row.type !== '연차') return false;
       if (item === '반차' && row.type !== '반차') return false;
-      if (item === '병가' && row.type !== '병가') return false;
-      if (item === '공가' && row.type !== '공가') return false;
     }
 
     // 결재상태 필터링 (모든 사용자)
@@ -393,18 +402,6 @@ function Approval() {
 
   // 증명서 데이터 필터링
   const filteredCert = certData.filter((row) => {
-    console.log('증명서 필터링 체크:', {
-      rowStatus: row.status,
-      approvalStatus,
-      rowType: row.type,
-      item,
-      applyDate: row.applyDate,
-      dateFrom,
-      dateTo,
-      filterValue,
-    });
-
-    // 항목 필터링
     if (item !== 'all') {
       if (item === '재직증명서' && row.type !== '재직증명서') return false;
       if (item === '경력증명서' && row.type !== '경력증명서') return false;
@@ -440,15 +437,16 @@ function Approval() {
 
   // 부재 데이터 필터링
   const filteredAbsence = absenceDataFromHook.filter((row) => {
-    // 항목 필터링
+    // 항목 필터링 (부재 탭에서만)
     if (item !== 'all') {
+      console.log('부재 필터링:', { item, rowType: row.type, row });
       if (item === '병가' && row.type !== '병가') return false;
       if (item === '공가' && row.type !== '공가') return false;
       if (item === '기타' && row.type !== '기타') return false;
     }
 
-    // 긴급도 필터링 (일반 사용자만)
-    if (!isHR && urgency !== 'all') {
+    // 긴급도 필터링 (모든 사용자)
+    if (urgency !== 'all') {
       const urgencyMap = {
         일반: '일반',
         긴급: '긴급',
@@ -485,39 +483,6 @@ function Approval() {
     }
     return true;
   });
-
-  // 필터링 상태 로깅
-  console.log('필터링 상태:', {
-    item,
-    approvalStatus,
-    urgency: !isHR && tab === 'absence' ? urgency : undefined,
-    dateFrom,
-    dateTo,
-    filterValue,
-    totalData:
-      tab === 'leave'
-        ? leaveData.length
-        : tab === 'certificate'
-          ? certData.length
-          : absenceDataFromHook.length,
-    filteredData:
-      tab === 'leave'
-        ? filteredLeave.length
-        : tab === 'certificate'
-          ? filteredCert.length
-          : filteredAbsence.length,
-  });
-
-  // 실제 데이터 구조 확인 (첫 번째 항목만)
-  if (tab === 'leave' && leaveData.length > 0) {
-    console.log('첫 번째 휴가 데이터:', leaveData[0]);
-  }
-  if (tab === 'certificate' && certData.length > 0) {
-    console.log('첫 번째 증명서 데이터:', certData[0]);
-  }
-  if (tab === 'absence' && absenceDataFromHook.length > 0) {
-    console.log('첫 번째 부재 데이터:', absenceDataFromHook[0]);
-  }
 
   // 버튼 핸들러 (삭제/반려/승인)
 
@@ -669,13 +634,24 @@ function Approval() {
   // PDF 인쇄 함수
   const printPdfFromServer = async (certificateId) => {
     try {
+      console.log('=== PDF 인쇄 시작 ===');
+      console.log('증명서 ID:', certificateId);
+
       const res = await axiosInstance.get(
-        `/certificate/my-print/${certificateId}`,
+        `${API_BASE_URL}${CERTIFICATE}/my-print/${certificateId}`,
         { responseType: 'arraybuffer' },
       );
+
+      console.log('PDF 응답 상태:', res.status);
+      console.log('PDF 데이터 크기:', res.data.byteLength);
+
       const contentType = res.headers['content-type'] || 'application/pdf';
       const blob = new Blob([res.data], { type: contentType });
       const fileURL = URL.createObjectURL(blob);
+
+      console.log('Blob 크기:', blob.size);
+      console.log('파일 URL:', fileURL);
+
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
       iframe.src = fileURL;
@@ -687,15 +663,29 @@ function Approval() {
         }, 100);
       };
     } catch (err) {
-      setToast({ message: 'PDF 인쇄 중 오류 발생', type: 'error' });
+      console.error('PDF 인쇄 오류:', err);
     }
   };
 
   // 인쇄 버튼 클릭 핸들러
   const handlePrintSelected = () => {
-    const approvedIds = selected.filter(
-      (id) => certData.find((row) => row.id === id)?.status === '승인',
-    );
+    console.log('선택된 ID들:', selected);
+    console.log('증명서 데이터:', certData);
+
+    const approvedIds = selected
+      .map((selectedId) => {
+        const cert = certData.find((row) => row.id === selectedId);
+        return cert?.certificateId || cert?.id;
+      })
+      .filter((certificateId) => {
+        const cert = certData.find(
+          (row) => (row.certificateId || row.id) === certificateId,
+        );
+        return cert?.status === '승인' || cert?.status === 'APPROVED';
+      });
+
+    console.log('승인된 증명서 ID들:', approvedIds);
+
     if (approvedIds.length === 0) {
       setToast({
         message: '승인된 증명서만 인쇄할 수 있습니다.',
@@ -703,14 +693,16 @@ function Approval() {
       });
       return;
     }
-    approvedIds.forEach((id) => printPdfFromServer(id));
+    approvedIds.forEach((certificateId) => {
+      console.log(`증명서 인쇄 시도: certificateId = ${certificateId}`);
+      printPdfFromServer(certificateId);
+    });
   };
 
   // 부재 통계 조회 함수 추가
   const fetchAbsenceStatistics = async () => {
     try {
       const stats = await approvalService.getAbsenceApprovalStatistics();
-      console.log('부재 통계:', stats);
       return stats;
     } catch (error) {
       console.error('부재 통계 조회 실패:', error);
@@ -781,7 +773,7 @@ function Approval() {
           value={approvalStatus}
           onChange={setApprovalStatus}
         />
-        {tab === 'absence' && !isHR && (
+        {tab === 'absence' && (
           <>
             <label className={styles.filterLabel}>긴급도</label>
             <Dropdown
@@ -1006,16 +998,6 @@ function Approval() {
         onConfirm={handleRejectConfirm}
         loading={rejectLoading}
       />
-
-      {/* 성공 모달 */}
-      {showSuccessModal && (
-        <SuccessModal
-          message={successMessage}
-          onClose={() => setShowSuccessModal(false)}
-          autoClose={true}
-          autoCloseDelay={3000}
-        />
-      )}
 
       {/* 증명서 신청 모달 */}
       {showCertModal && (

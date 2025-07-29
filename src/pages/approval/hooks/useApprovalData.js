@@ -161,7 +161,6 @@ export const useApprovalData = (
     page = 0,
     size = 10,
   } = {}) => {
-    console.log('부재 데이터 조회 시작');
     setLoading(true);
     try {
       let arr = [];
@@ -189,11 +188,9 @@ export const useApprovalData = (
         arr = res?.content || res?.result || [];
       }
 
-      console.log('부재 조회 결과:', arr);
       const mappedData = mapAbsenceData(arr);
       setAbsenceData(mappedData);
     } catch (error) {
-      console.error('부재 데이터 조회 실패:', error);
       setAbsenceData([]);
     } finally {
       setLoading(false);
@@ -211,36 +208,22 @@ export const useApprovalData = (
     sortOrder = 'desc',
     requestType = tab === 'leave' ? 'VACATION' : undefined, // 연차/반차 탭에서만 VACATION 타입 필터링
   } = {}) => {
-    console.log(
-      'fetchData 호출 - approvalStatus:',
-      approvalStatus,
-      'status:',
-      status,
-    );
     setLoading(true);
     try {
       let arr = [];
       if (tab === 'leave') {
         if (isHR) {
           // HR 사용자는 통합 API로 전체 결재 내역을 받아옴
-          console.log(
-            'HR 사용자 데이터 조회 - status:',
-            status,
-            'requestType:',
-            requestType,
-          );
           const res = await approvalService.getAllApprovals({
             status: status === 'all' ? undefined : status,
             sortBy,
             sortOrder,
             requestType: 'VACATION', // 명시적으로 VACATION만 조회
           });
-          console.log('HR 사용자 조회 결과:', res);
           arr = Array.isArray(res) ? res : res?.result || [];
 
           // 클라이언트 사이드에서 VACATION 타입만 필터링 (백엔드 필터링이 작동하지 않을 경우 대비)
           arr = arr.filter((item) => item.requestType === 'VACATION');
-          console.log('VACATION 타입 필터링 후 결과:', arr);
         } else {
           const res = await approvalService.getMyVacationRequests();
           arr = Array.isArray(res) ? res : res?.result || [];
@@ -249,13 +232,10 @@ export const useApprovalData = (
         setLeaveData(mappedData);
       } else if (tab === 'certificate') {
         // 증명서 탭의 경우 모든 사용자가 본인 증명서 내역 조회
-        console.log('증명서 데이터 조회 시작');
         const res = await approvalService.getMyCertificates();
-        console.log('증명서 API 응답:', res);
         arr = Array.isArray(res)
           ? res
           : res?.result?.content || res?.result || [];
-        console.log('증명서 데이터 배열:', arr);
         // 증명서 데이터도 매핑 (CertificateResDto 구조에 맞게)
         const mappedCertData = arr.map((row) => ({
           ...row,
@@ -273,7 +253,6 @@ export const useApprovalData = (
           rejectComment:
             row.rejectComment || (row.status === 'REJECTED' ? row.purpose : ''), // 반려 사유 추가 (임시 해결책)
         }));
-        console.log('매핑된 증명서 데이터:', mappedCertData);
         setCertData(mappedCertData);
       } else if (tab === 'absence') {
         // 부재 탭의 경우 fetchAbsenceData 함수 사용
