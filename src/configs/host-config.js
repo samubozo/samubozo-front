@@ -27,6 +27,6 @@ export const CHATBOT = '/chatbot-service/chatbot';
 export const ATTENDANCE = '/attendance-service/attendance';
 export const VACATION = '/vacation-service/vacations';
 export const MESSAGE = '/message-service/messages';
-export const NOTIFICATION = '/message-service/notifications';
+export const NOTIFICATION = '/notification-service/notifications';
 export const SCHEDULE = '/schedule-service/schedule';
 export const PAYROLL = '/payroll-service/payroll';

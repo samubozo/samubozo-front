@@ -294,7 +294,27 @@ function MessageWriteModal({
   const [content, setContent] = useState('');
   const [files, setFiles] = useState([]);
   const [showUserSearch, setShowUserSearch] = useState(false);
+  const [isNotice, setIsNotice] = useState(false);
   const editorRef = React.useRef();
+
+  // JWT에서 권한 추출 함수
+  const getRoleFromToken = () => {
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return decoded.role || null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // 공지 권한 확인
+  const hasNoticePermission = () => {
+    const role = getRoleFromToken();
+    return role === 'Y';
+  };
 
   const ALLOWED_TYPES = [
     'image/jpeg',
@@ -328,11 +348,19 @@ function MessageWriteModal({
       setSubject(initialSubject);
       setContent('');
       setFiles([]);
+      setIsNotice(false);
       if (editorRef.current) {
         editorRef.current.getInstance().setMarkdown('');
       }
     }
   }, [open, initialReceiver, initialSubject]);
+
+  // 권한이 없으면 공지 상태 해제
+  useEffect(() => {
+    if (!hasNoticePermission() && isNotice) {
+      setIsNotice(false);
+    }
+  }, [isNotice]);
 
   useEffect(() => {
     if (open) {
@@ -383,7 +411,7 @@ function MessageWriteModal({
   };
 
   const handleSend = async () => {
-    if (receivers.length === 0) {
+    if (!isNotice && receivers.length === 0) {
       alert('받는사람을 선택해주세요.');
       return;
     }
@@ -396,60 +424,54 @@ function MessageWriteModal({
       return;
     }
 
-    let successCount = 0;
-    let failCount = 0;
+    try {
+      const requestData = {
+        receiverId: isNotice ? null : receivers[0].id,
+        subject: subject.trim(),
+        content: content.trim(),
+        isNotice: isNotice,
+      };
 
-    for (const receiver of receivers) {
-      try {
-        const formData = new FormData();
-        formData.append(
-          'request',
-          new Blob(
-            [
-              JSON.stringify({
-                receiverId: receiver.id,
-                subject: subject.trim(),
-                content: content.trim(),
-              }),
-            ],
-            { type: 'application/json' },
-          ),
-        );
-        files.forEach((file) => {
-          formData.append('attachments', file);
-        });
+      console.log('전송할 데이터:', requestData);
+      console.log('isNotice 값:', isNotice);
+      console.log('isNotice 타입:', typeof isNotice);
 
-        const response = await axiosInstance.post(
-          `${API_BASE_URL}${MESSAGE}`,
-          formData,
-        );
-
-        if (response.status === 200 || response.status === 201) {
-          successCount++;
-        } else {
-          failCount++;
-        }
-      } catch (error) {
-        failCount++;
-      }
-    }
-
-    if (successCount > 0) {
-      alert(
-        `쪽지 전송 완료: ${successCount}명 성공${failCount > 0 ? `, ${failCount}명 실패` : ''}`,
+      const formData = new FormData();
+      formData.append(
+        'request',
+        new Blob([JSON.stringify(requestData)], { type: 'application/json' }),
       );
-      // 폼 초기화 등 기존 로직 유지
-      setReceivers([]);
-      setSubject('');
-      setContent('');
-      setFiles([]);
-      if (editorRef.current) {
-        editorRef.current.getInstance().setMarkdown('');
+      files.forEach((file) => {
+        formData.append('attachments', file);
+      });
+
+      const response = await axiosInstance.post(
+        `${API_BASE_URL}${MESSAGE}`,
+        formData,
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        alert(isNotice ? '공지가 등록되었습니다.' : '쪽지가 전송되었습니다.');
+        // 폼 초기화 등 기존 로직 유지
+        setReceivers([]);
+        setSubject('');
+        setContent('');
+        setFiles([]);
+        setIsNotice(false);
+        if (editorRef.current) {
+          editorRef.current.getInstance().setMarkdown('');
+        }
+        onSend({ success: true });
+      } else {
+        alert(
+          isNotice ? '공지 등록에 실패했습니다.' : '쪽지 전송에 실패했습니다.',
+        );
+        onSend({ success: false });
       }
-      onSend({ success: true });
-    } else {
-      alert('쪽지 전송에 실패했습니다.');
-      // 폼 상태는 그대로 유지
+    } catch (error) {
+      alert(
+        isNotice ? '공지 등록에 실패했습니다.' : '쪽지 전송에 실패했습니다.',
+      );
       onSend({ success: false });
     }
   };
@@ -459,6 +481,7 @@ function MessageWriteModal({
     setSubject('');
     setContent('');
     setFiles([]);
+    setIsNotice(false);
     if (editorRef.current) {
       editorRef.current.getInstance().setMarkdown('');
     }
@@ -527,19 +550,42 @@ function MessageWriteModal({
               </div>
               <button
                 onClick={() => setShowUserSearch(true)}
+                disabled={isNotice}
                 style={{
-                  background: '#007bff',
+                  background: isNotice ? '#ccc' : '#007bff',
                   color: 'white',
                   border: 'none',
                   padding: '6px 12px',
                   borderRadius: 4,
-                  cursor: 'pointer',
+                  cursor: isNotice ? 'not-allowed' : 'pointer',
                   fontSize: 12,
                 }}
               >
                 검색
               </button>
             </div>
+            {hasNoticePermission() && (
+              <div style={{ marginTop: 8 }}>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type='checkbox'
+                    checked={isNotice}
+                    onChange={(e) => setIsNotice(e.target.checked)}
+                    style={{ margin: 0 }}
+                  />
+                  <span style={{ fontSize: 14, color: '#333' }}>
+                    공지로 보내기 (전체 공지사항)
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
           <div className={styles.modalField}>
             <label>제목</label>
@@ -881,6 +927,25 @@ const Message = () => {
       return;
     }
 
+    // 공지 쪽지 삭제 권한 확인
+    const currentUserId = sessionStorage.getItem('USER_EMPLOYEE_NO');
+    const selectedMessages = paged.filter((msg) =>
+      checked.includes(msg.id || msg.messageId),
+    );
+    const noticeMessages = selectedMessages.filter(
+      (msg) => msg.isNotice === true,
+    );
+
+    if (noticeMessages.length > 0) {
+      const unauthorizedNotices = noticeMessages.filter(
+        (msg) => msg.senderId != currentUserId,
+      );
+      if (unauthorizedNotices.length > 0) {
+        alert('공지 쪽지는 작성자만 삭제할 수 있습니다.');
+        return;
+      }
+    }
+
     const confirmMessage =
       tab === 'received'
         ? '선택한 쪽지를 삭제하시겠습니까?'
@@ -1171,32 +1236,47 @@ const Message = () => {
             검색
           </button>
         </div>
-        <table className={styles.table}>
+        <table
+          className={`${styles.table} ${tab === 'sent' ? styles.sentTable : ''}`}
+        >
           <thead>
             <tr>
               <th>
-                <input
-                  type='checkbox'
-                  checked={
-                    paged.length > 0 &&
-                    paged.every((msg) =>
-                      checked.includes(msg.id || msg.messageId),
-                    )
-                  }
-                  onChange={handleCheckAll}
-                />
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    height: '100%',
+                    cursor: 'pointer',
+                    padding: 6,
+                  }}
+                >
+                  <input
+                    type='checkbox'
+                    checked={
+                      paged.length > 0 &&
+                      paged.every((msg) =>
+                        checked.includes(msg.id || msg.messageId),
+                      )
+                    }
+                    onChange={handleCheckAll}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </label>
               </th>
               <th>{tab === 'received' ? '보낸사람' : '받는사람'}</th>
               <th>제목</th>
               <th>일시</th>
-              <th>수신여부</th>
+              {tab === 'sent' && <th>수신여부</th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={tab === 'sent' ? 5 : 4}
                   className={styles.noData}
                   style={{ height: 120 }}
                 >
@@ -1206,80 +1286,131 @@ const Message = () => {
             ) : paged.length === 0 ? (
               <tr>
                 <td>
-                  <input
-                    type='checkbox'
-                    disabled
-                    style={{ opacity: 0.5, pointerEvents: 'none' }}
-                  />
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '100%',
+                      height: '100%',
+                      cursor: 'pointer',
+                      padding: 6,
+                    }}
+                  >
+                    <input
+                      type='checkbox'
+                      disabled
+                      style={{
+                        opacity: 0.5,
+                        pointerEvents: 'none',
+                        cursor: 'pointer',
+                      }}
+                    />
+                  </label>
                 </td>
                 <td></td>
                 <td style={{ textAlign: 'center', color: '#bbb' }}>
                   쪽지가 없습니다.
                 </td>
                 <td></td>
-                <td></td>
+                {tab === 'sent' && <td></td>}
               </tr>
             ) : (
-              paged.map((msg) => (
-                <tr
-                  key={msg.id || msg.messageId}
-                  className={msg.isRead === false ? styles.unreadRow : ''}
-                  onClick={() => {
-                    const messageId = msg.id || msg.messageId;
-                    if (messageId) {
-                      fetchMessageDetail(messageId);
-                    } else {
-                      console.error('메시지 ID가 없습니다:', msg);
-                      alert('메시지 ID를 찾을 수 없습니다.');
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ cursor: 'pointer', width: 40, minWidth: 32 }}
+              (() => {
+                // 공지 쪽지와 일반 쪽지 분리
+                const noticeMessages = paged.filter(
+                  (msg) => msg.isNotice === true,
+                );
+                const normalMessages = paged.filter(
+                  (msg) => msg.isNotice !== true,
+                );
+
+                return [...noticeMessages, ...normalMessages].map((msg) => (
+                  <tr
+                    key={msg.id || msg.messageId}
+                    className={`${msg.isRead === false ? styles.unreadRow : ''} ${msg.isNotice ? styles.noticeRow : ''}`}
+                    onClick={() => {
+                      const messageId = msg.id || msg.messageId;
+                      if (messageId) {
+                        fetchMessageDetail(messageId);
+                      } else {
+                        console.error('메시지 ID가 없습니다:', msg);
+                        alert('메시지 ID를 찾을 수 없습니다.');
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
                   >
-                    <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        width: '100%',
-                        height: '100%',
-                        cursor: 'pointer',
-                        padding: 6,
-                      }}
+                    <td
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ cursor: 'pointer', width: 40, minWidth: 32 }}
                     >
-                      <input
-                        type='checkbox'
-                        checked={checked.includes(msg.id || msg.messageId)}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          handleCheck(msg.id || msg.messageId);
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          height: '100%',
+                          cursor: 'pointer',
+                          padding: 6,
                         }}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </label>
-                  </td>
-                  <td>
-                    {tab === 'received'
-                      ? msg.senderName || '보낸사람 없음'
-                      : msg.receiverName || '받는사람 없음'}
-                  </td>
-                  <td>{msg.subject || '제목 없음'}</td>
-                  <td>
-                    {msg.sentAt
-                      ? new Date(msg.sentAt).toLocaleString()
-                      : msg.createdAt
-                        ? new Date(msg.createdAt).toLocaleString()
-                        : msg.createdDate
-                          ? new Date(msg.createdDate).toLocaleString()
-                          : ''}
-                  </td>
-                  <td>
-                    {tab === 'sent' ? (msg.isRead ? '읽음' : '미확인') : ''}
-                  </td>
-                </tr>
-              ))
+                      >
+                        <input
+                          type='checkbox'
+                          checked={checked.includes(msg.id || msg.messageId)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleCheck(msg.id || msg.messageId);
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </label>
+                    </td>
+                    <td>
+                      {tab === 'received'
+                        ? msg.senderName || '보낸사람 없음'
+                        : msg.receiverName || '받는사람 없음'}
+                    </td>
+                    <td>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        {msg.isNotice && (
+                          <span
+                            style={{
+                              background: '#ff4757',
+                              color: 'white',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            공지
+                          </span>
+                        )}
+                        {msg.subject || '제목 없음'}
+                      </div>
+                    </td>
+                    <td>
+                      {msg.sentAt
+                        ? new Date(msg.sentAt).toLocaleString()
+                        : msg.createdAt
+                          ? new Date(msg.createdAt).toLocaleString()
+                          : msg.createdDate
+                            ? new Date(msg.createdDate).toLocaleString()
+                            : ''}
+                    </td>
+                    {tab === 'sent' && (
+                      <td>{msg.isRead ? '읽음' : '미확인'}</td>
+                    )}
+                  </tr>
+                ));
+              })()
             )}
           </tbody>
         </table>
@@ -1311,27 +1442,51 @@ const Message = () => {
               {'>>'}
             </button>
           </div>
-          {checked.length > 0 && (
-            <button className={styles.deleteBtn} onClick={handleDelete}>
-              {tab === 'sent'
-                ? // 보낸쪽지함일 때
-                  (() => {
-                    // 선택된 쪽지 중 하나라도 읽음이면 '삭제', 모두 미확인이면 '취소'
-                    const selected = paged.filter((msg) =>
-                      checked.includes(msg.id || msg.messageId),
-                    );
-                    if (
-                      selected.length > 0 &&
-                      selected.every((msg) => msg.isRead === false)
-                    ) {
-                      return '취소';
-                    } else {
-                      return '삭제';
-                    }
-                  })()
-                : '삭제'}
-            </button>
-          )}
+          <div className={styles.bottomBarRight}>
+            {checked.length > 0 &&
+              (() => {
+                // 공지 쪽지 삭제 권한 확인
+                const currentUserId = sessionStorage.getItem('USER_ID');
+                const selectedMessages = paged.filter((msg) =>
+                  checked.includes(msg.id || msg.messageId),
+                );
+                const noticeMessages = selectedMessages.filter(
+                  (msg) => msg.isNotice === true,
+                );
+
+                // 공지 쪽지가 있고, 현재 사용자가 작성자가 아닌 경우 삭제 버튼 숨김
+                if (noticeMessages.length > 0) {
+                  const unauthorizedNotices = noticeMessages.filter(
+                    (msg) => msg.senderId != currentUserId,
+                  );
+                  if (unauthorizedNotices.length > 0) {
+                    return null; // 삭제 버튼 숨김
+                  }
+                }
+
+                return (
+                  <button className={styles.deleteBtn} onClick={handleDelete}>
+                    {tab === 'sent'
+                      ? // 보낸쪽지함일 때
+                        (() => {
+                          // 선택된 쪽지 중 하나라도 읽음이면 '삭제', 모두 미확인이면 '취소'
+                          const selected = paged.filter((msg) =>
+                            checked.includes(msg.id || msg.messageId),
+                          );
+                          if (
+                            selected.length > 0 &&
+                            selected.every((msg) => msg.isRead === false)
+                          ) {
+                            return '취소';
+                          } else {
+                            return '삭제';
+                          }
+                        })()
+                      : '삭제'}
+                  </button>
+                );
+              })()}
+          </div>
         </div>
         <MessageModal
           open={!!modalMsg}

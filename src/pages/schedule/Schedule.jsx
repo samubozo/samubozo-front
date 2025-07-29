@@ -61,9 +61,10 @@ function isSameDay(date, dateStr) {
 }
 
 function isBetween(date, start, end) {
-  if (!start || !end) return false;
+  if (!start) return false;
+  const effectiveEnd = end || start;
   const d = date.toISOString().slice(0, 10);
-  return d >= start && d <= end;
+  return d >= start && d <= effectiveEnd;
 }
 
 function toDateOnly(d) {
@@ -150,6 +151,7 @@ function Schedule() {
         params: { year: currentYear, month: currentMonth + 1 },
       })
       .then((res) => {
+        console.log('일정 데이터:', res.data);
         setEvents(res.data || []); // res.data.result 대신 res.data 사용
       })
       .catch((err) => {
@@ -277,7 +279,7 @@ function Schedule() {
   // 2. 월별 할일만 필터링
   const filteredEvents = visibleEvents.filter((e) => {
     const start = new Date(e.startDate);
-    const end = new Date(e.endDate);
+    const end = new Date(e.endDate || e.startDate);
     // 일정이 이번 달에 걸쳐 있으면 표시
     return end >= monthStart && start <= monthEnd;
   });
@@ -290,19 +292,19 @@ function Schedule() {
   const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
   const rightNormal = filteredEvents.filter(
-    (e) => e.type !== 'TODO' || (e.startDate && e.endDate),
+    (e) => e.type !== 'TODO' || e.startDate,
   );
 
   const pastEvents = rightNormal.filter(
-    (e) => e.endDate && e.endDate < todayStr,
+    (e) => (e.endDate || e.startDate) < todayStr,
   );
   const todayEvents = rightNormal.filter(
-    (e) => e.startDate <= todayStr && e.endDate >= todayStr,
+    (e) => e.startDate <= todayStr && (e.endDate || e.startDate) >= todayStr,
   );
   const tomorrowEvents = rightNormal.filter(
     (e) =>
       e.startDate <= tomorrowStr &&
-      e.endDate >= tomorrowStr &&
+      (e.endDate || e.startDate) >= tomorrowStr &&
       e.startDate !== todayStr,
   );
   const futureEvents = rightNormal.filter((e) => e.startDate > tomorrowStr);
@@ -310,12 +312,38 @@ function Schedule() {
   // 연속 일정 바 렌더링: 한 달 내에서 start~end가 겹치는 일정은 한 번만 표시
   function getEventBarsForMonth(year, month, events) {
     const bars = [];
+    console.log('getEventBarsForMonth 호출:', {
+      year,
+      month,
+      eventsCount: events.length,
+    });
     events.forEach((ev) => {
+      console.log('일정 처리:', {
+        id: ev.id,
+        title: ev.title,
+        startDate: ev.startDate,
+        endDate: ev.endDate,
+      });
       // 기한 없는 할일은 달력에 표시 X
       if (ev.type === 'TODO' && (!ev.startDate || !ev.endDate)) return;
-      if (!ev.startDate || !ev.endDate) return;
+      if (!ev.startDate) return;
+
+      // 당일 일정(endDate가 null이거나 startDate와 같은 경우)은 연속 일정 바로 처리하지 않음
       const start = new Date(ev.startDate);
-      const end = new Date(ev.endDate);
+      const end = new Date(ev.endDate || ev.startDate);
+      const isSingleDay =
+        !ev.endDate ||
+        toDateOnly(start).getTime() === toDateOnly(end).getTime();
+
+      if (isSingleDay) {
+        console.log('당일 일정이므로 연속 일정 바로 처리하지 않음:', ev.title);
+        return;
+      }
+
+      console.log('날짜 처리:', {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      });
       if (
         (start.getFullYear() < year ||
           (start.getFullYear() === year && start.getMonth() <= month)) &&
@@ -332,8 +360,10 @@ function Schedule() {
             ? end.getDate()
             : lastDay;
         bars.push({ ...ev, barStart, barEnd });
+        console.log('바 추가됨:', { barStart, barEnd });
       }
     });
+    console.log('최종 바 개수:', bars.length);
     return bars;
   }
   const eventBars = getEventBarsForMonth(
@@ -544,10 +574,12 @@ function Schedule() {
     if (!highlightedEventId) return false;
     // visibleEvents에서 해당 일정 찾기
     const event = visibleEvents.find((e) => e.id === highlightedEventId);
-    if (!event || !event.startDate || !event.endDate) return false;
+    if (!event || !event.startDate) return false;
     const cellDate = toDateOnly(date).getTime();
     const start = toDateOnly(new Date(event.startDate)).getTime();
-    const end = toDateOnly(new Date(event.endDate)).getTime();
+    const end = toDateOnly(
+      new Date(event.endDate || event.startDate),
+    ).getTime();
     return cellDate >= start && cellDate <= end;
   };
 
@@ -700,13 +732,12 @@ function Schedule() {
                 const dayEvents = visibleEvents.filter((e) => {
                   if (e.type === 'TODO' && !e.startDate && !e.endDate)
                     return false;
-                  if (!e.startDate || !e.endDate)
-                    return isSameDay(date, dateStr); // 기한 없음(날짜 지정된 할일만)
+                  if (!e.startDate) return false;
                   // 연속 일정 바로 처리되는 일정은 무조건 제외
                   if (eventBarIds.has(e.id)) return false;
                   // 날짜 비교도 toDateOnly로 보정
                   const start = toDateOnly(new Date(e.startDate));
-                  const end = toDateOnly(new Date(e.endDate));
+                  const end = toDateOnly(new Date(e.endDate || e.startDate));
                   const cellDate = toDateOnly(date);
                   const isInRange = cellDate >= start && cellDate <= end;
                   return isInRange;
@@ -732,7 +763,83 @@ function Schedule() {
                   >
                     <div className={styles.dateNum}>{date.getDate()}</div>
 
-                    {/* 단일 일정들을 컨테이너로 감싸서 상단에 배치 */}
+                    {/* 연속 일정 바: 해당 날짜가 barStart~barEnd에 포함되는 모든 바 (먼저 렌더링) */}
+                    {barsForCell.map((bar) => {
+                      const cat = categories.find(
+                        (c) => c.id === bar.categoryId,
+                      );
+
+                      // 연속 일정 바의 위치에 따른 라운딩 클래스 결정
+                      const currentDate = date.getDate(); // 현재 셀의 날짜 (1-31)
+                      const barStart = bar.barStart; // 해당 월에서의 시작일
+                      const barEnd = bar.barEnd; // 해당 월에서의 종료일
+
+                      let barClassName = styles.continuousEventBar;
+
+                      // 당일 일정인 경우 (barStart와 barEnd가 같음)
+                      if (barStart === barEnd) {
+                        barClassName = styles.continuousEventBarSingle;
+                      } else {
+                        // 구간 일정의 첫 번째 날
+                        if (currentDate === barStart) {
+                          barClassName = styles.continuousEventBarStart;
+                        }
+                        // 구간 일정의 마지막 날
+                        else if (currentDate === barEnd) {
+                          barClassName = styles.continuousEventBarEnd;
+                        }
+                        // 구간 일정의 중간 날
+                        else {
+                          barClassName = styles.continuousEventBarMiddle;
+                        }
+                      }
+
+                      return (
+                        <div
+                          key={bar.id + '-' + dateStr}
+                          className={barClassName}
+                          style={{
+                            background: cat?.color,
+                            color: cat?.color
+                              ? getContrastColor(cat.color)
+                              : '#222',
+                            position: 'relative',
+                          }}
+                          onMouseEnter={(e) => {
+                            const rect =
+                              e.currentTarget.getBoundingClientRect();
+                            handleEventMouseEnter(
+                              bar,
+                              {
+                                left: rect.right, // 오른쪽 끝
+                                top: rect.bottom + 4,
+                              },
+                              'bar',
+                              dateStr,
+                            );
+                          }}
+                          onMouseLeave={handleEventMouseLeave}
+                        >
+                          {bar.title}
+                          {hoveredEvent &&
+                            hoveredEvent.id === bar.id &&
+                            hoveredEvent.type === 'bar' &&
+                            hoveredEvent.dateStr === dateStr && (
+                              <EventDetailPopup
+                                event={bar}
+                                category={cat}
+                                popupPos={popupPos}
+                                onEdit={handleEventEdit}
+                                onDelete={handleEventDelete}
+                                onMouseEnter={handlePopupMouseEnter}
+                                onMouseLeave={handlePopupMouseLeave}
+                              />
+                            )}
+                        </div>
+                      );
+                    })}
+
+                    {/* 단일 일정들을 컨테이너로 감싸서 연속 일정 바 다음에 배치 */}
                     <div className={styles.singleEventsContainer}>
                       {dayEvents.map((ev) => {
                         const cat = categories.find(
@@ -783,56 +890,6 @@ function Schedule() {
                         );
                       })}
                     </div>
-
-                    {/* 연속 일정 바: 해당 날짜가 barStart~barEnd에 포함되는 모든 바 */}
-                    {barsForCell.map((bar) => {
-                      const cat = categories.find(
-                        (c) => c.id === bar.categoryId,
-                      );
-                      return (
-                        <div
-                          key={bar.id + '-' + dateStr}
-                          className={styles.continuousEventBar}
-                          style={{
-                            background: cat?.color,
-                            color: cat?.color
-                              ? getContrastColor(cat.color)
-                              : '#222',
-                            position: 'relative',
-                          }}
-                          onMouseEnter={(e) => {
-                            const rect =
-                              e.currentTarget.getBoundingClientRect();
-                            handleEventMouseEnter(
-                              bar,
-                              {
-                                left: rect.right, // 오른쪽 끝
-                                top: rect.bottom + 4,
-                              },
-                              'bar',
-                              dateStr,
-                            );
-                          }}
-                          onMouseLeave={handleEventMouseLeave}
-                        >
-                          {bar.title}
-                          {hoveredEvent &&
-                            hoveredEvent.id === bar.id &&
-                            hoveredEvent.type === 'bar' &&
-                            hoveredEvent.dateStr === dateStr && (
-                              <EventDetailPopup
-                                event={bar}
-                                category={cat}
-                                popupPos={popupPos}
-                                onEdit={handleEventEdit}
-                                onDelete={handleEventDelete}
-                                onMouseEnter={handlePopupMouseEnter}
-                                onMouseLeave={handlePopupMouseLeave}
-                              />
-                            )}
-                        </div>
-                      );
-                    })}
                   </td>,
                 );
                 // 한 주가 끝나면 행 추가
@@ -1306,8 +1363,10 @@ function EventDetailPopup({
       <div className={styles.eventDetailRow}>
         <span className={styles.eventDetailLabel}>일자</span>
         <span className={styles.eventDetailValue}>
-          {event.startDate && event.endDate
-            ? `${event.startDate} ~ ${event.endDate}`
+          {event.startDate
+            ? event.endDate && event.endDate !== event.startDate
+              ? `${event.startDate} ~ ${event.endDate}`
+              : event.startDate
             : '기한 없음'}
         </span>
       </div>
@@ -1506,6 +1565,7 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
   const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
   const [noDue, setNoDue] = useState(false);
   const [error, setError] = useState('');
+  const [dateType, setDateType] = useState('single'); // 'single' | 'range'
 
   // defaultEvent가 있으면 기존 값 세팅
   useEffect(() => {
@@ -1517,6 +1577,9 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
       setType(defaultEvent.type);
       setCategoryId(defaultEvent.categoryId);
       setNoDue(defaultEvent.isAllDay);
+
+      // endDate가 null이면 당일 일정, null이 아니면 구간 일정
+      setDateType(defaultEvent.endDate ? 'range' : 'single');
     }
   }, [defaultEvent]);
 
@@ -1545,39 +1608,76 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
         </div>
         <div className={styles.modalField}>
           <label>일자</label>
-          <input
-            type='date'
-            value={start}
-            onChange={(e) => {
-              setStart(e.target.value);
-              setNoDue(false);
-            }}
-            disabled={noDue}
-          />
-          <span>~</span>
-          <input
-            type='date'
-            value={end}
-            onChange={(e) => {
-              setEnd(e.target.value);
-              setNoDue(false);
-            }}
-            disabled={noDue}
-          />
-          <label style={{ marginLeft: 8 }}>
-            <input
-              type='checkbox'
-              checked={noDue}
-              onChange={(e) => {
-                setNoDue(e.target.checked);
-                if (e.target.checked) {
-                  setStart('');
-                  setEnd('');
-                }
-              }}
-            />
-            기한 없음
-          </label>
+          <div className={styles.dateFieldContainer}>
+            <div className={styles.dateTypeSelector}>
+              <label>
+                <input
+                  type='radio'
+                  value='single'
+                  checked={dateType === 'single'}
+                  onChange={(e) => {
+                    setDateType(e.target.value);
+                    setNoDue(false);
+                    if (e.target.value === 'single') {
+                      setEnd(''); // 당일 일정이면 종료일 초기화
+                    }
+                  }}
+                />
+                하루 일정
+              </label>
+              <label>
+                <input
+                  type='radio'
+                  value='range'
+                  checked={dateType === 'range'}
+                  onChange={(e) => {
+                    setDateType(e.target.value);
+                    setNoDue(false);
+                  }}
+                />
+                여러 날 일정
+              </label>
+            </div>
+            <div className={styles.dateInputs}>
+              <input
+                type='date'
+                value={start}
+                onChange={(e) => {
+                  setStart(e.target.value);
+                  setNoDue(false);
+                }}
+                disabled={noDue}
+              />
+              {dateType === 'range' && (
+                <>
+                  <span>~</span>
+                  <input
+                    type='date'
+                    value={end}
+                    onChange={(e) => {
+                      setEnd(e.target.value);
+                      setNoDue(false);
+                    }}
+                    disabled={noDue}
+                  />
+                </>
+              )}
+              <label className={styles.noDueCheckbox}>
+                <input
+                  type='checkbox'
+                  checked={noDue}
+                  onChange={(e) => {
+                    setNoDue(e.target.checked);
+                    if (e.target.checked) {
+                      setStart('');
+                      setEnd('');
+                    }
+                  }}
+                />
+                기한 없음
+              </label>
+            </div>
+          </div>
         </div>
         <div className={styles.modalField}>
           <label>일정구분</label>
@@ -1625,12 +1725,23 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
                 setError('내용을 입력하세요.');
                 return;
               }
-              if (!noDue && (!start || !end)) {
-                setError('일자를 입력하세요.');
+              if (!noDue && !start) {
+                setError('시작일을 입력하세요.');
                 return;
               }
-              // 시작일-종료일 유효성 검사 추가
-              if (!noDue && start && end && start > end) {
+              // 구간 일정인 경우에만 종료일 검사
+              if (!noDue && dateType === 'range' && !end) {
+                setError('종료일을 입력하세요.');
+                return;
+              }
+              // 구간 일정인 경우에만 시작일-종료일 유효성 검사
+              if (
+                !noDue &&
+                dateType === 'range' &&
+                start &&
+                end &&
+                start > end
+              ) {
                 setError('시작일은 종료일보다 늦을 수 없습니다.');
                 return;
               }
@@ -1649,7 +1760,7 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
                 title: title, // 일정 제목
                 content: content, // 일정 내용 (별도 입력)
                 startDate: start, // 서버 필드명에 맞춤
-                endDate: end, // 서버 필드명에 맞춤
+                endDate: dateType === 'single' ? null : end, // 당일 일정이면 null, 구간 일정이면 endDate
                 type,
                 categoryId,
                 isAllDay: noDue, // 기한 없음 상태와 연동
