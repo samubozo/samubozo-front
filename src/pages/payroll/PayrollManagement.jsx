@@ -45,6 +45,8 @@ const fetchEmployees = async ({
           position: emp.positionName,
           department: emp.department?.name || '',
           imageUrl: emp.profileImage || '',
+          activated: emp.activate || 'Y',
+          isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // ✅ 퇴사자 표시 필드 추가
         },
       ];
     }
@@ -71,7 +73,8 @@ const fetchEmployees = async ({
       name: emp.userName,
       position: emp.positionName,
       department: emp.department?.name || '',
-      imageUrl: emp.profileImage || '',
+      activated: emp.activate || 'Y', // ✅ 재직 여부 (원본)
+      isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // ✅ 퇴직 여부 (EmployeeTable 호환)
     }));
   } catch (err) {
     console.error('직원 불러오기 실패:', err);
@@ -212,7 +215,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
                   value={form.basePayroll}
                   onChange={handleChange}
                   autoComplete='off'
-                  // required
                 />
               </td>
             </tr>
@@ -229,7 +231,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
                   value={form.positionAllowance}
                   onChange={handleChange}
                   autoComplete='off'
-                  // required
                 />
               </td>
             </tr>
@@ -244,7 +245,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
                   value={form.mealAllowance}
                   onChange={handleChange}
                   autoComplete='off'
-                  // required
                 />
               </td>
             </tr>
@@ -277,7 +277,7 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
             style={{ minWidth: 180 }}
             className={styles['save-button']}
           >
-            {loading ? '저장 중...' : '저장'}
+            {loading ? '등록/수정 중...' : '등록 / 수정'}
           </button>
           {message && (
             <div
@@ -307,7 +307,10 @@ const PayrollManagement = () => {
     mealAllowance: '',
     bonus: '',
   });
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
   const [selectedDepartment, setSelectedDepartment] = useState('전체');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
@@ -319,6 +322,17 @@ const PayrollManagement = () => {
     const payload = parseJwt(token);
     console.log('✅ JWT payload:', payload); // 추가
     setIsHR(payload?.role === 'Y');
+  }, []);
+
+  useEffect(() => {
+    if (selectedMonth && user) {
+      const [year, month] = selectedMonth.split('-');
+      if (isHR && selectedEmployee) {
+        fetchPayroll(year, month, selectedEmployee.id);
+      } else {
+        fetchPayroll(year, month);
+      }
+    }
   }, []);
 
   const fetchPayroll = (year, month, employeeId = null) => {
@@ -390,7 +404,7 @@ const PayrollManagement = () => {
   useEffect(() => {
     const loadEmployees = async () => {
       console.log('🚀 isHR 전달됨:', isHR); // 확인
-      const employees = await fetchEmployees({ isHR });
+      const employees = await fetchEmployees({ isHR, includeRetired: true });
       console.log('📦 직원 목록:', employees); // 확인
       setEmployeeData(employees);
     };
@@ -459,6 +473,7 @@ const PayrollManagement = () => {
           bankName: data.bankName || '',
           accountNumber: data.accountNumber || '',
           accountHolder: data.accountHolder || data.userName,
+          isRetired: data.activate !== 'Y' ? 'Y' : 'N', // ✅ 추가!
         });
 
         if (isHR && selectedMonth) {
@@ -501,8 +516,32 @@ const PayrollManagement = () => {
 
   const printRef = useRef(null);
 
-  const handleOvertimeCalculation = () => {
-    alert('야근수당 계산 로직이 아직 구현되지 않았습니다.');
+  const handleOvertimeCalculation = async () => {
+    if (!selectedEmployee || !selectedMonth) return;
+
+    const [yearStr, monthStr] = selectedMonth.split('-');
+    const year = parseInt(yearStr);
+    const month = parseInt(monthStr);
+
+    const payload = {
+      userId: selectedEmployee.id,
+      payYear: year,
+      payMonth: month,
+      basePayroll: payrollData.basePayroll,
+      positionAllowance: payrollData.positionAllowance,
+      mealAllowance: payrollData.mealAllowance,
+      bonus: payrollData.bonus,
+      positionName: selectedEmployee.position,
+    };
+
+    try {
+      await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
+      alert('야근수당이 계산되어 저장되었습니다.');
+      fetchPayroll(year, month, selectedEmployee.id); // 화면 반영
+    } catch (err) {
+      console.error('야근수당 계산 실패:', err);
+      alert('야근수당 계산에 실패했습니다.');
+    }
   };
 
   const handlePrintPayroll = () => {
@@ -623,6 +662,9 @@ const PayrollManagement = () => {
     </head>
     <body>
       <h2>${formattedMonth} 급여명세서</h2>
+
+      ${emp.isRetired === 'Y' ? `<p style="text-align:center; color:red; font-weight:bold;">[퇴사자]</p>` : ''}
+
 
       <!-- 직원 정보 -->
       <table class="info-table">
@@ -775,8 +817,10 @@ const PayrollManagement = () => {
               {filteredEmployees.map((emp, idx) => (
                 <tr
                   key={emp.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleEmployeeClick(emp)} // ✅ 수정
+                  className={`${selectedEmployeeId === emp.id ? styles.selected : ''} ${
+                    emp.isRetired === 'Y' ? styles['retired-row'] : ''
+                  }`}
+                  onClick={() => handleEmployeeClick(emp)}
                 >
                   <td>
                     <input
@@ -796,8 +840,22 @@ const PayrollManagement = () => {
           <div className={styles['employee-summary-spacer']} />
           {/* 하단 인원(퇴직) 요약 */}
           <div className={styles['employee-summary']}>
-            <span>인원 (퇴직)</span>
-            <span>{filteredEmployees.length}</span>
+            {(() => {
+              const total = filteredEmployees.length;
+              const retiredCount = filteredEmployees.filter(
+                (emp) => emp.isRetired === 'Y', // ✅ 고친 부분
+              ).length;
+              const activeCount = total - retiredCount;
+
+              return (
+                <>
+                  <span>인원 (퇴직)</span>
+                  <span>
+                    {activeCount}명 ({retiredCount}명)
+                  </span>
+                </>
+              );
+            })()}
           </div>
         </div>
 
