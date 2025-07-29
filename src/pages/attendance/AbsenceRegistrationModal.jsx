@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './AbsenceRegistrationModal.module.scss';
 import { getKoreaToday } from '../../utils/dateUtils';
+import { attendanceService } from '../../services/attendanceService';
+import SuccessModal from '../../components/SuccessModal';
 
 // 한국 시간 기준 오늘 날짜
 const todayStr = getKoreaToday();
@@ -35,6 +37,64 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('18:00');
   const [reason, setReason] = useState('');
+  const [myAbsences, setMyAbsences] = useState([]);
+  const [duplicateError, setDuplicateError] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // 내 부재 목록 불러오기
+  useEffect(() => {
+    if (open) {
+      fetchMyAbsences();
+    }
+  }, [open]);
+
+  const fetchMyAbsences = async () => {
+    try {
+      const response = await attendanceService.getAbsences({});
+      const absences = response.result || response.data || response || [];
+      setMyAbsences(absences);
+    } catch (error) {
+      console.error('부재 목록 불러오기 실패:', error);
+      setMyAbsences([]);
+    }
+  };
+
+  // 중복 검사 함수
+  const checkDuplicate = () => {
+    if (!myAbsences.length) return false;
+
+    const requestStart = new Date(startDate);
+    const requestEnd = new Date(endDate);
+
+    return myAbsences.some((absence) => {
+      const absenceStart = new Date(absence.startDate);
+      const absenceEnd = new Date(absence.endDate);
+
+      // 기간이 겹치는지 확인
+      const isOverlapping =
+        requestStart <= absenceEnd && requestEnd >= absenceStart;
+
+      // 같은 타입인지 확인
+      const isSameType = absence.type === type;
+
+      return isOverlapping && isSameType;
+    });
+  };
+
+  // 날짜나 타입이 변경될 때마다 중복 검사
+  useEffect(() => {
+    if (startDate && endDate && type) {
+      const isDuplicate = checkDuplicate();
+      if (isDuplicate) {
+        setDuplicateError(
+          '이미 해당 기간에 같은 유형의 부재가 신청되어 있습니다.',
+        );
+      } else {
+        setDuplicateError('');
+      }
+    }
+  }, [startDate, endDate, type, myAbsences]);
 
   // 부재 타입 변경 시 긴급도 자동 설정
   const handleTypeChange = (e) => {
@@ -53,6 +113,14 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // 중복 검사
+    if (duplicateError) {
+      setSuccessMessage(duplicateError);
+      setShowSuccessModal(true);
+      return;
+    }
+
     // startTime, endTime이 'HH:mm' 포맷인지 보장
     const formattedStartTime =
       startTime && startTime.length === 5 ? startTime : '';
@@ -159,8 +227,20 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
               }}
             />
           </div>
+          {duplicateError && (
+            <div
+              className={styles.errorMessage}
+              style={{ color: 'red', fontSize: '0.9rem', marginBottom: '1rem' }}
+            >
+              {duplicateError}
+            </div>
+          )}
           <div className={styles.buttonRow}>
-            <button type='submit' className={styles.submitBtn}>
+            <button
+              type='submit'
+              className={styles.submitBtn}
+              disabled={!!duplicateError}
+            >
               신청
             </button>
             <button
@@ -173,6 +253,13 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
           </div>
         </form>
       </div>
+      {showSuccessModal && (
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          message={successMessage}
+        />
+      )}
     </div>
   );
 };

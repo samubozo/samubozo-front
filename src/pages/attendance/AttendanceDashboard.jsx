@@ -337,16 +337,12 @@ export default function AttendanceDashboard() {
         await approvalService.requestAbsenceApproval(approvalData);
         console.log('부재 결재 요청 생성 완료');
 
-        // 성공 메시지에 결재 요청 정보 추가
-        setSuccessMessage(
-          '부재 신청이 완료되었습니다. 결재 요청이 자동으로 생성되었습니다.',
-        );
+        // 성공 메시지를 간단하게 수정
+        setSuccessMessage('부재 신청이 완료되었습니다.');
       } catch (approvalError) {
         console.error('부재 결재 요청 생성 실패:', approvalError);
-        // 결재 요청 실패해도 부재 신청은 성공으로 처리하되, 사용자에게 알림
-        setSuccessMessage(
-          '부재 신청은 완료되었으나, 결재 요청 생성에 실패했습니다. 관리자에게 문의하세요.',
-        );
+        // 결재 요청 실패 시 실패 메시지 표시
+        setSuccessMessage('부재 신청을 실패했습니다.');
       }
 
       await fetchAbsences();

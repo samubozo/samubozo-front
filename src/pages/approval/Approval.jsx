@@ -101,10 +101,14 @@ function Approval() {
     setCertModalLoading(true);
     try {
       // 신청(POST)
+      console.log('증명서 신청 시작:', form);
       await approvalService.applyCertificate(form);
+      console.log('증명서 신청 완료, 데이터 새로고침 시작');
       fetchData();
+      console.log('증명서 신청 후 fetchData 완료');
       return true; // 성공 시 true 반환
     } catch (e) {
+      console.error('증명서 신청 실패:', e);
       setCertModalLoading(false);
       return false; // 실패 시 false 반환
     }
@@ -186,7 +190,14 @@ function Approval() {
   // HR 담당자용 승인 핸들러
   const handleHRApprove = async (approvalId) => {
     try {
-      await approvalService.approveHRVacation(approvalId);
+      if (tab === 'leave') {
+        await approvalService.approveHRVacation(approvalId);
+      } else if (tab === 'certificate') {
+        await approvalService.approveCertificate(approvalId);
+      } else if (tab === 'absence') {
+        await approvalService.approveHRAbsence(approvalId);
+      }
+
       setToast({ message: '승인 처리 완료', type: 'success' });
       // 승인 후 처리완료 탭으로 자동 이동
       console.log('승인 처리 후 approvalStatus 변경: pending -> processed');
@@ -238,6 +249,18 @@ function Approval() {
         }
         const message = `부재 신청이 반려되었습니다.\n\n반려 완료: ${targetIds.length}건`;
         setSuccessMessage(message);
+      } else if (tab === 'certificate') {
+        // 증명서 반려 (새로 추가)
+        for (const id of targetIds) {
+          if (isHR) {
+            await approvalService.rejectCertificate(id, comment);
+          } else {
+            // 일반 사용자는 증명서 반려 권한 없음
+            throw new Error('일반 사용자는 증명서를 반려할 수 없습니다.');
+          }
+        }
+        const message = `증명서 신청이 반려되었습니다.\n\n반려 완료: ${targetIds.length}건`;
+        setSuccessMessage(message);
       }
 
       setShowSuccessModal(true);
@@ -250,6 +273,8 @@ function Approval() {
         fetchData();
       } else if (tab === 'absence') {
         fetchAbsenceDataFromHook();
+      } else if (tab === 'certificate') {
+        fetchData();
       }
     } catch (err) {
       setToast({
@@ -368,6 +393,17 @@ function Approval() {
 
   // 증명서 데이터 필터링
   const filteredCert = certData.filter((row) => {
+    console.log('증명서 필터링 체크:', {
+      rowStatus: row.status,
+      approvalStatus,
+      rowType: row.type,
+      item,
+      applyDate: row.applyDate,
+      dateFrom,
+      dateTo,
+      filterValue,
+    });
+
     // 항목 필터링
     if (item !== 'all') {
       if (item === '재직증명서' && row.type !== '재직증명서') return false;
@@ -815,8 +851,12 @@ function Approval() {
             selected={selected}
             setSelected={setSelected}
             onEditVacation={null}
-            onApprove={null}
-            onReject={null}
+            onApprove={
+              isHR && approvalStatus === 'pending' ? handleHRApprove : null
+            }
+            onReject={
+              isHR && approvalStatus === 'pending' ? handleHRReject : null
+            }
             isHR={isHR}
             onEditCert={null}
             onPrintCert={(row) => {

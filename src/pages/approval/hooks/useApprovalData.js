@@ -249,10 +249,13 @@ export const useApprovalData = (
         setLeaveData(mappedData);
       } else if (tab === 'certificate') {
         // 증명서 탭의 경우 모든 사용자가 본인 증명서 내역 조회
+        console.log('증명서 데이터 조회 시작');
         const res = await approvalService.getMyCertificates();
+        console.log('증명서 API 응답:', res);
         arr = Array.isArray(res)
           ? res
           : res?.result?.content || res?.result || [];
+        console.log('증명서 데이터 배열:', arr);
         // 증명서 데이터도 매핑 (CertificateResDto 구조에 맞게)
         const mappedCertData = arr.map((row) => ({
           ...row,
@@ -270,6 +273,7 @@ export const useApprovalData = (
           rejectComment:
             row.rejectComment || (row.status === 'REJECTED' ? row.purpose : ''), // 반려 사유 추가 (임시 해결책)
         }));
+        console.log('매핑된 증명서 데이터:', mappedCertData);
         setCertData(mappedCertData);
       } else if (tab === 'absence') {
         // 부재 탭의 경우 fetchAbsenceData 함수 사용
@@ -291,6 +295,17 @@ export const useApprovalData = (
     // 연차/반차 탭일 때 모든 사용자에게 자동 새로고침 (10초마다)
     if (tab === 'leave') {
       const interval = setInterval(fetchData, 10000);
+      setAutoRefreshInterval(interval);
+
+      return () => {
+        clearInterval(interval);
+        setAutoRefreshInterval(null);
+      };
+    }
+
+    // 증명서 탭일 때도 자동 새로고침 (5초마다)
+    if (tab === 'certificate') {
+      const interval = setInterval(fetchData, 5000);
       setAutoRefreshInterval(interval);
 
       return () => {
