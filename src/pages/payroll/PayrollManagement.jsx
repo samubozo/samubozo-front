@@ -495,20 +495,22 @@ const PayrollManagement = () => {
   const allowance = payrollData.positionAllowance || 0;
   const meal = payrollData.mealAllowance || 0;
   const bonus = payrollData.bonus || 0;
-  const nonTaxableMeal = Math.min(meal, 100000);
-  const taxableMeal = Math.max(meal - 100000, 0);
+  const nonTaxableMeal = Math.min(meal, 200000);
+  const taxableMeal = Math.max(meal - 200000, 0);
   const taxable = base + allowance + taxableMeal + bonus;
   const nonTaxable = nonTaxableMeal;
   const total = taxable + nonTaxable;
 
   // 공제항목 계산
-  const pension = Math.floor(taxable * 0.045);
-  const health = Math.floor(taxable * 0.07);
-  const employment = Math.floor(taxable * 0.008);
-  const incomeTax = Math.floor(taxable * 0.03);
-  const localTax = Math.floor(incomeTax * 0.1);
+  const pension = Math.floor(taxable * 0.045); // 국민연금 (4.5%)
+  const health = Math.floor(taxable * 0.03545); // 건강보험 (3.545%)
+  const care = Math.floor(health * 0.1281); // 장기요양보험 (건강보험의 12.81%)
+  const employment = Math.floor(taxable * 0.008); // 고용보험 (0.8%)
+  const incomeTax = Math.floor(taxable * 0.03); // 소득세 (3%)
+  const localTax = Math.floor(incomeTax * 0.1); // 지방소득세 (소득세의 10%)
 
-  const totalDeduction = pension + health + employment + incomeTax + localTax;
+  const totalDeduction =
+    pension + health + care + employment + incomeTax + localTax;
   const netPay = total - totalDeduction;
 
   const printRef = useRef(null);
@@ -714,6 +716,10 @@ const PayrollManagement = () => {
           <tr>
             <td>야근수당</td><td>${(payrollData.overtimePay ?? 0).toLocaleString()}</td>
             <td>지방소득세</td><td>${localTax.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td><td></td></td>
+            <td>장기요양보험</td><td>${care.toLocaleString()}</td>
           </tr>
           <tr>
             <td class="summary">지급합계</td><td class="summary">${total.toLocaleString()}</td>
@@ -929,6 +935,10 @@ const PayrollManagement = () => {
                 <tr>
                   <td>건강보험</td>
                   <td>{health ? health.toLocaleString() : ''}</td>
+                </tr>
+                <tr>
+                  <td>장기요양보험</td>
+                  <td>{health ? care.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
                   <td>고용보험</td>
