@@ -641,7 +641,7 @@ const OrgChart = () => {
           </div>
 
           {/* 부서 추가 버튼 - 부서 탭에서만 표시 */}
-          {tab === 'team' && !deptView && (
+          {tab === 'team' && !deptView && sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
             <button
               className={styles.addDeptHeaderBtn}
               onClick={() => setShowAddDeptModal(true)}

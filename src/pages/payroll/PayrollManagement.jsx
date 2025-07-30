@@ -47,7 +47,7 @@ const fetchEmployees = async ({
           department: emp.department?.name || '',
           imageUrl: emp.profileImage || '',
           activated: emp.activate || 'Y',
-          isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // ✅ 퇴사자 표시 필드 추가
+          isRetired: emp.activate !== 'Y' ? 'Y' : 'N',
         },
       ];
     }
@@ -74,8 +74,8 @@ const fetchEmployees = async ({
       name: emp.userName,
       position: emp.positionName,
       department: emp.department?.name || '',
-      activated: emp.activate || 'Y', // ✅ 재직 여부 (원본)
-      isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // ✅ 퇴직 여부 (EmployeeTable 호환)
+      activated: emp.activate || 'Y', // 재직 여부 (원본)
+      isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // 퇴직 여부 (EmployeeTable 호환)
     }));
   } catch (err) {
     console.error('직원 불러오기 실패:', err);
@@ -433,17 +433,6 @@ const PayrollManagement = () => {
     }
   };
 
-  // 전체 체크 코드
-  // const isAllChecked = checkedList.length === employeeData.length;
-
-  // const handleAllCheck = (e) => {
-  //   if (e.target.checked) {
-  //     setCheckedList(employeeData.map((emp) => emp.id));
-  //   } else {
-  //     setCheckedList([]);
-  //   }
-  // };
-
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
   const handleCheck = (id) => {
@@ -716,6 +705,10 @@ const PayrollManagement = () => {
           <tr>
             <td>성과급</td><td>${bonus.toLocaleString()}</td>
             <td>소득세</td><td>${incomeTax.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td>야근수당</td><td>${(payrollData.overtimePay ?? 0).toLocaleString()}</td>
+            <td>지방소득세</td><td>${localTax.toLocaleString()}</td>
           </tr>
           <tr>
             <td class="summary">지급합계</td><td class="summary">${total.toLocaleString()}</td>
