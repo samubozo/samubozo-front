@@ -84,11 +84,9 @@ const Signup = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
-  // 부서와 직책 데이터 불러오기
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 부서 목록 가져오기
         const deptResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/departments`,
         );
@@ -97,7 +95,6 @@ const Signup = () => {
           : [];
         setDepartments(deptData);
 
-        // 직책 목록 가져오기
         const posResponse = await axiosInstance.get(
           `${API_BASE_URL}${HR}/positions`,
         );
@@ -126,10 +123,8 @@ const Signup = () => {
     fetchData();
   }, []);
 
-  // 실시간 입력값 변경 및 즉시 에러 체크
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // 연락처 입력 시 하이픈 자동 포맷팅
     if (name === 'phone') {
       let onlyNum = value.replace(/[^0-9]/g, '');
       if (onlyNum.length > 11) onlyNum = onlyNum.slice(0, 11);
@@ -156,13 +151,11 @@ const Signup = () => {
       [name]: value,
     }));
 
-    // 현재 필드 에러 체크
     setErrors((prev) => ({
       ...prev,
       [name]: validateField(name, value, { ...form, [name]: value }),
     }));
 
-    // 비밀번호 변경 시 비밀번호 확인도 즉시 체크
     if (name === 'passwordCheck' || name === 'password') {
       setErrors((prev) => ({
         ...prev,
@@ -180,7 +173,6 @@ const Signup = () => {
     }
   };
 
-  // 성별 버튼 처리 (실시간 체크, 서버에는 'M'/'F'로 전달)
   const handleGender = (genderCode) => {
     setForm((prev) => ({
       ...prev,
@@ -195,7 +187,6 @@ const Signup = () => {
     }));
   };
 
-  // 포커스 잃을 때도 체크 (선택적. UX 따라 생략 가능)
   const handleBlur = (e) => {
     const { name, value } = e.target;
     setErrors((prev) => ({
@@ -204,36 +195,12 @@ const Signup = () => {
     }));
   };
 
-  // 이메일 인증 모달
-  const handleEmailVerify = async () => {
-    if (!form.email) {
-      setErrors((prev) => ({
-        ...prev,
-        email: '이메일을 입력해 주세요.',
-      }));
-      return;
-    }
-    try {
-      await axiosInstance.post(`${API_BASE_URL}${HR}/email-valid`, {
-        email: form.email,
-      });
-      // setShowModal(true); // 모달 관련 코드 제거
-    } catch (e) {
-      setErrors((prev) => ({
-        ...prev,
-        email: '이메일 인증 메일 발송에 실패했습니다.',
-      }));
-    }
-  };
-
-  // 회원가입 제출 (전체 에러 체크)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     let newErrors = {};
     let isValid = true;
 
-    // 모든 필드 반복 검사
     Object.keys(form).forEach((key) => {
       const err = validateField(key, form[key], form);
       if (err) {
@@ -262,7 +229,6 @@ const Signup = () => {
     setIsSubmitting(false);
   };
 
-  // 주소찾기 함수 추가
   const handleAddressSearch = () => {
     function openPostcode() {
       new window.daum.Postcode({
@@ -278,7 +244,6 @@ const Signup = () => {
     if (window.daum && window.daum.Postcode) {
       openPostcode();
     } else {
-      // 0.5초 후 한 번 더 시도 (최대 5회)
       let retry = 0;
       const interval = setInterval(() => {
         retry++;
@@ -326,7 +291,6 @@ const Signup = () => {
                     onBlur={handleBlur}
                     style={{ flex: 1 }}
                   />
-                  {/* 중복확인 버튼 제거 */}
                 </div>
                 {errors.email && (
                   <div className={styles.error}>{errors.email}</div>
@@ -438,7 +402,7 @@ const Signup = () => {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     style={{ flex: 1 }}
-                    readOnly // 직접 입력 방지, 주소찾기로만 입력
+                    readOnly
                   />
                   <button
                     type='button'
@@ -525,7 +489,6 @@ const Signup = () => {
         </div>
       </div>
 
-      {/* 성공 모달 */}
       {showSuccessModal && (
         <SuccessModal
           message={successMessage}

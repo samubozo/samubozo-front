@@ -13,12 +13,11 @@ export default function PasswordFind() {
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [codeRequested, setCodeRequested] = useState(false); // 인증번호 요청 여부
+  const [codeRequested, setCodeRequested] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
-  // 인증번호 발송 및 재전송 (버튼 텍스트/쿨타임 관리)
   const handleSendOrResendCode = async () => {
     if (!email || resendCooldown > 0) return;
     try {
@@ -34,7 +33,7 @@ export default function PasswordFind() {
         setShowSuccessModal(true);
       }
       setCodeSent(true);
-      setResendCooldown(20); // 20초 쿨타임
+      setResendCooldown(20);
     } catch (e) {
       setSuccessMessage(e.response?.data?.message || '인증번호 발송 실패');
       setShowSuccessModal(true);
@@ -61,7 +60,6 @@ export default function PasswordFind() {
     }
   };
 
-  // 쿨타임 타이머
   React.useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setInterval(() => {
@@ -166,7 +164,6 @@ export default function PasswordFind() {
         </div>
       </div>
 
-      {/* 성공 모달 */}
       {showSuccessModal && (
         <SuccessModal
           message={successMessage}

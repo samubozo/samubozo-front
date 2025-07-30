@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import styles from './EmployeeDetail.module.scss'; // styles import
+import styles from './EmployeeDetail.module.scss';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, HR, CERTIFICATE } from '../../configs/host-config';
-// certificateEnums.js import 제거
 import AuthContext from '../../context/UserContext';
 import { approvalService } from '../../services/approvalService';
 import { getKoreaToday } from '../../utils/dateUtils';
@@ -11,13 +10,12 @@ import RejectModal from '../approval/RejectModal';
 import SuccessModal from '../../components/SuccessModal';
 
 const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
-  const [dept, setDept] = useState(''); // departmentId
+  const [dept, setDept] = useState('');
   const [deptName, setDeptName] = useState('');
-  const [position, setPosition] = useState(''); // positionId
+  const [position, setPosition] = useState('');
   const [positionName, setPositionName] = useState('');
   const [residentRegNo, setResidentRegNo] = useState('');
   const [residentRegNoError, setResidentRegNoError] = useState('');
-  // 주민등록번호 입력 핸들러: 하이픈 포함하여 저장, 6자리 뒤에 자동으로 '-' 표시, 최대 14자리(하이픈 포함)
   const handleResidentRegNoChange = (e) => {
     let value = e.target.value.replace(/[^0-9]/g, '');
     if (value.length > 13) value = value.slice(0, 13);
@@ -28,13 +26,11 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     setResidentRegNo(formatted);
     setResidentRegNoError('');
   };
-  // 주민등록번호 유효성 검사 함수
   const isValidResidentRegNo = (value) => {
-    // 6자리-7자리, 총 14글자, 하이픈 포함
     return /^\d{6}-\d{7}$/.test(value);
   };
   const [status, setStatus] = useState('재직');
-  const [role, setRole] = useState('N'); // hrRole: 'Y' or 'N'
+  const [role, setRole] = useState('N');
   const [joinDate, setJoinDate] = useState('');
   const [leaveDate, setLeaveDate] = useState('');
   const [memo, setMemo] = useState('');
@@ -42,7 +38,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [employeeName, setEmployeeName] = useState('');
   const [employeePhone, setEmployeePhone] = useState('');
   const [employeePhoneError, setEmployeePhoneError] = useState('');
-  // 연락처 입력 핸들러: 3-4-4 형태로 하이픈 포함하여 저장, 최대 13자리(하이픈 포함)
   const handleEmployeePhoneChange = (e) => {
     let value = e.target.value.replace(/[^0-9]/g, '');
     if (value.length > 11) value = value.slice(0, 11);
@@ -60,12 +55,9 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     setEmployeePhone(formatted);
     setEmployeePhoneError('');
   };
-  // 화면에 표시할 연락처: employeePhone 그대로 사용
   const displayEmployeePhone = employeePhone;
 
-  // 연락처 유효성 검사 함수 (하이픈 필수, 010-1234-5678 등)
   const isValidPhone = (value) => {
-    // 010-1234-5678, 011-123-4567 등 3-3~4-4
     return /^01[016789]-\d{3,4}-\d{4}$/.test(value);
   };
   const [employeeOutEmail, setEmployeeOutEmail] = useState('');
@@ -84,8 +76,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [birthDate, setBirthDate] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false); // 성공 메시지 모달
-  const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 내용
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleAccountNumberChange = (e) => {
     let value = e.target.value;
@@ -96,7 +88,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const { user } = React.useContext(AuthContext);
   const isHR = user?.hrRole === 'Y';
 
-  // 부서/직책 목록 불러오기
   useEffect(() => {
     const fetchMeta = async () => {
       try {
@@ -106,14 +97,11 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         ]);
         setDepartments(deptRes.data.result || []);
         setPositions(posRes.data.result || []);
-      } catch (e) {
-        // 무시
-      }
+      } catch (e) {}
     };
     fetchMeta();
   }, []);
 
-  // 선택된 직원에 따라 이름과 전화번호 업데이트
   useEffect(() => {
     if (!selectedEmployee?.id) return;
     setLoading(true);
@@ -148,18 +136,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       .finally(() => setLoading(false));
   }, [selectedEmployee]);
 
-  // 직책 관련 상태
-  const [selectedPositionId, setSelectedPositionId] = useState(
-    positions[0]?.id,
-  );
-  const [showPositionDropdown, setShowPositionDropdown] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-
-  // 모달 입력 상태
-  const [newOrder, setNewOrder] = useState('');
-  const [newName, setNewName] = useState('');
-
-  // === 한글 변환 함수 ===
   const typeToKor = (type) => {
     const t = (type || '').trim().toUpperCase();
     if (t === 'EMPLOYMENT') return '재직증명서';
@@ -174,27 +150,20 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     return status;
   };
 
-  // === 증명서 내역 상태 ===
   const [certList, setCertList] = useState([]);
   const [certType, setCertType] = useState('EMPLOYMENT');
   const [certDate, setCertDate] = useState(getKoreaToday());
-  const [certApproveDate, setCertApproveDate] = useState('');
-  const [certStatus, setCertStatus] = useState('REQUESTED');
   const [certPurpose, setCertPurpose] = useState('');
 
-  const [certId, setCertId] = useState(''); // 추가: 폼에 표시할 발급번호 상태
-  const [selectedCertIds, setSelectedCertIds] = useState([]); // 체크된 증명서 ID 목록
+  const [selectedCertIds, setSelectedCertIds] = useState([]);
 
-  // 반려 모달 상태
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const [rejectLoading, setRejectLoading] = useState(false);
 
-  // 증명서 내역 불러오기 (GET /list 또는 /list/all)
   useEffect(() => {
     const loadCertList = () => {
       if (isHR && selectedEmployee?.id) {
-        // 관리자이면서 특정 직원 선택 시: 해당 직원의 증명서 내역만 조회
         axiosInstance
           .get(`${API_BASE_URL}${CERTIFICATE}/list/all`, {
             params: { employeeNo: selectedEmployee.id },
@@ -204,7 +173,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           })
           .catch(() => setCertList([]));
       } else if (isHR) {
-        // 관리자이지만 직원 선택 안 한 경우: 전체 내역 조회(기존 유지)
         approvalService
           .getAllCertificates()
           .then((res) => {
@@ -212,7 +180,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           })
           .catch(() => setCertList([]));
       } else if (selectedEmployee?.id) {
-        // 일반 사용자가 특정 직원을 선택한 경우: 해당 직원의 증명서 내역 조회
         axiosInstance
           .get(`${API_BASE_URL}${CERTIFICATE}/my-list`, {
             params: { employeeNo: selectedEmployee.id },
@@ -222,7 +189,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           })
           .catch(() => setCertList([]));
       } else {
-        // 일반 사용자가 인사관리 페이지에 들어온 경우: 자신의 증명서 내역 조회
         approvalService
           .getMyCertificates()
           .then((res) => {
@@ -232,26 +198,21 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       }
     };
 
-    // 초기 로드
     loadCertList();
 
-    // 5초마다 자동 새로고침 (실시간 업데이트)
     const interval = setInterval(loadCertList, 5000);
 
     return () => clearInterval(interval);
   }, [isHR, selectedEmployee]);
 
-  // 증명서 신청 (POST /application)
   const handleSubmitCertificate = async () => {
     if (!selectedEmployee?.id) return;
 
-    // 중복 신청 검사 - 같은 타입의 증명서가 대기/승인 상태인지 확인 (반려는 재신청 가능)
     const isDuplicate = certList.some((row) => {
       const rowType = (row.type || '').trim().toUpperCase();
       const rowStatus = (row.status || '').trim().toUpperCase();
       const currentType = (certType || '').trim().toUpperCase();
 
-      // 같은 타입이고 대기/승인 상태인 경우만 중복으로 처리 (반려는 제외)
       return (
         rowType === currentType &&
         ['REQUESTED', 'PENDING', 'APPROVED'].includes(rowStatus)
@@ -259,9 +220,11 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     });
 
     if (isDuplicate) {
-      alert(
+      setSuccessMessage(
         `${certType === 'EMPLOYMENT' ? '재직증명서' : '경력증명서'}가 이미 신청되어 있습니다.`,
       );
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
       return;
     }
 
@@ -271,16 +234,13 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         requestDate: certDate,
         type: certType,
         purpose: certPurpose,
-        approveDate: certApproveDate,
-        approverId: 1, // 기본 HR 담당자 ID (실제로는 동적으로 설정해야 함)
+        approverId: 1,
       });
 
-      // 성공 메시지 표시
       setSuccessMessage('증명서 신청이 완료되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 2000);
 
-      // 신청 후 목록 갱신
       const res = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
       );
@@ -288,7 +248,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setCertType('EMPLOYMENT');
       setCertDate(getKoreaToday());
       setCertPurpose('');
-      setCertApproveDate('');
     } catch (e) {
       setSuccessMessage('증명서 신청 실패');
       setShowSuccessModal(true);
@@ -296,53 +255,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
   };
 
-  // 모달 열기
-  const openAddModal = () => {
-    setNewOrder('');
-    setNewName('');
-    setShowAddModal(true);
-    setShowPositionDropdown(false);
-  };
-
-  // 모달 닫기
-  const closeAddModal = () => {
-    setShowAddModal(false);
-  };
-
-  // 직책 선택
-  const handleSelectPosition = (id) => {
-    setSelectedPositionId(id);
-    setShowPositionDropdown(false); // 선택 후 드롭다운 닫기
-  };
-
-  // 드롭다운 외부 클릭 시 닫기
-  useEffect(() => {
-    // 드롭다운이 열려있지 않으면 이벤트 리스너를 등록할 필요 없음
-    if (!showPositionDropdown) return;
-
-    // 클릭 이벤트 핸들러
-    const handler = (e) => {
-      // 클릭된 요소가 커스텀 셀렉트 랩이나 커스텀 드롭다운 내부에 속하지 않으면 드롭다운 닫기
-      if (
-        !e.target.closest(`.${styles.customSelectWrap}`) &&
-        !e.target.closest(`.${styles.customDropdown}`)
-      ) {
-        setShowPositionDropdown(false);
-      }
-    };
-
-    // 문서 전체에 클릭 이벤트 리스너 등록
-    document.addEventListener('mousedown', handler);
-    // 컴포넌트 언마운트 시 또는 showPositionDropdown 값이 변경되어 다시 실행될 때 이벤트 리스너 제거
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showPositionDropdown]); // showPositionDropdown 값이 변경될 때마다 실행
-
-  // 상세 정보 출력 (인쇄) 함수
   const handlePrint = () => {
     window.print();
   };
 
-  // 프로필 이미지 업로드 핸들러
   const handleProfileImgClick = () => {
     fileInputRef.current.click();
   };
@@ -358,7 +274,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
   };
 
-  // 프로필 이미지 서버 업로드
   const handleProfileUpload = async () => {
     if (!profileFile || !selectedEmployee?.id) return;
     const formData = new FormData();
@@ -375,12 +290,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setSuccessMessage('프로필 이미지가 업로드되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 2000);
-      // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
       if (
         user?.employeeNo &&
         String(user.employeeNo) === String(selectedEmployee.id)
       ) {
-        // 서버 응답에서 최신 프로필 이미지 URL을 받아서 저장 (예시: res.data.result.profileImage)
         const newProfileImage = res.data?.result?.profileImage || profileImage;
         sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
         window.location.reload();
@@ -392,13 +305,11 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
   };
 
-  // 직원 정보 저장 (수정)
   const handleSave = async () => {
     if (!selectedEmployee?.id) return;
     setLoading(true);
     setError(null);
     try {
-      // FormData 생성
       const formData = new FormData();
       formData.append('userName', employeeName);
       formData.append('email', employeeEmail);
@@ -415,16 +326,13 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       if (birthDate) formData.append('birthDate', birthDate);
       if (joinDate) formData.append('hireDate', joinDate);
       if (leaveDate) formData.append('retireDate', leaveDate);
-      formData.append('activate', status); // status는 'Y' 또는 'N'이어야 함
-      // 계좌 정보 등 추가 필요시 여기에
+      formData.append('activate', status);
       formData.append('bankName', bankName);
       formData.append('accountNumber', accountNumber);
       formData.append('accountHolder', accountHolder);
       if (profileFile) {
         formData.append('profileImage', profileFile);
       }
-      // 디버깅용
-      // for (let pair of formData.entries()) { console.log(pair[0]+ ': ' + pair[1]); }
       await axiosInstance.patch(
         `${API_BASE_URL}${HR}/users/${selectedEmployee.id}`,
         formData,
@@ -437,12 +345,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setSuccessMessage('저장되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 2000);
-      // 본인 프로필을 수정한 경우에만 sessionStorage 갱신 및 새로고침
       if (
         user?.employeeNo &&
         String(user.employeeNo) === String(selectedEmployee.id)
       ) {
-        // 저장 후 상세정보를 즉시 다시 불러오기
         try {
           const res = await axiosInstance.get(
             `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
@@ -466,7 +372,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
   };
 
-  // Icon SVGs for edit and delete
   const EditIcon = () => (
     <svg
       width='18'
@@ -483,103 +388,40 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     </svg>
   );
 
-  // === [수정] 테이블 행 클릭 시 폼에만 데이터 연동, 행은 항상 읽기 전용 ===
-  // 1. Remove handleRowToForm logic from row onClick
-  // 2. Remove handleRowToForm function definition
-
-  // === [수정] 폼 제출 ===
   const handleFormSubmit = async () => {
     if (!selectedEmployee?.id) return;
-    // 신규 신청만 가능
     await handleSubmitCertificate();
-    setCertId(''); // 추가: 신규 신청 후 발급번호 초기화
   };
 
-  // axiosInstance를 활용한 PDF 인쇄 함수 예시
   const printPdfFromServer = async (certificateId) => {
     try {
-      console.log('=== PDF 인쇄 시작 ===');
-      console.log('증명서 ID:', certificateId);
-      console.log('현재 사용자:', user);
-      console.log('HR 권한:', user?.hrRole);
-
-      // 올바른 엔드포인트로 수정
       const res = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/my-print/${certificateId}`,
         { responseType: 'arraybuffer' },
       );
 
-      console.log('PDF 응답 상태:', res.status);
-      console.log('PDF 응답 헤더:', res.headers);
-      console.log('PDF 데이터 크기:', res.data.byteLength);
-      console.log('Content-Type:', res.headers['content-type']);
-
-      // PDF 시그니처 확인
-      const pdfSignature = new Uint8Array(res.data.slice(0, 4));
-      console.log(
-        'PDF 시그니처:',
-        Array.from(pdfSignature)
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join(' '),
-      );
-      const isValidPdfSignature =
-        pdfSignature[0] === 0x25 &&
-        pdfSignature[1] === 0x50 &&
-        pdfSignature[2] === 0x44 &&
-        pdfSignature[3] === 0x46;
-      console.log('올바른 PDF 시그니처:', isValidPdfSignature);
-
       const contentType = res.headers['content-type'] || 'application/pdf';
       const blob = new Blob([res.data], { type: contentType });
       const fileURL = URL.createObjectURL(blob);
 
-      console.log('Blob 크기:', blob.size);
-      console.log('Blob 타입:', blob.type);
-      console.log('파일 URL:', fileURL);
-
-      // Blob이 비어있는지 확인
       if (blob.size === 0) {
-        console.error('Blob이 비어있습니다!');
-        alert(
+        setSuccessMessage(
           'PDF 데이터가 비어있습니다. 백엔드에서 PDF 생성에 실패했을 수 있습니다.',
         );
+        setShowSuccessModal(true);
+        setTimeout(() => setShowSuccessModal(false), 2000);
         return;
       }
 
-      // PDF 데이터를 콘솔에 출력하여 확인
-      console.log(
-        'PDF 데이터 첫 100바이트:',
-        new Uint8Array(res.data.slice(0, 100)),
-      );
-
-      // PDF 데이터가 실제로 PDF인지 확인
-      const pdfHeader = new TextDecoder().decode(res.data.slice(0, 20));
-      console.log('PDF 헤더:', pdfHeader);
-
-      // PDF 크기가 너무 작으면 문제
       if (res.data.byteLength < 1000) {
-        console.error('PDF 크기가 너무 작습니다:', res.data.byteLength);
-        alert(
+        setSuccessMessage(
           'PDF 크기가 너무 작습니다. 백엔드에서 PDF 생성에 실패했을 수 있습니다.',
         );
+        setShowSuccessModal(true);
+        setTimeout(() => setShowSuccessModal(false), 2000);
         return;
       }
 
-      // PDF 시그니처 재확인
-      if (!isValidPdfSignature) {
-        console.error(
-          '올바른 PDF 시그니처가 아닙니다:',
-          Array.from(pdfSignature)
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join(' '),
-        );
-        alert(
-          '올바른 PDF 형식이 아닙니다. 백엔드에서 PDF 생성에 실패했을 수 있습니다.',
-        );
-        return;
-      }
-
-      // 기존 iframe 제거
       const existingIframe = document.getElementById('pdf-iframe');
       if (existingIframe) {
         document.body.removeChild(existingIframe);
@@ -600,25 +442,16 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       iframe.src = fileURL;
       document.body.appendChild(iframe);
 
-      console.log('iframe 생성 완료');
-
       iframe.onload = () => {
-        console.log('iframe 로드 완료');
-
-        // PDF가 제대로 로드되었는지 확인
         try {
           const iframeDoc =
             iframe.contentDocument || iframe.contentWindow.document;
-          console.log('iframe 문서:', iframeDoc);
 
-          // 3초 후에 인쇄 실행 (PDF 로딩 시간 확보)
           setTimeout(() => {
             try {
               iframe.contentWindow.focus();
               iframe.contentWindow.print();
-              console.log('인쇄 다이얼로그 열림');
 
-              // 인쇄 다이얼로그가 닫힌 후 iframe 제거
               setTimeout(() => {
                 if (document.getElementById('pdf-iframe')) {
                   document.body.removeChild(iframe);
@@ -626,18 +459,16 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 }
               }, 2000);
             } catch (printError) {
-              console.error('인쇄 오류:', printError);
-              alert('인쇄 중 오류가 발생했습니다.');
+              setSuccessMessage('인쇄 중 오류가 발생했습니다.');
+              setShowSuccessModal(true);
+              setTimeout(() => setShowSuccessModal(false), 2000);
               if (document.getElementById('pdf-iframe')) {
                 document.body.removeChild(iframe);
                 URL.revokeObjectURL(fileURL);
               }
             }
-          }, 3000); // 로딩 시간을 3초로 증가
+          }, 3000);
         } catch (error) {
-          console.error('iframe 문서 접근 오류:', error);
-          // iframe 실패 시 새 창으로 시도
-          console.log('iframe 실패, 새 창으로 시도');
           const newWindow = window.open(fileURL, '_blank');
           if (newWindow) {
             setTimeout(() => {
@@ -651,21 +482,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           }
         }
       };
-
-      console.log('=== PDF 인쇄 완료 ===');
     } catch (err) {
-      console.error('=== PDF 인쇄 오류 ===');
-      console.error('오류 타입:', err.constructor.name);
-      console.error('오류 메시지:', err.message);
-      console.error('오류 응답:', err.response);
-
-      if (err.response) {
-        console.error('응답 상태:', err.response.status);
-        console.error('응답 헤더:', err.response.headers);
-        console.error('응답 데이터:', err.response.data);
-      }
-
-      alert('PDF 인쇄 중 오류 발생: ' + err.message);
+      setSuccessMessage('PDF 인쇄 중 오류 발생: ' + err.message);
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
     }
   };
 
@@ -677,51 +497,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     );
   };
 
-  const handlePrintSelected = () => {
-    console.log('선택된 증명서 ID들:', selectedCertIds);
-    console.log('전체 증명서 목록:', certList);
-
-    const approvedIds = certList
-      .filter((row) => {
-        const certificateId = row.certificateId || row.id;
-        const isSelected = selectedCertIds.includes(certificateId);
-        const isApproved = row.status === 'APPROVED' || row.status === '승인';
-
-        console.log('증명서 필터링:', {
-          certificateId: certificateId,
-          originalId: row.id,
-          certificateIdField: row.certificateId,
-          status: row.status,
-          isSelected,
-          isApproved,
-        });
-
-        return isSelected && isApproved;
-      })
-      .map((row) => {
-        const certificateId = row.certificateId || row.id;
-        console.log(`인쇄할 증명서 ID: ${certificateId} (원본: ${row.id})`);
-        return certificateId;
-      });
-
-    console.log('승인된 증명서 ID들:', approvedIds);
-
-    if (approvedIds.length === 0) {
-      alert('승인된 증명서만 인쇄할 수 있습니다.');
-      return;
-    }
-
-    // 각 ID에 대해 개별적으로 인쇄 시도
-    approvedIds.forEach((id) => {
-      console.log(`증명서 인쇄 시도: ID = ${id}`);
-      printPdfFromServer(id);
-    });
-  };
-
-  // 직원 퇴사자 등록
   const [showRetireConfirm, setShowRetireConfirm] = useState(false);
 
-  // 퇴사자 등록 실제 실행
   const doRetire = async () => {
     if (!selectedEmployee?.id) return;
     try {
@@ -731,7 +508,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setSuccessMessage('퇴사자 등록이 완료되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 2000);
-      // 상세정보 새로고침
       const res = await axiosInstance.get(
         `${API_BASE_URL}${HR}/user/${selectedEmployee.id}`,
       );
@@ -745,14 +521,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
   };
 
-  // 퇴사자 등록 버튼 클릭 시
   const handleRetire = () => {
     setShowRetireConfirm(true);
   };
 
-  const isRetired = status === 'N'; // activate === 'N'이면 true
+  const isRetired = status === 'N';
 
-  // 승인/반려 버튼 클릭 후 목록 갱신 부분을 아래와 같이 수정
   const refreshCertList = async () => {
     if (selectedEmployee?.id) {
       const res = await axiosInstance.get(
@@ -763,33 +537,27 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
   };
 
-  // 증명서 단건 조회 함수 수정 (approvalService 사용)
   const getCertificateById = async (certificateId) => {
     const res = await approvalService.getCertificateById(certificateId);
     return res.result;
   };
 
-  // 증명서 반려 핸들러
   const handleCertReject = (certificateId) => {
     setRejectTargetId(certificateId);
     setShowRejectModal(true);
   };
 
-  // 반려 확인 핸들러
   const handleRejectConfirm = async (comment) => {
     setRejectLoading(true);
     try {
-      // rejectTargetId가 배열인 경우 (다중 선택)
       const targetIds = Array.isArray(rejectTargetId)
         ? rejectTargetId
         : [rejectTargetId];
 
-      // 선택된 증명서들 중 처리 가능한 항목만 필터링
       const selectedCerts = certList.filter((row) =>
         targetIds.includes(row.certificateId || row.id),
       );
 
-      // 대기 상태인 증명서만 필터링
       const pendingCerts = selectedCerts.filter(
         (cert) =>
           cert.status === 'REQUESTED' ||
@@ -798,14 +566,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       );
 
       if (pendingCerts.length === 0) {
-        // 처리 가능한 항목이 없으면 조용히 종료
         setShowRejectModal(false);
         setRejectTargetId(null);
         setRejectLoading(false);
         return;
       }
 
-      // 반려 처리
       let processedCount = 0;
       for (const cert of pendingCerts) {
         try {
@@ -813,7 +579,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
             cert.certificateId || cert.id,
             comment,
           );
-          // 단건 조회 후 certList 갱신
           const updated = await getCertificateById(
             cert.certificateId || cert.id,
           );
@@ -839,11 +604,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       if (processedCount > 0) {
         setSuccessMessage(`${processedCount}개 증명서가 반려되었습니다.`);
         setShowSuccessModal(true);
-        // 반려 후 목록 자동 새로고침
         refreshCertList();
       }
     } catch (err) {
-      alert('반려 처리 중 오류가 발생했습니다: ' + err.message);
+      setSuccessMessage('반려 처리 중 오류가 발생했습니다: ' + err.message);
+      setShowSuccessModal(true);
+      setTimeout(() => setShowSuccessModal(false), 2000);
     } finally {
       setRejectLoading(false);
     }
@@ -851,12 +617,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
 
   return (
     <div className={styles.employeeDetailWrap}>
-      {/* 기본 정보 제목 섹션 */}
       <div className={styles.basicInfoTitle}>
         <span className={styles.arrow}>&#9654;</span>
         <span>상세정보</span>
       </div>
-      {/* 탭 메뉴 섹션 */}
       <div className={styles.tabMenu}>
         <button
           className={activeTab === 'info' ? styles.active : ''}
@@ -871,10 +635,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           증명서 발급
         </button>
       </div>
-      {/* 상세 정보 본문 섹션 */}
       {activeTab === 'info' && (
         <div className={styles.detailBody}>
-          {/* 프로필 이미지 섹션 */}
           <div className={styles.profileSection}>
             <div
               className={styles.profileImg}
@@ -912,7 +674,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
               />
             </div>
           </div>
-          {/* 인적 사항 테이블 섹션 - 첨부 이미지와 완전히 동일하게 수정 */}
           <div className={styles.infoTableSection}>
             <table
               className={styles.infoTable}
@@ -944,7 +705,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                     <input
                       value={residentRegNo}
                       onChange={handleResidentRegNoChange}
-                      maxLength={14} // 6자리+하이픈+7자리 = 14
+                      maxLength={14}
                       placeholder='예: 123456-1234567'
                       onBlur={() => {
                         if (
@@ -997,7 +758,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                     <input
                       value={displayEmployeePhone}
                       onChange={handleEmployeePhoneChange}
-                      maxLength={13} // 3자리+하이픈+4자리+하이픈+4자리 = 13
+                      maxLength={13}
                       placeholder='예: 010-1234-5678'
                       onBlur={() => {
                         if (
@@ -1107,7 +868,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       )}
       {activeTab === 'cert' && (
         <div className={styles.certTabBody}>
-          {/* 증명서 신청 내역 */}
           <div
             className={styles.certListTitle}
             style={{
@@ -1117,7 +877,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
             }}
           >
             <span>증명서발급내역</span>
-            {/* 증명서 신청 내역 상단에서 선택 인쇄 버튼 제거 */}
           </div>
           <div
             style={{
@@ -1210,7 +969,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
               </table>
             </div>
           </div>
-          {/* 테이블 하단 승인/반려 버튼 */}
           {isHR && (
             <div className={styles.certFormBtnRow} style={{ marginTop: 12 }}>
               <button
@@ -1218,12 +976,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 disabled={selectedCertIds.length === 0}
                 onClick={async () => {
                   try {
-                    // 선택된 증명서들 중 처리 가능한 항목만 필터링
                     const selectedCerts = certList.filter((row) =>
                       selectedCertIds.includes(row.certificateId || row.id),
                     );
 
-                    // 대기 상태인 증명서만 필터링
                     const pendingCerts = selectedCerts.filter(
                       (cert) =>
                         cert.status === 'REQUESTED' ||
@@ -1232,18 +988,15 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                     );
 
                     if (pendingCerts.length === 0) {
-                      // 처리 가능한 항목이 없으면 조용히 종료
                       return;
                     }
 
-                    // 승인 처리
                     let processedCount = 0;
                     for (const cert of pendingCerts) {
                       try {
                         await approvalService.approveCertificate(
                           cert.certificateId || cert.id,
                         );
-                        // 단건 조회 후 certList 갱신
                         const updated = await getCertificateById(
                           cert.certificateId || cert.id,
                         );
@@ -1270,11 +1023,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                         `${processedCount}개 증명서가 승인되었습니다.`,
                       );
                       setShowSuccessModal(true);
-                      // 승인 후 목록 자동 새로고침
                       refreshCertList();
                     }
                   } catch (e) {
-                    alert('승인 처리 중 오류가 발생했습니다.');
+                    setSuccessMessage('승인 처리 중 오류가 발생했습니다.');
+                    setShowSuccessModal(true);
+                    setTimeout(() => setShowSuccessModal(false), 2000);
                   }
                 }}
               >
@@ -1286,7 +1040,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 disabled={selectedCertIds.length === 0}
                 onClick={() => {
                   if (selectedCertIds.length === 1) {
-                    // 선택된 증명서가 대기 상태인지 확인
                     const selectedCert = certList.find((row) =>
                       selectedCertIds.includes(row.certificateId || row.id),
                     );
@@ -1299,7 +1052,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                     ) {
                       handleCertReject(selectedCertIds);
                     }
-                    // 이미 처리된 증명서면 조용히 무시
                   }
                 }}
               >
@@ -1309,7 +1061,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           )}
         </div>
       )}
-      {/* 기타 정보 테이블 섹션 */}
       {activeTab !== 'cert' && (
         <div className={styles.empTableSectionWrap}>
           <table className={styles.empTable} style={{ tableLayout: 'fixed' }}>
@@ -1403,7 +1154,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
               </tr>
             </tbody>
           </table>
-          {/* 버튼 행 */}
           <div className={styles.empTableBtnRow}>
             <button className={styles.excel} onClick={handlePrint}>
               상세 정보 출력
@@ -1441,7 +1191,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         </div>
       )}
 
-      {/* 반려 사유 입력 모달 */}
       <RejectModal
         open={showRejectModal}
         onClose={() => {
@@ -1452,7 +1201,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         loading={rejectLoading}
       />
 
-      {/* 성공 모달 */}
       {showSuccessModal && (
         <SuccessModal
           message={successMessage}
@@ -1462,7 +1210,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         />
       )}
 
-      {/* 퇴사자 등록 확인 모달 */}
       {showRetireConfirm && (
         <div className={styles.modalOverlay}>
           <div className={styles.successModal}>

@@ -45,7 +45,6 @@ const EmployeeTable = () => {
   const navigate = useNavigate();
   const tableWrapRef = useRef(null);
 
-  // 직원 리스트 불러오기 (페이지네이션)
   const fetchEmployees = async (
     pageNum = 0,
     search = '',
@@ -72,7 +71,6 @@ const EmployeeTable = () => {
         }
       }
       const res = await axiosInstance.get(url, { params });
-      // /user/list는 페이징, /users/search는 전체 리스트 반환
       const list = res.data.result?.content || res.data.result || [];
       let filtered = list;
       if (search) {
@@ -93,12 +91,11 @@ const EmployeeTable = () => {
         isRetired: emp.activate === 'Y' ? 'Y' : 'N',
       }));
       setEmployees((prev) => (append ? [...prev, ...mapped] : mapped));
-      // hasMore 계산 (페이지네이션 정보가 있으면 활용)
       const totalPages = res.data.result?.totalPages;
       if (typeof totalPages === 'number') {
         setHasMore(pageNum + 1 < totalPages);
       } else {
-        setHasMore(mapped.length === 10); // fallback
+        setHasMore(mapped.length === 10);
       }
     } catch (err) {
       setError('직원 정보를 불러오지 못했습니다.');
@@ -107,16 +104,13 @@ const EmployeeTable = () => {
     }
   };
 
-  // 최초 마운트 시 전체 리스트만 불러오기
   useEffect(() => {
     setEmployees([]);
     setPage(0);
     setHasMore(true);
     fetchEmployees(0);
-    // eslint-disable-next-line
   }, []);
 
-  // 검색/필터 변경 시 employees 초기화 및 첫 페이지부터 다시 로드
   const handleSearch = () => {
     setIsSearching(true);
     setEmployees([]);
@@ -127,13 +121,11 @@ const EmployeeTable = () => {
     setIsSearching(false);
   };
 
-  // 무한스크롤: 스크롤 하단 도달 시 다음 페이지 불러오기
   const handleScroll = () => {
     if (!hasMore || loading || isSearching) return;
     const el = tableWrapRef.current;
     if (!el) return;
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
-      // 다음 페이지 불러오기
       const nextPage = page + 1;
       setPage(nextPage);
       fetchEmployees(nextPage, searchTerm, dropdownValue, includeRetired, true);
@@ -145,7 +137,6 @@ const EmployeeTable = () => {
     if (!el) return;
     el.addEventListener('scroll', handleScroll);
     return () => el.removeEventListener('scroll', handleScroll);
-    // eslint-disable-next-line
   }, [employees, hasMore, loading, isSearching]);
 
   const handleExcelDownload = () => {
@@ -188,7 +179,6 @@ const EmployeeTable = () => {
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             {dropdownValue}
-            {/* Custom SVG Down Arrow */}
             <span className={styles.dropdownArrow} aria-hidden='true'>
               <svg
                 width='16'
@@ -320,7 +310,6 @@ const EmployeeTable = () => {
           </tbody>
         </table>
       </div>
-      {/* 직원 상세정보: 행 클릭 시에만 노출 */}
       {selectedRow !== null && (
         <EmployeeDetail
           selectedEmployee={employees[selectedRow]}
