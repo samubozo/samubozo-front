@@ -16,6 +16,12 @@ function ApprovalTabs({ tab, setTab }) {
       >
         연차/반차 내역
       </button>
+      <button
+        className={`${styles.tabBtn} ${tab === 'absence' ? styles.activeTab : ''}`}
+        onClick={() => setTab('absence')}
+      >
+        부재 내역
+      </button>
     </div>
   );
 }

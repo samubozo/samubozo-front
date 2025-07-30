@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import styles from './VacationRequest.module.scss';
 import { approvalService } from '../../services/approvalService';
 import AuthContext from '../../context/UserContext';
+import SuccessModal from '../../components/SuccessModal';
 
 // 한국 시간으로 오늘 날짜 가져오기
 const today = new Date();
@@ -49,23 +50,21 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const [reasonError, setReasonError] = useState('');
   const [overlapError, setOverlapError] = useState('');
   const [myVacations, setMyVacations] = useState([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 내 휴가 목록 불러오기
   useEffect(() => {
     async function fetchMyVacations() {
       try {
         const res = await approvalService.getMyVacationRequests();
-        console.log('getMyVacationRequests 응답:', res);
         const vacations = res.result || res.data || res || [];
-        vacations.forEach((v, i) => {
-          console.log(
-            `휴가[${i}] id=${v.id}, vacationStatus=${v.vacationStatus}, startDate=${v.startDate}, endDate=${v.endDate}`,
-          );
+        vacations.forEach((v, i) => {});
+        // 승인/처리중 상태만 필터링 (다양한 필드명 시도)
+        const filtered = vacations.filter((v) => {
+          const status = v.vacationStatus || v.status || v.approvalStatus;
+          return ['PENDING', 'APPROVED', 'PROCESSING'].includes(status);
         });
-        // 승인/처리중 상태만 필터링 (vacationStatus 사용)
-        const filtered = vacations.filter((v) =>
-          ['PENDING', 'APPROVED', 'PROCESSING'].includes(v.vacationStatus),
-        );
         setMyVacations(filtered);
       } catch (e) {
         setMyVacations([]);
@@ -125,6 +124,43 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
       alert(overlapError);
       return;
     }
+
+    // 추가 중복 검사 - 현재 신청하려는 기간과 겹치는 휴가가 있는지 다시 확인
+    const currentRequestStart = new Date(startDate);
+    const currentRequestEnd = new Date(
+      vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
+        ? startDate
+        : endDate,
+    );
+
+    const hasOverlap = myVacations.some((vacation) => {
+      // 수정 모드일 때는 자기 자신 제외
+      if (editData && vacation.id === editData.id) {
+        return false;
+      }
+
+      const vacationStart = new Date(vacation.startDate);
+      const vacationEnd = new Date(vacation.endDate);
+      const vacationStatus =
+        vacation.vacationStatus || vacation.status || vacation.approvalStatus;
+
+      // 기간이 겹치고, 승인/처리중 상태인 경우
+      const isOverlapping =
+        currentRequestStart <= vacationEnd &&
+        currentRequestEnd >= vacationStart;
+      const isActiveStatus = ['PENDING', 'APPROVED', 'PROCESSING'].includes(
+        vacationStatus,
+      );
+
+      return isOverlapping && isActiveStatus;
+    });
+
+    if (hasOverlap) {
+      setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
+      setShowSuccessModal(true);
+      return;
+    }
+
     // 사유 유효성 검사
     if (!reason.trim()) {
       setReasonError('휴가 사유를 입력해주세요.');
@@ -137,15 +173,56 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
       vacationBalance &&
       days > vacationBalance.remainingDays
     ) {
-      alert(
+      setSuccessMessage(
         `보유 연차(${vacationBalance.remainingDays}일)보다 많이 신청할 수 없습니다.`,
       );
+      setShowSuccessModal(true);
       return;
     }
 
     setReasonError('');
     setLoading(true);
+
     try {
+      // API 호출 전에 최신 휴가 데이터를 다시 가져와서 중복 검사
+      const latestRes = await approvalService.getMyVacationRequests();
+      const latestVacations =
+        latestRes.result || latestRes.data || latestRes || [];
+
+      // 휴가 데이터 구조 확인
+      const activeVacations = latestVacations.filter((v) => {
+        const status = v.vacationStatus || v.status || v.approvalStatus;
+        return ['PENDING', 'APPROVED', 'PROCESSING'].includes(status);
+      });
+
+      // 최신 데이터로 중복 검사
+      const currentRequestStart = new Date(startDate);
+      const currentRequestEnd = new Date(
+        vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
+          ? startDate
+          : endDate,
+      );
+
+      const hasLatestOverlap = activeVacations.some((vacation) => {
+        if (editData && vacation.id === editData.id) return false;
+
+        const vacationStart = new Date(vacation.startDate);
+        const vacationEnd = new Date(vacation.endDate);
+
+        const isOverlapping =
+          currentRequestStart <= vacationEnd &&
+          currentRequestEnd >= vacationStart;
+
+        return isOverlapping;
+      });
+
+      if (hasLatestOverlap) {
+        setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
+        setShowSuccessModal(true);
+        setLoading(false);
+        return;
+      }
+
       // 반차는 startDate, endDate 동일하게
       const reqStart =
         vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
@@ -164,7 +241,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
           endDate: reqEnd,
           reason,
         });
-        alert('휴가 신청이 수정되었습니다.');
+        setSuccessMessage('휴가 신청이 수정되었습니다.');
+        setShowSuccessModal(true);
       } else {
         // 신규 신청 모드 - 백엔드 변경사항에 맞게 수정
         await approvalService.requestVacation({
@@ -174,131 +252,186 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
           reason,
           requested_at: new Date(requestDate + 'T00:00:00').toISOString(), // 신청일자 추가
         });
-        alert('휴가 신청이 완료되었습니다.');
+        setSuccessMessage('휴가 신청이 완료되었습니다.');
+        setShowSuccessModal(true);
       }
 
-      if (onClose) onClose();
-    } catch (err) {
-      if (err.response && err.response.status === 400) {
-        alert(err.response.data || '이미 해당 기간에 신청된 휴가가 있습니다.');
-      } else {
-        alert(
-          err.message ||
-            (editData
-              ? '휴가 신청 수정에 실패했습니다.'
-              : '휴가 신청에 실패했습니다.'),
-        );
+      // 성공 시 모달은 SuccessModal에서 처리하도록 onClose() 호출 제거
+    } catch (error) {
+      console.error('휴가 신청 에러:', error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        '휴가 신청 중 오류가 발생했습니다.';
+
+      console.log('백엔드 에러 메시지:', errorMessage);
+      console.log('에러 메시지 타입:', typeof errorMessage);
+      console.log(
+        '백엔드 에러 메시지가 문자열인지 확인:',
+        typeof errorMessage === 'string',
+      );
+      console.log(
+        '백엔드 에러 메시지가 객체인지 확인:',
+        typeof errorMessage === 'object',
+      );
+
+      let errorText = errorMessage;
+
+      // 백엔드에서 객체로 오는 경우 처리
+      if (typeof errorMessage === 'object' && errorMessage !== null) {
+        errorText = JSON.stringify(errorMessage);
       }
+
+      console.log('처리할 에러 텍스트:', errorText);
+
+      setSuccessMessage(errorText);
+      setShowSuccessModal(true);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.vacationRequest}>
-      <h2>{editData ? '휴가 신청 수정' : '휴가 신청'}</h2>
-      <form onSubmit={handleSubmit}>
-        {/* 휴가 신청일 */}
-        <div className={styles.row}>
-          <label>휴가 신청일</label>
-          <input
-            type='date'
-            min={todayStr}
-            value={requestDate}
-            onChange={(e) => setRequestDate(e.target.value)}
-            required
-          />
-        </div>
-        {/* 휴가 유형 */}
-        <div className={styles.row}>
-          <label>휴가 유형</label>
-          <select value={vacationType} onChange={handleVacationTypeChange}>
-            <option value='ANNUAL_LEAVE'>연차</option>
-            <option value='AM_HALF_DAY'>반차(오전)</option>
-            <option value='PM_HALF_DAY'>반차(오후)</option>
-          </select>
-        </div>
-        {/* 휴가 기간 */}
-        <div className={styles.row}>
-          <label>휴가 기간</label>
-          <input
-            type='date'
-            className={styles.periodInput}
-            min={todayStr}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            required
-          />
-          {vacationType === 'ANNUAL_LEAVE' && (
-            <>
-              <span className={styles.periodTilde}>~</span>
-              <input
-                type='date'
-                className={styles.periodInput}
-                min={startDate}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                required
-              />
-            </>
-          )}
-          <span
-            className={styles.daysInfo}
-            style={{ marginLeft: 8, fontWeight: 600, color: '#388e3c' }}
-          >
-            {days > 0 && `${days}일 신청`}
-          </span>
-        </div>
-        {/* 날짜 겹침 에러 메시지 */}
-        {overlapError && (
-          <div style={{ color: 'red', fontWeight: 600, marginBottom: 8 }}>
-            {overlapError}
+    <div className={styles.vacationOverlay}>
+      <div className={styles.vacationRequest}>
+        <h2>{editData ? '휴가 신청 수정' : '휴가 신청'}</h2>
+        <form onSubmit={handleSubmit}>
+          {/* 휴가 신청일 */}
+          <div className={styles.row}>
+            <label>휴가 신청일</label>
+            <input
+              type='date'
+              min={todayStr}
+              value={requestDate}
+              onChange={(e) => setRequestDate(e.target.value)}
+              required
+            />
           </div>
-        )}
-        {/* 사유 */}
-        <div className={styles.row}>
-          <label>사유</label>
-          <input
-            type='text'
-            value={reason}
-            onChange={(e) => {
-              setReason(e.target.value);
-              if (e.target.value.trim()) {
-                setReasonError('');
-              }
-            }}
-            required
-            className={reasonError ? styles.errorInput : ''}
-          />
-          {reasonError && (
-            <span className={styles.errorMessage}>{reasonError}</span>
+          {/* 휴가 유형 */}
+          <div className={styles.row}>
+            <label>휴가 유형</label>
+            <select value={vacationType} onChange={handleVacationTypeChange}>
+              <option value='ANNUAL_LEAVE'>연차</option>
+              <option value='AM_HALF_DAY'>반차(오전)</option>
+              <option value='PM_HALF_DAY'>반차(오후)</option>
+            </select>
+          </div>
+          {/* 휴가 기간 */}
+          <div className={styles.row}>
+            <label>휴가 기간</label>
+            <input
+              type='date'
+              className={styles.periodInput}
+              min={todayStr}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+            />
+            {vacationType === 'ANNUAL_LEAVE' && (
+              <>
+                <span className={styles.periodTilde}>~</span>
+                <input
+                  type='date'
+                  className={styles.periodInput}
+                  min={startDate}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  required
+                />
+              </>
+            )}
+            <span
+              className={styles.daysInfo}
+              style={{ marginLeft: 8, fontWeight: 600, color: '#388e3c' }}
+            >
+              {days > 0 && `${days}일 신청`}
+            </span>
+          </div>
+          {/* 사유 */}
+          <div className={styles.row}>
+            <label>사유</label>
+            <textarea
+              value={reason}
+              onChange={(e) => {
+                setReason(e.target.value);
+                if (e.target.value.trim()) {
+                  setReasonError('');
+                }
+              }}
+              required
+              className={reasonError ? styles.errorInput : ''}
+              style={{
+                width: '100%',
+                height: '120px',
+                resize: 'vertical',
+                border: '1px solid #b7d7c2',
+                borderRadius: '4px',
+                padding: '0.5rem 0.7rem',
+                fontSize: '1rem',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                flex: '1',
+              }}
+            />
+            {reasonError && (
+              <span className={styles.errorMessage}>{reasonError}</span>
+            )}
+          </div>
+          {/* 날짜 겹침 에러 메시지 */}
+          {overlapError && (
+            <div
+              style={{
+                marginLeft: '105px',
+                marginTop: '4px',
+                color: '#e74c3c',
+                fontSize: '14px',
+                fontWeight: 400,
+              }}
+            >
+              {overlapError}
+            </div>
           )}
-        </div>
-        {/* 버튼 */}
-        <div className={styles['button-row']}>
-          <button
-            type='submit'
-            className={styles['confirm-btn']}
-            disabled={loading || !!overlapError}
-          >
-            {loading
-              ? editData
-                ? '수정 중...'
-                : '신청 중...'
-              : editData
-                ? '수정'
-                : '등록'}
-          </button>
-          <button
-            type='button'
-            onClick={onClose}
-            className={styles['cancel-btn']}
-            disabled={loading}
-          >
-            취소
-          </button>
-        </div>
-      </form>
+          {/* 버튼 */}
+          <div className={styles['button-row']}>
+            <button
+              type='submit'
+              className={styles['confirm-btn']}
+              disabled={loading || !!overlapError}
+            >
+              {loading
+                ? editData
+                  ? '수정 중...'
+                  : '신청 중...'
+                : editData
+                  ? '수정'
+                  : '신청'}
+            </button>
+            <button
+              type='button'
+              onClick={onClose}
+              className={styles['cancel-btn']}
+              disabled={loading}
+            >
+              취소
+            </button>
+          </div>
+        </form>
+
+        {/* 성공 모달 */}
+        {showSuccessModal && (
+          <SuccessModal
+            message={successMessage}
+            onClose={() => {
+              setShowSuccessModal(false);
+              setSuccessMessage('');
+              if (onClose) onClose();
+            }}
+            autoClose={true}
+            autoCloseDelay={2000}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -6,6 +6,7 @@ import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, AUTH, HR } from '../../configs/host-config';
 import AuthContext from '../../context/UserContext';
 import { useContext } from 'react';
+import SuccessModal from '../../components/SuccessModal';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +16,8 @@ const Login = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [filteredEmails, setFilteredEmails] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
   const emailInputRef = useRef(null);
@@ -170,9 +173,13 @@ const Login = () => {
     } catch (e) {
       console.log('로그인 에러', e);
       if (e.response?.status === 403) {
-        alert('정지된 계정입니다. 관리자에게 문의하세요.');
+        setSuccessMessage('정지된 계정입니다. 관리자에게 문의하세요.');
+        setShowSuccessModal(true);
       } else {
-        alert('로그인 실패입니다. 아이디 또는 비밀번호를 확인하세요!');
+        setSuccessMessage(
+          '로그인 실패입니다. 아이디 또는 비밀번호를 확인하세요!',
+        );
+        setShowSuccessModal(true);
       }
     }
   };
@@ -407,6 +414,17 @@ const Login = () => {
               </button>
             </div>
           </div>
+        )}
+
+        {/* 성공 모달 */}
+        {showSuccessModal && (
+          <SuccessModal
+            message={successMessage}
+            onClose={() => {
+              setShowSuccessModal(false);
+              setSuccessMessage('');
+            }}
+          />
         )}
       </div>
     </div>

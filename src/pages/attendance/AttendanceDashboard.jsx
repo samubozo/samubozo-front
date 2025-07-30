@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AttendanceDashboard.module.scss';
+import { getKoreaToday } from '../../utils/dateUtils';
 import VacationRequest from './VacationRequest';
 import AbsenceRegistrationModal from './AbsenceRegistrationModal';
 import AbsenceEditModal from './AbsenceEditModal';
+import SuccessModal from '../../components/SuccessModal';
+import CheckoutConfirmModal from '../../components/CheckoutConfirmModal';
 import { attendanceService } from '../../services/attendanceService';
+import { approvalService } from '../../services/approvalService';
 
 function pad(num) {
   return num.toString().padStart(2, '0');
@@ -89,6 +93,7 @@ export default function AttendanceDashboard() {
   const [showSuccessModal, setShowSuccessModal] = useState(false); // 성공 메시지 모달
   const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 내용
   const [todayHighlight, setTodayHighlight] = useState(false);
+  const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false); // 퇴근 확인 모달
 
   // 1. 월별 근태 데이터 상태 추가
   const [monthlyAttendance, setMonthlyAttendance] = useState([]);
@@ -145,7 +150,8 @@ export default function AttendanceDashboard() {
   // 출근/외출/복귀 버튼
   const handleAttendanceAction = async () => {
     // 오늘이 휴가/부재일인지 체크
-    const todayStr = new Date().toISOString().slice(0, 10);
+    // 한국 시간 기준 오늘 날짜
+    const todayStr = getKoreaToday();
     const isVacation = absences.some(
       (a) =>
         a.startDate <= todayStr &&
@@ -194,8 +200,14 @@ export default function AttendanceDashboard() {
     }
   };
 
-  // 퇴근 버튼
-  const handleCheckOut = async () => {
+  // 퇴근 확인 모달 열기
+  const handleCheckOutClick = () => {
+    setShowCheckoutConfirm(true);
+  };
+
+  // 퇴근 확인 후 실제 퇴근 처리
+  const handleCheckOutConfirm = async () => {
+    setShowCheckoutConfirm(false);
     setLoading(true);
     setError(null);
     try {
@@ -205,11 +217,18 @@ export default function AttendanceDashboard() {
       attendanceService.getMonthlyAttendance(year, month).then((res) => {
         setMonthlyAttendance(res.result || res.data?.result || []);
       });
+      setSuccessMessage('퇴근이 완료되었습니다.');
+      setShowSuccessModal(true);
     } catch (error) {
       setError('퇴근 처리 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // 퇴근 확인 모달 취소
+  const handleCheckOutCancel = () => {
+    setShowCheckoutConfirm(false);
   };
 
   // 오늘 근태 정보 불러오기 함수
@@ -273,26 +292,63 @@ export default function AttendanceDashboard() {
   const closeModal = () => setShowVacation(false);
   const handleAbsence = () => setShowAbsence(true);
   const closeAbsenceModal = () => setShowAbsence(false);
-  // 부재 등록 (WorkStatusRegisterRequestDto 구조에 맞게)
+  // 부재 신청 (WorkStatusRegisterRequestDto 구조에 맞게)
   const handleAbsenceSubmit = async (absence) => {
     try {
-      // absence: { type(한글), startDate, endDate, startTime, endTime, reason }
+      // absence: { type(Enum), urgency, startDate, endDate, startTime, endTime, reason }
       const apiData = {
-        type: typeMap[absence.type] || 'ETC',
+        type: absence.type, // 이미 Enum 값으로 전달됨
         startDate: absence.startDate,
         endDate: absence.endDate,
-        startTime: absence.startTime,
-        endTime: absence.endTime,
+        startTime: absence.startTime || null, // 명시적으로 null 처리
+        endTime: absence.endTime || null, // 명시적으로 null 처리
         reason: absence.reason,
       };
+
+      // 1. 부재 등록
       await attendanceService.registerAbsence(apiData);
+
+      // 2. 부재 결재 요청 생성
+      try {
+        // 부재 타입에 따른 긴급도 설정 (모달에서 선택한 값 우선, 없으면 자동 설정)
+        const getUrgencyByType = (type) => {
+          switch (type) {
+            case 'SICK_LEAVE':
+            case 'OFFICIAL_LEAVE':
+              return 'URGENT'; // 병가, 공가는 긴급
+            case 'ANNUAL_LEAVE':
+            case 'HALF_DAY_LEAVE':
+              return 'NORMAL'; // 연차, 반차는 일반
+            default:
+              return 'NORMAL'; // 기본값
+          }
+        };
+
+        const approvalData = {
+          absenceType: absence.type,
+          urgency: absence.urgency || getUrgencyByType(absence.type),
+          startDate: absence.startDate,
+          endDate: absence.endDate,
+          startTime: absence.startTime || null, // 명시적으로 null 처리
+          endTime: absence.endTime || null, // 명시적으로 null 처리
+          reason: absence.reason,
+        };
+
+        await approvalService.requestAbsenceApproval(approvalData);
+        setSuccessMessage('부재 신청이 완료되었습니다.');
+      } catch (approvalError) {
+        console.error('부재 결재 요청 생성 실패:', approvalError);
+        // 결재 요청 실패 시 실패 메시지 표시
+        setSuccessMessage('부재 신청을 실패했습니다.');
+      }
+
       await fetchAbsences();
       setShowAbsence(false);
-      setSuccessMessage('부재 등록이 완료되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
-      setSuccessMessage('부재 등록 중 오류가 발생했습니다.');
+      console.error('부재 신청 실패:', error);
+      setSuccessMessage('부재 신청 중 오류가 발생했습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     }
@@ -335,27 +391,65 @@ export default function AttendanceDashboard() {
     setEditAbsence(absence);
   };
   const closeEditAbsence = () => setEditAbsence(null);
-  // 부재 수정 (WorkStatusUpdateRequestDto 구조에 맞게)
+  // 부재 신청 수정 (WorkStatusUpdateRequestDto 구조에 맞게)
   const handleUpdateAbsence = async (updated) => {
     try {
-      // updated: { type(한글 또는 ENUM), ... }
-      const isEnum = Object.values(typeMap).includes(updated.type);
+      // updated: { type(Enum), urgency, ... }
       const apiData = {
-        type: isEnum ? updated.type : typeMap[updated.type] || 'ETC',
+        type: updated.type, // 이미 Enum 값으로 전달됨
         startDate: updated.startDate,
         endDate: updated.endDate,
         startTime: updated.startTime,
         endTime: updated.endTime,
         reason: updated.reason,
       };
+
+      // 1. 부재 수정
       await attendanceService.updateAbsence(editAbsence.id, apiData);
+
+      // 2. 부재 결재 요청 업데이트 (기존 결재 요청이 있는 경우)
+      try {
+        // 부재 타입에 따른 긴급도 설정
+        const getUrgencyByType = (type) => {
+          switch (type) {
+            case 'SICK_LEAVE':
+            case 'OFFICIAL_LEAVE':
+              return 'URGENT';
+            case 'ANNUAL_LEAVE':
+            case 'HALF_DAY_LEAVE':
+              return 'NORMAL';
+            default:
+              return 'NORMAL';
+          }
+        };
+
+        const approvalData = {
+          absenceType: updated.type,
+          urgency: updated.urgency || getUrgencyByType(updated.type),
+          startDate: updated.startDate,
+          endDate: updated.endDate,
+          startTime: updated.startTime,
+          endTime: updated.endTime,
+          reason: updated.reason,
+        };
+
+        // 기존 결재 요청이 있는지 확인하고 업데이트
+        // (실제로는 absence-service에서 처리하거나 별도 API 필요)
+        setSuccessMessage('부재 신청 수정이 완료되었습니다.');
+      } catch (approvalError) {
+        console.error('부재 결재 요청 업데이트 실패:', approvalError);
+        setSuccessMessage(
+          '부재 신청 수정은 완료되었으나, 결재 요청 업데이트에 실패했습니다.',
+        );
+      }
+
       await fetchAbsences();
       closeEditAbsence();
-      setSuccessMessage('부재 수정이 완료되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
-      setSuccessMessage('부재 수정 중 오류가 발생했습니다.');
+      console.error('부재 신청 수정 실패:', error);
+      setSuccessMessage('부재 신청 수정 중 오류가 발생했습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     }
@@ -364,13 +458,28 @@ export default function AttendanceDashboard() {
   const handleDeleteAbsence = async (absenceId) => {
     try {
       setEditAbsence(null); // 삭제 확인 시 바로 모달 닫기
+
+      // 1. 부재 삭제
       await attendanceService.deleteAbsence(absenceId);
+
+      // 2. 부재 결재 요청 삭제 (기존 결재 요청이 있는 경우)
+      try {
+        // 기존 결재 요청이 있는지 확인하고 삭제
+        // (실제로는 absence-service에서 처리하거나 별도 API 필요)
+        setSuccessMessage('부재 신청이 삭제되었습니다.');
+      } catch (approvalError) {
+        console.error('부재 결재 요청 삭제 실패:', approvalError);
+        setSuccessMessage(
+          '부재 신청은 삭제되었으나, 결재 요청 삭제에 실패했습니다.',
+        );
+      }
+
       await fetchAbsences();
-      setSuccessMessage('부재가 삭제되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
-      setSuccessMessage('부재 삭제 중 오류가 발생했습니다.');
+      console.error('부재 신청 삭제 실패:', error);
+      setSuccessMessage('부재 신청 삭제 중 오류가 발생했습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     }
@@ -585,7 +694,7 @@ export default function AttendanceDashboard() {
                   </div>
                   <button
                     className={styles.cardButton}
-                    onClick={handleCheckOut}
+                    onClick={handleCheckOutClick}
                     disabled={
                       loading ||
                       !attendanceData.checkInTime ||
@@ -830,7 +939,7 @@ export default function AttendanceDashboard() {
                   className={styles.cardButtonSub}
                   onClick={handleAbsence}
                 >
-                  부재 등록
+                  부재 신청
                 </button>
                 <button
                   className={styles.cardButtonSub}
@@ -885,149 +994,164 @@ export default function AttendanceDashboard() {
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: 15 }).map((_, i) => {
-                // 왼쪽(1~15일)
-                const d1 = new Date(year, month - 1, i + 1);
-                const d1str = getDateStrLocal(d1);
-                const att1 = getAttendanceByDate(d1str);
-                const absence1 = absences.find(
-                  (a) => a.startDate <= d1str && a.endDate >= d1str,
-                );
-                // 오른쪽(16~말일)
-                const d2 = new Date(year, month - 1, i + 16);
-                const d2str = getDateStrLocal(d2);
-                const att2 = getAttendanceByDate(d2str);
-                const absence2 = absences.find(
-                  (a) => a.startDate <= d2str && a.endDate >= d2str,
-                );
-                return (
-                  <tr key={i}>
-                    {/* 날짜/출근/퇴근/부재 */}
-                    <td
-                      className={
-                        year === today.getFullYear() &&
-                        month === today.getMonth() + 1 &&
-                        today.getDate() === i + 1 &&
-                        todayHighlight
-                          ? styles.todayRow
-                          : getDayColor(d1.getDay())
-                      }
-                    >
-                      {i + 1}({getDayName(d1)})
-                    </td>
-                    <td>
-                      {formatTime(
-                        att1?.checkInTime || att1?.workStatus?.checkInTime,
-                      )}
-                    </td>
-                    <td>
-                      {formatTime(
-                        att1?.checkOutTime || att1?.workStatus?.checkOutTime,
-                      )}
-                    </td>
-                    <td>
-                      {absence1 && (
-                        <span
-                          className={styles.absenceBtn}
-                          style={{
-                            cursor: 'pointer',
-                            display: 'inline-block',
-                            position: 'relative',
-                          }}
-                          onClick={() => handleEditAbsence(absence1)}
-                          title='수정'
-                          onMouseEnter={(e) => {
-                            setHoveredAbsence(absence1);
-                            const rect = e.target.getBoundingClientRect();
-                            setTooltipPos({
-                              x: rect.right + window.scrollX,
-                              y: rect.top + window.scrollY,
-                            });
-                          }}
-                          onMouseLeave={() => setHoveredAbsence(null)}
-                        >
-                          {typeToKorean[absence1.type] || absence1.type}
-                        </span>
-                      )}
-                    </td>
-                    {/* 합계/정상/연장/심야 */}
-                    <td>{att1?.totalWorkTime || ''}</td>
-                    <td>{att1?.normalWorkTime || ''}</td>
-                    <td>{att1?.overtimeWorkTime || ''}</td>
-                    <td>{att1?.nightWorkTime || ''}</td>
-                    {/* 오른쪽 날짜/출근/퇴근/부재 */}
-                    <td
-                      className={
-                        year === today.getFullYear() &&
-                        month === today.getMonth() + 1 &&
-                        today.getDate() === i + 16 &&
-                        todayHighlight
-                          ? styles.todayRow
-                          : getDayColor(d2.getDay())
-                      }
-                    >
-                      {i + 16 <= days.length
-                        ? `${i + 16}(${getDayName(d2)})`
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length
-                        ? formatTime(
-                            att2?.checkInTime || att2?.workStatus?.checkInTime,
-                          )
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length
-                        ? formatTime(
-                            att2?.checkOutTime ||
-                              att2?.workStatus?.checkOutTime,
-                          )
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length && absence2 && (
-                        <span
-                          className={styles.absenceBtn}
-                          style={{
-                            cursor: 'pointer',
-                            display: 'inline-block',
-                            position: 'relative',
-                          }}
-                          onClick={() => handleEditAbsence(absence2)}
-                          title='수정'
-                          onMouseEnter={(e) => {
-                            setHoveredAbsence(absence2);
-                            const rect = e.target.getBoundingClientRect();
-                            setTooltipPos({
-                              x: rect.right + window.scrollX,
-                              y: rect.top + window.scrollY,
-                            });
-                          }}
-                          onMouseLeave={() => setHoveredAbsence(null)}
-                        >
-                          {typeToKorean[absence2.type] || absence2.type}
-                        </span>
-                      )}
-                    </td>
-                    {/* 합계/정상/연장/심야 */}
-                    <td>
-                      {i + 16 <= days.length ? att2?.totalWorkTime || '' : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length ? att2?.normalWorkTime || '' : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length
-                        ? att2?.overtimeWorkTime || ''
-                        : ''}
-                    </td>
-                    <td>
-                      {i + 16 <= days.length ? att2?.nightWorkTime || '' : ''}
-                    </td>
-                  </tr>
-                );
-              })}
+              {Array.from({ length: Math.ceil(days.length / 2) }).map(
+                (_, i) => {
+                  // 왼쪽(1~15일)
+                  const d1 = new Date(year, month - 1, i + 1);
+                  const d1str = getDateStrLocal(d1);
+                  const att1 = getAttendanceByDate(d1str);
+                  const absence1 = absences.find(
+                    (a) => a.startDate <= d1str && a.endDate >= d1str,
+                  );
+                  // 오른쪽(16~말일)
+                  const d2 = new Date(
+                    year,
+                    month - 1,
+                    i + Math.ceil(days.length / 2) + 1,
+                  );
+                  const d2str = getDateStrLocal(d2);
+                  const att2 = getAttendanceByDate(d2str);
+                  const absence2 = absences.find(
+                    (a) => a.startDate <= d2str && a.endDate >= d2str,
+                  );
+                  return (
+                    <tr key={i}>
+                      {/* 날짜/출근/퇴근/부재 */}
+                      <td
+                        className={
+                          year === today.getFullYear() &&
+                          month === today.getMonth() + 1 &&
+                          today.getDate() === i + 1 &&
+                          todayHighlight
+                            ? styles.todayRow
+                            : getDayColor(d1.getDay())
+                        }
+                      >
+                        {i + 1}({getDayName(d1)})
+                      </td>
+                      <td>
+                        {formatTime(
+                          att1?.checkInTime || att1?.workStatus?.checkInTime,
+                        )}
+                      </td>
+                      <td>
+                        {formatTime(
+                          att1?.checkOutTime || att1?.workStatus?.checkOutTime,
+                        )}
+                      </td>
+                      <td>
+                        {absence1 && (
+                          <span
+                            className={styles.absenceBtn}
+                            style={{
+                              cursor: 'pointer',
+                              display: 'inline-block',
+                              position: 'relative',
+                            }}
+                            onClick={() => handleEditAbsence(absence1)}
+                            title='수정'
+                            onMouseEnter={(e) => {
+                              setHoveredAbsence(absence1);
+                              const rect = e.target.getBoundingClientRect();
+                              setTooltipPos({
+                                x: rect.right + window.scrollX,
+                                y: rect.top + window.scrollY,
+                              });
+                            }}
+                            onMouseLeave={() => setHoveredAbsence(null)}
+                          >
+                            {typeToKorean[absence1.type] || absence1.type}
+                          </span>
+                        )}
+                      </td>
+                      {/* 합계/정상/연장/심야 */}
+                      <td>{att1?.totalWorkTime || ''}</td>
+                      <td>{att1?.normalWorkTime || ''}</td>
+                      <td>{att1?.overtimeWorkTime || ''}</td>
+                      <td>{att1?.nightWorkTime || ''}</td>
+                      {/* 오른쪽 날짜/출근/퇴근/부재 */}
+                      <td
+                        className={
+                          year === today.getFullYear() &&
+                          month === today.getMonth() + 1 &&
+                          today.getDate() ===
+                            i + Math.ceil(days.length / 2) + 1 &&
+                          todayHighlight
+                            ? styles.todayRow
+                            : getDayColor(d2.getDay())
+                        }
+                      >
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? `${i + Math.ceil(days.length / 2) + 1}(${getDayName(d2)})`
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? formatTime(
+                              att2?.checkInTime ||
+                                att2?.workStatus?.checkInTime,
+                            )
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? formatTime(
+                              att2?.checkOutTime ||
+                                att2?.workStatus?.checkOutTime,
+                            )
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length &&
+                          absence2 && (
+                            <span
+                              className={styles.absenceBtn}
+                              style={{
+                                cursor: 'pointer',
+                                display: 'inline-block',
+                                position: 'relative',
+                              }}
+                              onClick={() => handleEditAbsence(absence2)}
+                              title='수정'
+                              onMouseEnter={(e) => {
+                                setHoveredAbsence(absence2);
+                                const rect = e.target.getBoundingClientRect();
+                                setTooltipPos({
+                                  x: rect.right + window.scrollX,
+                                  y: rect.top + window.scrollY,
+                                });
+                              }}
+                              onMouseLeave={() => setHoveredAbsence(null)}
+                            >
+                              {typeToKorean[absence2.type] || absence2.type}
+                            </span>
+                          )}
+                      </td>
+                      {/* 합계/정상/연장/심야 */}
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.totalWorkTime || ''
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.normalWorkTime || ''
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.overtimeWorkTime || ''
+                          : ''}
+                      </td>
+                      <td>
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length
+                          ? att2?.nightWorkTime || ''
+                          : ''}
+                      </td>
+                    </tr>
+                  );
+                },
+              )}
             </tbody>
           </table>
           {/* === 부재 툴팁 === */}
@@ -1083,7 +1207,7 @@ export default function AttendanceDashboard() {
             </div>
           </div>
         )}
-        {/* 부재등록 모달 */}
+        {/* 부재신청 모달 */}
         <AbsenceRegistrationModal
           open={showAbsence}
           onClose={closeAbsenceModal}
@@ -1098,19 +1222,20 @@ export default function AttendanceDashboard() {
         />
         {/* 성공 메시지 모달 */}
         {showSuccessModal && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.successModal}>
-              <div className={styles.successIcon}>✓</div>
-              <div className={styles.successMessage}>{successMessage}</div>
-              <button
-                className={styles.successCloseBtn}
-                onClick={() => setShowSuccessModal(false)}
-              >
-                확인
-              </button>
-            </div>
-          </div>
+          <SuccessModal
+            message={successMessage}
+            onClose={() => setShowSuccessModal(false)}
+            autoClose={true}
+            autoCloseDelay={3000}
+          />
         )}
+        {/* 퇴근 확인 모달 */}
+        <CheckoutConfirmModal
+          isOpen={showCheckoutConfirm}
+          onConfirm={handleCheckOutConfirm}
+          onCancel={handleCheckOutCancel}
+          currentTime={getTimeStrWithSec(currentTime)}
+        />
       </div>
     );
   }

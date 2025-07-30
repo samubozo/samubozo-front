@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './AbsenceRegistrationModal.module.scss';
+import { getKoreaToday } from '../../utils/dateUtils';
+import { attendanceService } from '../../services/attendanceService';
+import SuccessModal from '../../components/SuccessModal';
 
-const todayStr = new Date().toISOString().slice(0, 10);
+// 한국 시간 기준 오늘 날짜
+const todayStr = getKoreaToday();
 
 const absenceTypes = [
-  { value: '출장', label: '출장' },
-  { value: '연수', label: '연수' },
-  { value: '연차', label: '연차' },
-  { value: '반차', label: '반차' },
-  { value: '외출', label: '외출' },
-  { value: '기타', label: '기타' },
+  { value: 'BUSINESS_TRIP', label: '출장' },
+  { value: 'TRAINING', label: '연수' },
+  { value: 'ANNUAL_LEAVE', label: '연차' },
+  { value: 'HALF_DAY_LEAVE', label: '반차' },
+  { value: 'SHORT_LEAVE', label: '외출' },
+  { value: 'SICK_LEAVE', label: '병가' },
+  { value: 'OFFICIAL_LEAVE', label: '공가' },
+  { value: 'ETC', label: '기타' },
+];
+
+const urgencyOptions = [
+  { value: 'NORMAL', label: '일반' },
+  { value: 'URGENT', label: '긴급' },
 ];
 
 const timeOptions = Array.from({ length: 36 }, (_, i) => {
@@ -19,17 +30,97 @@ const timeOptions = Array.from({ length: 36 }, (_, i) => {
 });
 
 const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
-  const [type, setType] = useState('출장');
+  const [type, setType] = useState('BUSINESS_TRIP');
+  const [urgency, setUrgency] = useState('NORMAL');
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(todayStr);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('18:00');
   const [reason, setReason] = useState('');
+  const [myAbsences, setMyAbsences] = useState([]);
+  const [duplicateError, setDuplicateError] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // 내 부재 목록 불러오기
+  useEffect(() => {
+    if (open) {
+      fetchMyAbsences();
+    }
+  }, [open]);
+
+  const fetchMyAbsences = async () => {
+    try {
+      const response = await attendanceService.getAbsences({});
+      const absences = response.result || response.data || response || [];
+      setMyAbsences(absences);
+    } catch (error) {
+      console.error('부재 목록 불러오기 실패:', error);
+      setMyAbsences([]);
+    }
+  };
+
+  // 중복 검사 함수
+  const checkDuplicate = () => {
+    if (!myAbsences.length) return false;
+
+    const requestStart = new Date(startDate);
+    const requestEnd = new Date(endDate);
+
+    return myAbsences.some((absence) => {
+      const absenceStart = new Date(absence.startDate);
+      const absenceEnd = new Date(absence.endDate);
+
+      // 기간이 겹치는지 확인
+      const isOverlapping =
+        requestStart <= absenceEnd && requestEnd >= absenceStart;
+
+      // 같은 타입인지 확인
+      const isSameType = absence.type === type;
+
+      return isOverlapping && isSameType;
+    });
+  };
+
+  // 날짜나 타입이 변경될 때마다 중복 검사
+  useEffect(() => {
+    if (startDate && endDate && type) {
+      const isDuplicate = checkDuplicate();
+      if (isDuplicate) {
+        setDuplicateError(
+          '이미 해당 기간에 같은 유형의 부재가 신청되어 있습니다.',
+        );
+      } else {
+        setDuplicateError('');
+      }
+    }
+  }, [startDate, endDate, type, myAbsences]);
+
+  // 부재 타입 변경 시 긴급도 자동 설정
+  const handleTypeChange = (e) => {
+    const newType = e.target.value;
+    setType(newType);
+
+    // 부재 타입에 따른 긴급도 자동 설정
+    if (newType === 'SICK_LEAVE' || newType === 'OFFICIAL_LEAVE') {
+      setUrgency('URGENT');
+    } else {
+      setUrgency('NORMAL');
+    }
+  };
 
   if (!open) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // 중복 검사
+    if (duplicateError) {
+      setSuccessMessage(duplicateError);
+      setShowSuccessModal(true);
+      return;
+    }
+
     // startTime, endTime이 'HH:mm' 포맷인지 보장
     const formattedStartTime =
       startTime && startTime.length === 5 ? startTime : '';
@@ -37,6 +128,7 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
     if (onSubmit)
       onSubmit({
         type,
+        urgency,
         startDate,
         endDate,
         startTime: formattedStartTime,
@@ -49,12 +141,25 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
-        <h2>부재 등록</h2>
+        <h2>부재 신청</h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.row}>
             <label>부재 유형</label>
-            <select value={type} onChange={(e) => setType(e.target.value)}>
+            <select value={type} onChange={handleTypeChange}>
               {absenceTypes.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.row}>
+            <label>긴급도</label>
+            <select
+              value={urgency}
+              onChange={(e) => setUrgency(e.target.value)}
+            >
+              {urgencyOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -82,7 +187,6 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
             <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              style={{ width: 120 }}
             >
               {timeOptions.map((t) => (
                 <option key={t} value={t}>
@@ -94,7 +198,6 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
             <select
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              style={{ width: 120 }}
             >
               {timeOptions.map((t) => (
                 <option key={t} value={t}>
@@ -105,27 +208,50 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
           </div>
           <div className={styles.row}>
             <label>사유</label>
-            <input
-              type='text'
+            <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder=''
+              placeholder='부재 사유를 입력하세요'
             />
           </div>
+          {duplicateError && (
+            <div
+              style={{
+                marginLeft: '105px',
+                marginTop: '4px',
+                color: '#e74c3c',
+                fontSize: '14px',
+                fontWeight: 400,
+              }}
+            >
+              {duplicateError}
+            </div>
+          )}
           <div className={styles.buttonRow}>
-            <button type='submit' className={styles.confirmBtn}>
-              등록
+            <button
+              type='submit'
+              className={styles.submitBtn}
+              disabled={!!duplicateError}
+            >
+              신청
             </button>
             <button
               type='button'
-              className={styles.cancelBtn}
               onClick={onClose}
+              className={styles.cancelBtn}
             >
               취소
             </button>
           </div>
         </form>
       </div>
+      {showSuccessModal && (
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          message={successMessage}
+        />
+      )}
     </div>
   );
 };

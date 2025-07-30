@@ -4,6 +4,7 @@ import axiosInstance from '../../configs/axios-config';
 import styles from './PayrollManagement.module.scss';
 import AuthContext from '../../context/UserContext';
 import { API_BASE_URL, PAYROLL, HR } from '../../configs/host-config';
+import SuccessModal from '../../components/SuccessModal';
 
 function parseJwt(token) {
   if (!token) return {};
@@ -314,6 +315,8 @@ const PayrollManagement = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('전체');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const { user } = useContext(AuthContext);
 
@@ -573,7 +576,8 @@ const PayrollManagement = () => {
     const printContents = printRef.current.innerHTML;
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) {
-      alert('팝업 차단 해제를 먼저 해주세요!');
+      setSuccessMessage('팝업 차단 해제를 먼저 해주세요!');
+      setShowSuccessModal(true);
       return;
     }
 
@@ -991,6 +995,17 @@ const PayrollManagement = () => {
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
           fetchPayroll={fetchPayroll}
+        />
+      )}
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessMessage('');
+          }}
         />
       )}
     </div>

@@ -10,6 +10,12 @@ function ApprovalTable({
   onApprove,
   onReject,
   isHR = false,
+  onEditCert, // 추가
+  onPrintCert, // 추가
+  typeToKor, // 추가
+  statusToKor, // 추가
+  urgencyToKor, // 긴급도 변환 함수 추가
+  onRowClick, // 행 클릭 이벤트 추가
 }) {
   const toggle = (id) => {
     setSelected((prev) =>
@@ -19,6 +25,11 @@ function ApprovalTable({
 
   return (
     <table className={styles.table}>
+      <colgroup>
+        {columns.map((col) => (
+          <col key={col.key} />
+        ))}
+      </colgroup>
       <thead>
         <tr>
           <th>
@@ -33,12 +44,17 @@ function ApprovalTable({
           {columns.map((col) => (
             <th key={col.key}>{col.label}</th>
           ))}
+          {/* 작업 칼럼 제거 */}
         </tr>
       </thead>
       <tbody>
-        {data.map((row, idx) => (
-          <tr key={row.id ?? idx}>
-            <td>
+        {data.map((row) => (
+          <tr
+            key={row.id}
+            onClick={() => onRowClick && onRowClick(row)}
+            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+          >
+            <td onClick={(e) => e.stopPropagation()}>
               <input
                 type='checkbox'
                 checked={selected.includes(row.id)}
@@ -46,8 +62,17 @@ function ApprovalTable({
               />
             </td>
             {columns.map((col) => (
-              <td key={col.key}>{row[col.key]}</td>
+              <td key={`${row.id}-${col.key}`}>
+                {col.key === 'type' && typeToKor
+                  ? typeToKor(row[col.key])
+                  : col.key === 'urgency' && urgencyToKor
+                    ? urgencyToKor(row[col.key])
+                    : col.key === 'status' && statusToKor
+                      ? statusToKor(row[col.key])
+                      : row[col.key]}
+              </td>
             ))}
+            {/* 작업 버튼 칼럼 제거 */}
           </tr>
         ))}
       </tbody>

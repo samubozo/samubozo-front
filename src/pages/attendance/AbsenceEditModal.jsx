@@ -7,11 +7,19 @@ const typeOptions = [
   { value: 'ANNUAL_LEAVE', label: '연차' },
   { value: 'HALF_DAY_LEAVE', label: '반차' },
   { value: 'SHORT_LEAVE', label: '외출' },
+  { value: 'SICK_LEAVE', label: '병가' },
+  { value: 'OFFICIAL_LEAVE', label: '공가' },
   { value: 'ETC', label: '기타' },
+];
+
+const urgencyOptions = [
+  { value: 'NORMAL', label: '일반' },
+  { value: 'URGENT', label: '긴급' },
 ];
 
 const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
   const [type, setType] = useState(absence?.type || '');
+  const [urgency, setUrgency] = useState(absence?.urgency || 'NORMAL');
   const [startDate, setStartDate] = useState(absence?.startDate || '');
   const [endDate, setEndDate] = useState(absence?.endDate || '');
   const [startTime, setStartTime] = useState(absence?.startTime || '');
@@ -22,6 +30,7 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
   useEffect(() => {
     if (absence) {
       setType(absence.type); // ENUM 값이 들어오도록 보장
+      setUrgency(absence.urgency || 'NORMAL');
       setStartDate(absence.startDate);
       setEndDate(absence.endDate);
       setStartTime(absence.startTime);
@@ -29,6 +38,19 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
       setReason(absence.reason);
     }
   }, [absence]);
+
+  // 부재 타입 변경 시 긴급도 자동 설정
+  const handleTypeChange = (e) => {
+    const newType = e.target.value;
+    setType(newType);
+
+    // 부재 타입에 따른 긴급도 자동 설정
+    if (newType === 'SICK_LEAVE' || newType === 'OFFICIAL_LEAVE') {
+      setUrgency('URGENT');
+    } else {
+      setUrgency('NORMAL');
+    }
+  };
 
   if (!open) return null;
 
@@ -41,6 +63,7 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
     onSubmit({
       ...absence,
       type,
+      urgency,
       startDate,
       endDate,
       startTime: formattedStartTime,
@@ -72,8 +95,21 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
         <form onSubmit={handleSubmit}>
           <div className={styles.row}>
             <label>부재 유형</label>
-            <select value={type} onChange={(e) => setType(e.target.value)}>
+            <select value={type} onChange={handleTypeChange}>
               {typeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.row}>
+            <label>긴급도</label>
+            <select
+              value={urgency}
+              onChange={(e) => setUrgency(e.target.value)}
+            >
+              {urgencyOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -100,55 +136,72 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
               type='text'
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              style={{ width: 80 }}
+              placeholder='HH:mm'
+              style={{ width: 120 }}
             />
             <span>~</span>
             <input
               type='text'
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              style={{ width: 80 }}
+              placeholder='HH:mm'
+              style={{ width: 120 }}
             />
           </div>
           <div className={styles.row}>
             <label>사유</label>
-            <input
-              type='text'
+            <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
+              placeholder='부재 사유를 입력하세요'
+              style={{
+                flex: '1',
+                height: '80px',
+                resize: 'vertical',
+                border: '1px solid #b7d7c2',
+                borderRadius: '4px',
+                padding: '0.5rem 0.7rem',
+                fontSize: '1rem',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+              }}
             />
           </div>
           <div className={styles.buttonRow}>
-            <button type='submit' className={styles.confirmBtn}>
+            <button type='submit' className={styles.submitBtn}>
               수정
             </button>
             <button
               type='button'
-              className={styles.deleteBtn}
               onClick={handleDelete}
+              className={styles.deleteBtn}
             >
               삭제
             </button>
           </div>
         </form>
-        {showDeleteConfirm && (
-          <div className={styles.deleteConfirmOverlay}>
-            <div className={styles.deleteConfirmModal}>
-              <div style={{ marginBottom: 16 }}>정말 삭제하시겠습니까?</div>
-              <div
-                style={{ display: 'flex', gap: 8, justifyContent: 'center' }}
+      </div>
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <div className={styles.deleteConfirmOverlay}>
+          <div className={styles.deleteConfirmModal}>
+            <h3>삭제 확인</h3>
+            <p>정말 삭제하시겠습니까?</p>
+            <div className={styles.deleteConfirmButtons}>
+              <button onClick={cancelDelete} className={styles.cancelBtn}>
+                취소
+              </button>
+              <button
+                onClick={confirmDelete}
+                className={styles.confirmDeleteBtn}
               >
-                <button className={styles.confirmBtn} onClick={confirmDelete}>
-                  확인
-                </button>
-                <button className={styles.deleteBtn} onClick={cancelDelete}>
-                  취소
-                </button>
-              </div>
+                삭제
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

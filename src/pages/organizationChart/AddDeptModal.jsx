@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './OrgChart.module.scss';
 import { HexColorPicker } from 'react-colorful';
+import SuccessModal from '../../components/SuccessModal';
 // import UserSearchModal from './UserSearchModal';
 
 // 사용 가능한 색상 목록 (OrgChart COLOR_OPTIONS와 동일하게 유지)
@@ -34,6 +35,8 @@ function AddDeptModal({ open, onClose, onAdd, existingDepartments = [] }) {
   const [showPicker, setShowPicker] = useState(false);
   const colorCircleRef = useRef(null);
   const pickerRef = useRef(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 모달이 열릴 때 초기화
   useEffect(() => {
@@ -140,7 +143,8 @@ function AddDeptModal({ open, onClose, onAdd, existingDepartments = [] }) {
       } else if (error?.message) {
         msg = error.message;
       }
-      alert(msg);
+      setSuccessMessage(msg);
+      setShowSuccessModal(true);
       setErrors({ submit: msg });
     } finally {
       setIsSubmitting(false);
@@ -583,6 +587,17 @@ function AddDeptModal({ open, onClose, onAdd, existingDepartments = [] }) {
           }}
           hrRoleFilter={true}
         /> */}
+
+        {/* 성공 모달 */}
+        {showSuccessModal && (
+          <SuccessModal
+            message={successMessage}
+            onClose={() => {
+              setShowSuccessModal(false);
+              setSuccessMessage('');
+            }}
+          />
+        )}
       </div>
     </div>
   );
