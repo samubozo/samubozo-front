@@ -495,9 +495,10 @@ const PayrollManagement = () => {
   const allowance = payrollData.positionAllowance || 0;
   const meal = payrollData.mealAllowance || 0;
   const bonus = payrollData.bonus || 0;
+  const overtime = payrollData.overtimePay || 0;
   const nonTaxableMeal = Math.min(meal, 200000);
   const taxableMeal = Math.max(meal - 200000, 0);
-  const taxable = base + allowance + taxableMeal + bonus;
+  const taxable = base + allowance + taxableMeal + bonus + overtime;
   const nonTaxable = nonTaxableMeal;
   const total = taxable + nonTaxable;
 
