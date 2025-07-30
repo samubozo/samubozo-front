@@ -28,7 +28,7 @@ const fetchEmployees = async ({
   isHR = false,
 } = {}) => {
   try {
-    // ✅ HR이 아니면 본인 정보만 반환
+    //  HR이 아니면 본인 정보만 반환
     if (!isHR) {
       const payload = parseJwt(sessionStorage.getItem('ACCESS_TOKEN'));
 
@@ -52,7 +52,7 @@ const fetchEmployees = async ({
       ];
     }
 
-    // ✅ HR이면 전체 호출
+    //  HR이면 전체 호출
     let url = `${API_BASE_URL}${HR}/user/list`;
     let params = { page, size };
 
@@ -323,7 +323,6 @@ const PayrollManagement = () => {
   useEffect(() => {
     const token = sessionStorage.getItem('ACCESS_TOKEN');
     const payload = parseJwt(token);
-    console.log('✅ JWT payload:', payload); // 추가
     setIsHR(payload?.role === 'Y');
   }, []);
 
@@ -359,7 +358,7 @@ const PayrollManagement = () => {
 
     if (year && month) {
       axiosInstance
-        .get(url, { headers, params }) // ✅ 동적으로 지정된 url 사용
+        .get(url, { headers, params }) // 동적으로 지정된 url 사용
         .then((res) => {
           const result = res.data.result;
           setPayrollData({
@@ -405,17 +404,23 @@ const PayrollManagement = () => {
   };
 
   useEffect(() => {
+    if (!user) return;
+
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
+    const payload = parseJwt(token);
+    const hrRole = payload?.role === 'Y';
+    setIsHR(hrRole);
+
     const loadEmployees = async () => {
-      console.log('🚀 isHR 전달됨:', isHR); // 확인
-      const employees = await fetchEmployees({ isHR, includeRetired: true });
-      console.log('📦 직원 목록:', employees); // 확인
+      const employees = await fetchEmployees({
+        isHR: hrRole,
+        includeRetired: true,
+      });
       setEmployeeData(employees);
     };
 
-    if (user && isHR !== null) {
-      loadEmployees();
-    }
-  }, [user, isHR]);
+    loadEmployees();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -465,7 +470,7 @@ const PayrollManagement = () => {
           bankName: data.bankName || '',
           accountNumber: data.accountNumber || '',
           accountHolder: data.accountHolder || data.userName,
-          isRetired: data.activate !== 'Y' ? 'Y' : 'N', // ✅ 추가!
+          isRetired: data.activate !== 'Y' ? 'Y' : 'N',
         });
 
         if (isHR && selectedMonth) {
@@ -541,7 +546,7 @@ const PayrollManagement = () => {
 
     const emp = selectedEmployee;
     const [year, month] = selectedMonth.split('-');
-    const formattedMonth = `${year}년 ${month}월`; // ✅ 여기서 변환
+    const formattedMonth = `${year}년 ${month}월`;
     const employeeInfoHTML = `
     <div style="margin-bottom: 20px;">
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -823,7 +828,7 @@ const PayrollManagement = () => {
                     <input
                       type='checkbox'
                       checked={selectedEmployeeId === emp.id}
-                      onChange={() => handleEmployeeClick(emp)} // ✅ 단일 선택
+                      onChange={() => handleEmployeeClick(emp)} // 단일 선택
                       onClick={(e) => e.stopPropagation()}
                     />
                   </td>
@@ -840,7 +845,7 @@ const PayrollManagement = () => {
             {(() => {
               const total = filteredEmployees.length;
               const retiredCount = filteredEmployees.filter(
-                (emp) => emp.isRetired === 'Y', // ✅ 고친 부분
+                (emp) => emp.isRetired === 'Y',
               ).length;
               const activeCount = total - retiredCount;
 
