@@ -707,19 +707,19 @@ const PayrollManagement = () => {
           </tr>
           <tr>
             <td>식대</td><td>${meal.toLocaleString()}</td>
-            <td>고용보험</td><td>${employment.toLocaleString()}</td>
+            <td>장기요양보험</td><td>${care.toLocaleString()}</td>
           </tr>
           <tr>
             <td>성과급</td><td>${bonus.toLocaleString()}</td>
-            <td>소득세</td><td>${incomeTax.toLocaleString()}</td>
+            <td>고용보험</td><td>${employment.toLocaleString()}</td>
           </tr>
           <tr>
             <td>야근수당</td><td>${(payrollData.overtimePay ?? 0).toLocaleString()}</td>
-            <td>지방소득세</td><td>${localTax.toLocaleString()}</td>
+            <td>소득세</td><td>${incomeTax.toLocaleString()}</td>
           </tr>
           <tr>
             <td><td></td></td>
-            <td>장기요양보험</td><td>${care.toLocaleString()}</td>
+            <td>지방소득세</td><td>${localTax.toLocaleString()}</td>
           </tr>
           <tr>
             <td class="summary">지급합계</td><td class="summary">${total.toLocaleString()}</td>
