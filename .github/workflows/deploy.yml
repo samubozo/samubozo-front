@@ -21,7 +21,7 @@ jobs:
           node-version: '20' # 프로젝트에 필요한 Node.js 버전 지정
 
       - name: Install Dependencies # 3. React 프로젝트 의존성 설치
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build React App # 4. React 프로젝트 빌드
         run: CI=false npm run build
