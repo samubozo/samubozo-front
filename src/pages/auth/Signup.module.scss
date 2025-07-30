@@ -1,5 +1,4 @@
 .outerBg {
-  // .outer-bg
   position: relative;
   min-height: 100vh;
   background: #fff;
@@ -7,7 +6,6 @@
 }
 
 .registerNav {
-  // .register-nav
   position: absolute;
   top: 5px;
   right: 10px;
@@ -27,7 +25,6 @@
 }
 
 .registerWrap {
-  // .register-wrap
   min-height: 100vh;
   background: #fff;
   display: flex;
@@ -36,7 +33,6 @@
 }
 
 .registerContainer {
-  // .register-container
   margin-top: 40px;
   border: 8px solid #66be80;
   border-radius: 24px;
@@ -48,14 +44,12 @@
 }
 
 .registerHeader {
-  // .register-header
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .registerLogo {
-  // .register-logo
   height: 70px;
   position: absolute;
   right: 44%;
@@ -63,7 +57,6 @@
 }
 
 .registerTitle {
-  // .register-title
   flex: 1;
   display: flex;
   align-items: center;
@@ -71,7 +64,6 @@
 }
 
 .registerMainTitle {
-  // .register-main-title
   text-align: center;
   font-size: 30px;
   font-weight: 600;
@@ -81,12 +73,10 @@
 }
 
 .registerForm {
-  // .register-form
   width: 100%;
 }
 
 .registerGrid {
-  // .register-grid
   display: flex;
   gap: 38px;
   margin-bottom: 36px;
@@ -124,14 +114,12 @@
 }
 
 .emailRow {
-  // .email-row
   display: flex;
   gap: 10px;
   input[type='email'] {
     flex: 1;
   }
   .emailBtn {
-    // .email-btn
     padding: 0 24px;
     background: #66be80;
     color: #fff;
@@ -183,9 +171,7 @@
 }
 
 .inputIcon {
-  // .input-icon
   position: relative;
-  // input이 블록 레벨 요소임을 명확히 할 필요는 없지만, flex 컨테이너에서 flex-basis 등을 고려할 수 있음.
   input[type='date'] {
     width: 100%;
     min-width: 0;
@@ -206,7 +192,6 @@ select {
 }
 
 .registerSubmit {
-  // .register-submit
   width: 100%;
   margin-top: 10px;
   padding: 15px 0;

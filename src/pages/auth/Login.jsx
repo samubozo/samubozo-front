@@ -56,7 +56,6 @@ const Login = () => {
     const value = e.target.value;
     setEmail(value);
 
-    // 이메일 필터링
     const rememberedEmails = JSON.parse(
       localStorage.getItem('rememberedEmails') || '[]',
     );
@@ -157,12 +156,10 @@ const Login = () => {
         if (typeof onLogin === 'function') {
           await onLogin({ accessToken, refreshToken, id, role, provider });
         }
-        // 실제 저장되는 토큰 값도 출력
         console.log('sessionStorage에 저장할 ACCESS_TOKEN:', accessToken);
         sessionStorage.setItem('ACCESS_TOKEN', accessToken);
         localStorage.setItem('REFRESH_TOKEN', refreshToken);
 
-        // 로그인 성공 시에만 이메일 저장
         if (remember) {
           updateRememberedEmails(email, true);
         }
@@ -200,7 +197,6 @@ const Login = () => {
     );
     localStorage.setItem('rememberedEmails', JSON.stringify(rememberedEmails));
 
-    // 현재 필터링된 목록도 업데이트
     const filtered = rememberedEmails.filter((savedEmail) =>
       savedEmail.toLowerCase().includes(email.toLowerCase()),
     );
@@ -217,7 +213,6 @@ const Login = () => {
         <div className={styles.logoSection}>
           <img src={Logo} alt='사무보조 로고' />
         </div>
-        {/* 보안을 위한 숨겨진 필드 추가 */}
         <input
           type='text'
           style={{ display: 'none' }}
@@ -307,7 +302,6 @@ const Login = () => {
                 )}
               </ul>
             )}
-            {/* 이메일 자동완성 드롭다운(ul) 완전 제거 */}
           </div>
           <input
             className={styles.passwordInput}
@@ -416,7 +410,6 @@ const Login = () => {
           </div>
         )}
 
-        {/* 성공 모달 */}
         {showSuccessModal && (
           <SuccessModal
             message={successMessage}

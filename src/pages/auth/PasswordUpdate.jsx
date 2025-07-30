@@ -87,7 +87,6 @@ export default function PasswordUpdate() {
         </div>
       </div>
 
-      {/* 성공 모달 */}
       {showSuccessModal && (
         <SuccessModal
           message={successMessage}
