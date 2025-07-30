@@ -1,5 +1,4 @@
 .employeeWrapper {
-  // .employee-wrapper
   background: #fff;
   padding: 32px 10px 24px 10px;
   border-radius: 12px;
@@ -9,22 +8,21 @@
 }
 
 .searchBox {
-  // .employee-search-box -> .searchBox (JSX에서 이미 이렇게 사용 중)
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px;
   background-color: #f5f5f5;
   border-radius: 5px;
+  
   .searchLabel {
-    // .search-label
     font-size: 18px;
     font-weight: 500;
     margin-right: 6px;
     margin-left: 50px;
   }
+  
   .dropdownBox {
-    // .dropdown-box
     position: relative;
     width: 110px;
     height: 44px;
@@ -35,7 +33,6 @@
     margin-right: 2px;
 
     .dropdownSelected {
-      // .dropdown-selected
       height: 100%;
       display: flex;
       align-items: center;
@@ -46,14 +43,13 @@
     }
 
     .dropdownArrow {
-      // .dropdown-arrow
       margin-left: 10px;
       margin-right: 10px;
       font-size: 17px;
       color: #7b7b7b;
     }
+    
     .dropdownOptions {
-      // .dropdown-options
       position: absolute;
       left: 0;
       top: 43px;
@@ -75,7 +71,6 @@
   }
 
   .searchInput {
-    // .search-input
     width: 250px;
     height: 44px;
     font-size: 18px;
@@ -85,8 +80,8 @@
     margin-right: 12px;
     outline: none;
   }
+  
   .retiredLabel {
-    // .retired-label
     font-size: 18px;
     margin-right: 18px;
     display: flex;
@@ -99,8 +94,8 @@
       margin-right: 3px;
     }
   }
+  
   .searchBtn {
-    // .search-btn
     height: 44px;
     width: 90px;
     background: #62b87a;
@@ -114,11 +109,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    
     .searchIcon {
-      // .search-icon
       font-size: 24px;
       margin-right: 2px;
     }
+    
     &:hover {
       background: #48965b;
     }
@@ -126,7 +122,6 @@
 }
 
 .basicInfoTitle {
-  // .basic-info-title
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -144,10 +139,6 @@
   span {
     margin-right: auto;
   }
-}
-
-.gridWrap {
-  display: inline-block;
 }
 .tableWrap {
   width: 100%;
@@ -271,50 +262,4 @@
   }
 }
 
-/* --- 인쇄 전용 스타일 --- */
-@media print {
-  body * {
-    visibility: hidden;
-  }
 
-  .employeeDetailWrap, // .employee-detail-wrap (EmployeeDetail 컴포넌트에서 사용)
-  .employeeDetailWrap * {
-    visibility: visible;
-  }
-
-  .employeeDetailWrap {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  /* 인쇄 시 필요 없는 요소 숨기기 */
-  .tabMenu, // .tab-menu (EmployeeDetail 컴포넌트에서 사용)
-  .empTableBtnRow, // .emp-table-btn-row (EmployeeDetail 컴포넌트에서 사용)
-  .modalBackdrop {
-    // .modal-backdrop (EmployeeDetail 컴포넌트에서 사용)
-    display: none;
-  }
-
-  /* input과 select 박스의 배경색 및 테두리 조정 */
-  .infoTable input, // .info-table (EmployeeDetail 컴포넌트에서 사용)
-  .infoTable select,
-  .empTable input, // .emp-table (EmployeeDetail 컴포넌트에서 사용)
-  .empTable select,
-  .empTable textarea {
-    background-color: transparent !important;
-    border: 1px solid #ccc !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* 드롭다운 화살표 등 인쇄 시 불필요한 UI 요소 숨기기 */
-  .customSelectWrap .arrow {
-    // .custom-select-wrap (EmployeeDetail 컴포넌트에서 사용)
-    display: none;
-  }
-}
