@@ -535,11 +535,13 @@ const PayrollManagement = () => {
 
     try {
       await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
-      alert('야근수당이 계산되어 저장되었습니다.');
+      setSuccessMessage('야근수당이 계산되어 저장되었습니다.');
+      setShowSuccessModal(true);
       fetchPayroll(year, month, selectedEmployee.id); // 화면 반영
     } catch (err) {
       console.error('야근수당 계산 실패:', err);
-      alert('야근수당 계산에 실패했습니다.');
+      setSuccessMessage('야근수당 계산에 실패했습니다.');
+      setShowSuccessModal(true);
     }
   };
 
@@ -1017,10 +1019,9 @@ const PayrollManagement = () => {
       {showSuccessModal && (
         <SuccessModal
           message={successMessage}
-          onClose={() => {
-            setShowSuccessModal(false);
-            setSuccessMessage('');
-          }}
+          onClose={() => setShowSuccessModal(false)}
+          autoClose={true}
+          autoCloseDelay={2000}
         />
       )}
     </div>
