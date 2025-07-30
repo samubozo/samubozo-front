@@ -87,7 +87,7 @@ const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
-const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
+const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
   const [form, setForm] = useState({
     payMonthStr: '',
     basePayroll: '',
@@ -96,7 +96,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
     bonus: '',
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
   // 숫자만 추출 후 콤마 포맷
   const formatNumber = (value) => {
@@ -116,7 +115,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
     try {
       const [yearStr, monthStr] = form.payMonthStr.split('-');
       const year = parseInt(yearStr);
@@ -154,7 +152,8 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
       if (fetchPayroll) {
         fetchPayroll(year, month, employee.id);
       }
-      setMessage('저장되었습니다.');
+      showModal?.('급여가 저장되었습니다.');
+
       setForm({
         payMonthStr: '',
         basePayroll: '',
@@ -163,8 +162,7 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
         bonus: '',
       });
     } catch (err) {
-      console.error('급여 저장 요청 실패:', err); // 저장 실패 로그
-      setMessage('저장 실패: ' + (err?.response?.data?.message || '오류'));
+      showModal?.('저장 실패: ' + (err?.response?.data?.message || '오류'));
     } finally {
       setLoading(false);
     }
@@ -280,18 +278,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
           >
             {loading ? '등록/수정 중...' : '등록 / 수정'}
           </button>
-          {message && (
-            <div
-              style={{
-                textAlign: 'center',
-                color: message.includes('실패') ? 'red' : 'green',
-                paddingTop: 8,
-                fontWeight: 500,
-              }}
-            >
-              {message}
-            </div>
-          )}
         </div>
       </form>
     </div>
@@ -1013,6 +999,10 @@ const PayrollManagement = () => {
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
           fetchPayroll={fetchPayroll}
+          showModal={(msg) => {
+            setSuccessMessage(msg);
+            setShowSuccessModal(true);
+          }}
         />
       )}
 
