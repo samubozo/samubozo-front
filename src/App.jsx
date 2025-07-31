@@ -9,6 +9,7 @@ import LoginPage from './pages/auth/Login';
 import './App.css';
 
 import AppRouter from './router/AppRouter';
+import ErrorBoundary from './router/ErrorBoundary';
 
 const App = () => {
   return (
@@ -16,7 +17,9 @@ const App = () => {
       <WeatherProvider>
         <div className='App'>
           <div className='content-wrapper'>
-            <AppRouter />
+            <ErrorBoundary>
+              <AppRouter />
+            </ErrorBoundary>
           </div>
         </div>
       </WeatherProvider>
