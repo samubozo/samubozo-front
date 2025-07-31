@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>에러 발생</title>
+    <style>
+      body {
+        background: #f7f7f7;
+        color: #222;
+        font-family: 'Pretendard', 'Noto Sans KR', Arial, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .error-container {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        padding: 48px;
+        display: flex;
+        align-items: center;
+        max-width: 600px;
+        width: 100%;
+      }
+      .error-image {
+        flex: 0 0 120px;
+        margin-right: 40px;
+      }
+      .error-image img {
+        max-width: 100%;
+        height: auto;
+      }
+      .error-content {
+        text-align: left;
+      }
+      .error-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+      .error-desc {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 24px;
+      }
+      #contact-info {
+        margin-top: 20px;
+        padding: 16px;
+        background: #f1f1f1;
+        border-radius: 8px;
+        font-size: 15px;
+        color: #333;
+        line-height: 1.6;
+      }
+      #contact-info p {
+        margin: 0 0 4px 0;
+      }
+      .login-btn {
+        background: #66be80;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: background 0.18s;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 16px;
+      }
+      .login-btn:hover {
+        background: #269d51;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="error-container">
+      <div class="error-image">
+        <img src="/error.png" alt="에러" />
+      </div>
+      <div class="error-content">
+        <div class="error-title">예상치 못한 문제가 발생되었습니다.</div>
+        <div class="error-desc">관리자에게 문의 바랍니다.</div>
+        <div id="contact-info">
+          <p><b>관리자 이메일:</b> admin@samubozo.com</p>
+          <p><b>대표 연락처:</b> 02-123-4567</p>
+        </div>
+        <a href="/login" class="login-btn">첫 화면으로 돌아가기</a>
+      </div>
+    </div>
+  </body>
+</html>
