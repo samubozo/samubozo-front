@@ -11,7 +11,10 @@ const clientHostName = window.location.hostname;
 
 let backendHostName;
 
-if (clientHostName === 'localhost') {
+if (
+  clientHostName === 'localhost' ||
+  clientHostName === 'page-samubozo.s3-website.ap-northeast-2.amazonaws.com'
+) {
   // 개발 중
   backendHostName = 'http://localhost:8000';
 } else if (clientHostName === 'samubozo.co.kr') {
