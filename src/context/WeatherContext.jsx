@@ -225,25 +225,76 @@ export const WeatherProvider = ({ children }) => {
         longitude = cachedLocation.longitude;
       } else {
         // 위치 정보 가져오기
-        if (navigator.geolocation) {
-          const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              timeout: 10000,
-              enableHighAccuracy: false,
-              maximumAge: 300000,
+        // 브라우저 위치 정보 API 사용 여부 확인 (에러 방지)
+        const useBrowserLocation =
+          navigator.geolocation &&
+          typeof navigator.geolocation.getCurrentPosition === 'function' &&
+          !navigator.userAgent.includes('Safari'); // Safari에서 CoreLocation 에러 방지
+
+        if (useBrowserLocation) {
+          try {
+            const position = await new Promise((resolve, reject) => {
+              const options = {
+                timeout: 3000, // 더 짧은 타임아웃
+                enableHighAccuracy: false,
+                maximumAge: 600000, // 10분
+              };
+
+              navigator.geolocation.getCurrentPosition(
+                resolve,
+                reject,
+                options,
+              );
             });
-          });
-          const coords = position.coords;
-          latitude = coords.latitude;
-          longitude = coords.longitude;
-          console.log('위치 정보 성공:', latitude, longitude);
-          setCachedLocation(latitude, longitude);
+            const coords = position.coords;
+            latitude = coords.latitude;
+            longitude = coords.longitude;
+            console.log('브라우저 위치 정보 성공:', latitude, longitude);
+            setCachedLocation(latitude, longitude);
+          } catch (browserLocationError) {
+            console.log(
+              '브라우저 위치 정보 실패, IP 기반 위치 서비스 시도:',
+              browserLocationError.message,
+            );
+
+            try {
+              // 여러 무료 위치 서비스 백업 시스템 시도
+              const locationData = await getLocationFromMultipleServices();
+              latitude = locationData.latitude;
+              longitude = locationData.longitude;
+              console.log('IP 기반 위치 서비스 성공:', latitude, longitude);
+              setCachedLocation(latitude, longitude);
+            } catch (ipLocationError) {
+              console.log(
+                '모든 위치 서비스 실패, 기본 위치 사용:',
+                ipLocationError.message,
+              );
+              // 서울 서초구 좌표를 기본값으로 사용
+              latitude = 37.4837;
+              longitude = 127.0324;
+              setCachedLocation(latitude, longitude);
+            }
+          }
         } else {
-          // 여러 무료 위치 서비스 백업 시스템
-          const locationData = await getLocationFromMultipleServices();
-          latitude = locationData.latitude;
-          longitude = locationData.longitude;
-          setCachedLocation(latitude, longitude);
+          console.log('브라우저 위치 정보 사용 불가, IP 기반 위치 서비스 시도');
+
+          try {
+            // 여러 무료 위치 서비스 백업 시스템 시도
+            const locationData = await getLocationFromMultipleServices();
+            latitude = locationData.latitude;
+            longitude = locationData.longitude;
+            console.log('IP 기반 위치 서비스 성공:', latitude, longitude);
+            setCachedLocation(latitude, longitude);
+          } catch (ipLocationError) {
+            console.log(
+              '모든 위치 서비스 실패, 기본 위치 사용:',
+              ipLocationError.message,
+            );
+            // 서울 서초구 좌표를 기본값으로 사용
+            latitude = 37.4837;
+            longitude = 127.0324;
+            setCachedLocation(latitude, longitude);
+          }
         }
       }
 
@@ -319,7 +370,17 @@ export const WeatherProvider = ({ children }) => {
       console.log('날씨 데이터 설정 완료:', weather);
       setTodayWeatherState(weather);
     } catch (error) {
-      console.error('날씨 데이터 가져오기 실패:', error);
+      // 위치 정보 관련 에러는 조용히 처리 (사용자에게 불필요한 에러 표시 방지)
+      if (
+        error.message.includes('Position update is unavailable') ||
+        error.message.includes('GeolocationPositionError') ||
+        error.message.includes('kCLErrorLocationUnknown')
+      ) {
+        console.log('위치 정보를 가져올 수 없어 기본 날씨로 설정합니다.');
+      } else {
+        console.error('날씨 데이터 가져오기 실패:', error);
+      }
+
       // 기본값으로 설정
       setTodayWeatherState({
         TMP: '20',
