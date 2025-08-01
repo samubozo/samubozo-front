@@ -227,7 +227,7 @@
 }
 
 .calendarCell {
-  height: 140px;
+  height: 112px;
   vertical-align: top;
   border-bottom: 1px solid #e0e0e0;
   border-right: 1px solid #e0e0e0;
@@ -250,6 +250,7 @@
   font-weight: 600;
   color: #222;
   margin-bottom: 2px;
+  padding-left: 10px; /* 왼쪽 여백 추가 */
 }
 
 .eventBar,
@@ -288,15 +289,19 @@
 }
 .continuousEventBarStart {
   border-radius: 8px 0 0 8px;
+  margin-left: 10px;
 }
 .continuousEventBarMiddle {
   border-radius: 0;
 }
 .continuousEventBarEnd {
   border-radius: 0 8px 8px 0;
+  margin-right: 10px;
 }
 .continuousEventBarSingle {
   border-radius: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 // 마지막 일정바에는 margin-bottom: 0
