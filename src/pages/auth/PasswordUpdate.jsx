@@ -39,7 +39,7 @@ export default function PasswordUpdate() {
       });
       setSuccessMessage('비밀번호가 재설정되었습니다.');
       setShowSuccessModal(true);
-      navigate('/login');
+      navigate('/');
     } catch (e) {
       setSuccessMessage(e.response?.data?.message || '비밀번호 재설정 실패');
       setShowSuccessModal(true);
