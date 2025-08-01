@@ -5,7 +5,7 @@ name: Deploy React App to S3 (Using AWS Official Actions) # 워크플로우 이�
 on:
   push:
     branches:
-      - develop # 지정한 브랜치에 코드가 푸시될 때 이 워크플로우를 실행
+      - main # 지정한 브랜치에 코드가 푸시될 때 이 워크플로우를 실행
 
 jobs:
   build-and-deploy:
