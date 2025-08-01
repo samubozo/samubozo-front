@@ -1,0 +1,521 @@
+.payroll-management-container {
+  background: #fff;
+  margin: 30px auto;
+  width: 100%;
+  font-family: 'Noto Sans KR', sans-serif;
+
+  .payroll-filter-section {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+    justify-content: space-between;
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-right: 0.5rem;
+    }
+
+    label {
+      font-size: 15px;
+      color: #30512e;
+      font-weight: 500;
+      margin-right: 30px;
+      display: flex;
+      align-items: center;
+      select,
+      input {
+        margin-left: 8px;
+        height: 32px;
+        border: 1px solid #bcbcbc;
+        border-radius: 5px;
+        background: #fff;
+        font-size: 15px;
+        padding: 0 10px;
+      }
+    }
+    button {
+      background: #45bd74;
+      color: #fff;
+      border: none;
+      min-width: 100px;
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 7px;
+      height: 34px;
+      margin-left: 8px;
+      cursor: pointer;
+      &:hover {
+        background: #1fa366;
+      }
+    }
+  }
+
+  .payroll-table-section {
+    display: flex;
+    gap: 18px;
+    width: 100%;
+    min-height: 510px;
+    .employee-list {
+      flex: 1.2;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 1px solid #b6e2b6;
+      //border-top: 0;
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed; // 추가: 열 너비 고정
+        th,
+        td {
+          border: 1px solid #d8d8d8;
+          padding: 9px 10px;
+          text-align: center; // 모든 글씨 가운데 정렬
+          height: 1.2rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        th:nth-child(1),
+        td:nth-child(1) {
+          width: 36px;
+          min-width: 36px;
+          max-width: 36px;
+        }
+        th:nth-child(2),
+        td:nth-child(2) {
+          width: 56px;
+          min-width: 56px;
+          max-width: 56px;
+        }
+        th:nth-child(3),
+        td:nth-child(3) {
+          width: 90px;
+          min-width: 70px;
+          max-width: 120px;
+        }
+        th:nth-child(4),
+        td:nth-child(4) {
+          width: 80px;
+          min-width: 60px;
+          max-width: 100px;
+        }
+        // 필요시 열 개수에 맞게 추가
+        th {
+          background: #7ac083;
+          color: #fff;
+          font-size: 15px;
+          font-weight: 500;
+        }
+        /* 겹치는 외곽 테두리 제거 */
+        th:first-child,
+        td:first-child {
+          border-left: none;
+        }
+
+        th:last-child,
+        td:last-child {
+          border-right: none;
+        }
+      }
+      .employee-summary {
+        margin-top: auto;
+        margin-bottom: 0;
+        background: #e3f5e3;
+        color: #30512e;
+        font-weight: 500;
+        font-size: 15px;
+        border-top: 1px solid #b6e2b6;
+        padding: 9px 12px;
+        min-height: 38px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .employee-summary-spacer {
+        height: 40px;
+        background: #fff;
+        width: 100%;
+      }
+    }
+    .payroll-details {
+      flex: 2.8;
+      display: flex;
+      gap: 14px;
+      width: 100%;
+      .pay-section,
+      .deduction-section,
+      .summary-section {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        position: relative;
+        border: 1px solid #b6e2b6;
+        border-bottom: 0;
+        // border-top: 0;
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          th,
+          td {
+            border: 1px solid #d8d8d8;
+            padding: 9px 10px;
+            text-align: center;
+            height: 1.5rem;
+          }
+          th {
+            background: #7ac083;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+          }
+          /* 겹치는 외곽 테두리 제거 */
+          th:first-child,
+          td:first-child {
+            border-left: none;
+          }
+
+          th:last-child,
+          td:last-child {
+            border-right: none;
+          }
+        }
+        .summary-table-spacer {
+          height: 32px;
+          background: #fff;
+          width: 100%;
+        }
+        .summary-table {
+          margin-top: auto;
+          width: 100%;
+          th,
+          td {
+            background: #e3f5e3;
+            color: #30512e;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #b6e2b6;
+          }
+        }
+      }
+      .summary-section {
+        flex: 1.2;
+        table {
+          width: 100%;
+          th {
+            background: #7ac083;
+            color: #fff;
+          }
+        }
+      }
+      .pay-section {
+        table {
+          th:first-child,
+          td:first-child {
+            width: 40%;
+          }
+          th:last-child,
+          td:last-child {
+            width: 60%;
+          }
+        }
+      }
+      .summary-section {
+        table {
+          th:first-child,
+          td:first-child {
+            width: 40%;
+          }
+          th:last-child,
+          td:last-child {
+            width: 60%;
+          }
+        }
+        .summary-table {
+          th:first-child,
+          td:first-child {
+            width: 40%;
+          }
+          th:last-child,
+          td:last-child {
+            width: 60%;
+          }
+        }
+      }
+      .pay-section .summary-table,
+      .deduction-section .summary-table {
+        th:first-child,
+        td:first-child {
+          width: 40%;
+        }
+        th:last-child,
+        td:last-child {
+          width: 60%;
+        }
+      }
+      .deduction-section {
+        table {
+          th,
+          td {
+            font-size: 14px;
+          }
+          th:first-child,
+          td:first-child {
+            width: 40%;
+          }
+          th:last-child,
+          td:last-child {
+            width: 60%;
+          }
+        }
+      }
+    }
+  }
+}
+
+.payroll-detail-table {
+  width: 100%;
+  max-width: 480px;
+  border-collapse: collapse;
+  margin-top: 24px;
+  background: #fff;
+  border: 1.5px solid #b6e2b6;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(60, 120, 60, 0.04);
+  th,
+  td {
+    border: 1px solid #d8d8d8;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 15px;
+  }
+  th {
+    background: #eafaf1;
+    color: #30512e;
+    width: 120px;
+    font-weight: 500;
+  }
+  input[type='number'] {
+    width: 140px;
+    height: 32px;
+    border: 1px solid #bcbcbc;
+    border-radius: 5px;
+    font-size: 15px;
+    padding: 0 10px;
+    background: #f8f8f8;
+  }
+}
+
+.payroll-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #30512e;
+  }
+  button {
+    font-size: 16px;
+    background: #eee;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    &:hover {
+      background: #d8f5e0;
+    }
+  }
+}
+
+.employee-list table tr {
+  transition: background 0.18s;
+}
+.retired-row {
+  color: #aaa !important;
+  background-color: #f6f6f6 !important;
+  font-style: italic;
+}
+
+.employee-list table tr:hover {
+  background: #eafaf1;
+}
+
+.payroll-detail-layout {
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(60, 120, 60, 0.04);
+  padding: 32px 32px 24px 32px;
+  margin-top: 32px;
+  align-items: flex-start;
+}
+.profile-section {
+  min-width: 180px;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  img {
+    width: 140px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1.5px solid #b6e2b6;
+    background: #f5f5f5;
+  }
+}
+.info-section {
+  flex: 1.2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    th,
+    td {
+      border: 1px solid #e3e3e3;
+      padding: 10px 14px;
+      font-size: 15px;
+      background: #fafafa;
+    }
+    th {
+      background: #eafaf1;
+      color: #30512e;
+      font-weight: 500;
+      width: 110px;
+      text-align: center;
+    }
+    td {
+      background: #fff;
+      color: #222;
+      text-align: left;
+    }
+  }
+}
+.form-section {
+  flex: 1.1;
+  min-width: 320px;
+  max-width: 420px;
+}
+
+.payroll-detail-flex-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 36px;
+  width: 100%;
+  margin-top: 32px;
+}
+.payroll-profile-outer {
+  flex: 1 1 0;
+  min-width: 190px;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.payroll-profile-img {
+  width: 200px;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1.5px solid #e6e6e6;
+  background: #f5f5f5;
+  display: block;
+}
+.payroll-detail-table-merged {
+  flex: 2.1 1 0;
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1.5px solid #d8d8d8;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(60, 60, 60, 0.04);
+  table-layout: fixed;
+  th,
+  td {
+    border: 1px solid #d8d8d8;
+    padding: 14px 10px;
+    font-size: 16px;
+    background: #fafafa;
+    vertical-align: middle;
+    min-height: 54px;
+  }
+  th {
+    background: #f5f6fa;
+    color: #444;
+    font-weight: 500;
+    text-align: center;
+    min-width: 90px;
+    width: 110px;
+  }
+  td {
+    background: #fff;
+    color: #222;
+    text-align: left;
+    min-width: 90px;
+    max-width: 180px;
+    word-break: break-all;
+  }
+  input[type='text'],
+  input[type='month'] {
+    height: 40px;
+    border: 1px solid #bcbcbc;
+    border-radius: 5px;
+    background: #fff;
+    font-size: 16px;
+    margin: 0;
+    width: 80%;
+    box-sizing: border-box;
+    outline: none;
+    box-shadow: none;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  button[type='submit'] {
+    background: #888;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 0;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: background 0.2s;
+  }
+  button[type='submit']:hover {
+    background: #aaa;
+  }
+}
+
+.save-button {
+  background: #45bd74;
+  color: #fff;
+  border: none;
+  min-width: 100px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 7px;
+  height: 34px;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: #1fa366;
+  }
+}

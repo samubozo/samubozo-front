@@ -1,40 +1,180 @@
-import React from 'react';
-import './Dashboard.scss';
+import React, { useEffect, useRef, useState, useContext } from 'react';
+import styles from './Dashboard.module.scss'; // styles import
+import { useWeather } from '../../context/WeatherContext';
+import { attendanceService } from '../../services/attendanceService';
+import AuthContext from '../../context/UserContext';
 
-const stats = [
-  { label: "출근", count: 70, percent: 58.3, total: 261 },
-  { label: "지각", count: 5, percent: 12, total: 261 },
-  { label: "외출", count: 12, percent: 30.6, total: 261 },
-  { label: "반차", count: 4, percent: 42, total: 261 },
-  { label: "연차", count: 2, percent: 3, total: 261 },
-];
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
-function DashboardStats() {
+// 대시보드 왼쪽 영역: 통계 현황을 보여주는 컴포넌트
+function DashboardStats({ refresh, onAttendanceChange }) {
+  const barRefs = useRef([]);
+  const countRefs = useRef([]);
+  const [stats, setStats] = useState([
+    { label: '출근', count: 0, percent: 0, total: 0, color: '#66be80' },
+    { label: '지각', count: 0, percent: 0, total: 0, color: '#f7b731' },
+    { label: '외출', count: 0, percent: 0, total: 0, color: '#eb3b5a' },
+    { label: '반차', count: 0, percent: 0, total: 0, color: '#4b7bec' },
+    { label: '연차', count: 0, percent: 0, total: 0, color: '#8854d0' },
+  ]);
+
+  // 통계 새로고침 함수
+  const refreshStats = async () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    try {
+      const res = await attendanceService.getPersonalStats(year, month);
+      const d = res.result;
+      // === 261일 기준 ===
+      const YEAR_TOTAL = 261;
+      setStats([
+        {
+          label: '출근',
+          count: d.attendanceCount || 0,
+          percent: (((d.attendanceCount || 0) / YEAR_TOTAL) * 100).toFixed(1),
+          total: YEAR_TOTAL,
+          color: '#66be80',
+        },
+        {
+          label: '지각',
+          count: d.lateCount || 0,
+          percent: (((d.lateCount || 0) / YEAR_TOTAL) * 100).toFixed(1),
+          total: YEAR_TOTAL,
+          color: '#f7b731',
+        },
+        {
+          label: '외출',
+          count: d.goOutCount || 0,
+          percent: (((d.goOutCount || 0) / YEAR_TOTAL) * 100).toFixed(1),
+          total: YEAR_TOTAL,
+          color: '#eb3b5a',
+        },
+        {
+          label: '반차',
+          count: d.halfDayVacationCount || 0,
+          percent: (((d.halfDayVacationCount || 0) / YEAR_TOTAL) * 100).toFixed(
+            1,
+          ),
+          total: YEAR_TOTAL,
+          color: '#4b7bec',
+        },
+        {
+          label: '연차',
+          count: d.fullDayVacationCount || 0,
+          percent: (((d.fullDayVacationCount || 0) / YEAR_TOTAL) * 100).toFixed(
+            1,
+          ),
+          total: YEAR_TOTAL,
+          color: '#8854d0',
+        },
+      ]);
+    } catch (e) {
+      console.error('통계 새로고침 실패:', e);
+    }
+  };
+
+  useEffect(() => {
+    refreshStats();
+  }, [refresh]);
+
+  // 외출/복귀 후 통계 새로고침
+  useEffect(() => {
+    if (onAttendanceChange) {
+      refreshStats();
+    }
+  }, [onAttendanceChange]);
+
+  useEffect(() => {
+    // 게이지 애니메이션
+    stats.forEach((s, idx) => {
+      const bar = barRefs.current[idx];
+      if (bar) {
+        let start = 0;
+        const end = s.percent;
+        const duration = 1200;
+        const frameRate = 1000 / 60;
+        const totalFrames = Math.round(duration / frameRate);
+        let frame = 0;
+        function animate() {
+          frame++;
+          const progress = Math.min(frame / totalFrames, 1);
+          const current = start + (end - start) * progress;
+          bar.style.width = current + '%';
+          bar.style.background = s.color;
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          }
+        }
+        bar.style.width = '0%';
+        requestAnimationFrame(animate);
+      }
+    });
+    // 카운트 애니메이션
+    stats.forEach((s, idx) => {
+      const countEl = countRefs.current[idx];
+      if (countEl) {
+        let start = 0;
+        const end = s.count;
+        const duration = 1000;
+        const frameRate = 1000 / 60;
+        const totalFrames = Math.round(duration / frameRate);
+        let frame = 0;
+        function animateCount() {
+          frame++;
+          const progress = Math.min(frame / totalFrames, 1);
+          const current = Math.round(start + (end - start) * progress);
+          countEl.textContent = current;
+          if (progress < 1) {
+            requestAnimationFrame(animateCount);
+          }
+        }
+        countEl.textContent = '0';
+        requestAnimationFrame(animateCount);
+      }
+    });
+  }, [stats]);
+
   return (
-    <div className="dashboard-stats">
-      {/* 동그라미 카운터 */}
-      <div className="stat-circles">
-        {stats.map((s) => (
-          <div className="stat-circle" key={s.label}>
-            <div className="stat-count">{s.count}</div>
-            <div className="stat-label">{s.label}</div>
+    <div className={styles.dashboardStats}>
+      <div className={styles.statCircles}>
+        {stats.map((s, idx) => (
+          <div className={styles.statCircle} key={s.label}>
+            <div
+              className={styles.statCount}
+              ref={(el) => (countRefs.current[idx] = el)}
+              style={{ background: s.color }}
+            >
+              0
+            </div>
+            <div className={styles.statLabel}>{s.label}</div>
           </div>
         ))}
       </div>
-      {/* 현황 그래프 */}
-      <div className="stat-bars">
-        {stats.map((s) => (
-          <div className="stat-bar-row" key={s.label}>
-            <div className="stat-bar-head">
-              <span className="stat-bar-label">{s.label}현황</span>
-              <span className="stat-bar-value">
+      <div className={styles.statBars}>
+        {stats.map((s, idx) => (
+          <div className={styles.statBarRow} key={s.label}>
+            <div className={styles.statBarHead}>
+              <span className={styles.statBarLabel}>{s.label}현황</span>
+              <span className={styles.statBarValue}>
                 {s.percent}% ({s.count}/{s.total}일)
               </span>
             </div>
-            <div className="stat-bar-bg">
+            <div className={styles.statBarBg}>
               <div
-                className="stat-bar-fg"
-                style={{ width: `${s.percent}%` }}
+                className={styles.statBarFg}
+                ref={(el) => (barRefs.current[idx] = el)}
+                style={{ width: 0, background: s.color }}
               ></div>
             </div>
           </div>
@@ -43,67 +183,326 @@ function DashboardStats() {
     </div>
   );
 }
-// 오른쪽: 프로필/출근표
-function DashboardProfile() {
+
+// 대시보드 오른쪽 영역: 사용자 프로필 및 출근표를 보여주는 컴포넌트
+// 1. 안전한 초기값
+function DashboardProfile({ onAttendanceChange }) {
+  const { user } = useContext(AuthContext);
+  const [attendanceData, setAttendanceData] = useState({
+    checkInTime: null,
+    checkOutTime: null,
+    goOutTime: null,
+    returnTime: null,
+  });
+
+  // 연차 수/요청수 상태 추가
+  const [vacationBalance, setVacationBalance] = useState({
+    totalGranted: 0,
+    usedDays: 0,
+    remainingDays: 0,
+  });
+  const [personalStats, setPersonalStats] = useState({
+    fullDayVacationCount: 0,
+    halfDayVacationCount: 0,
+  });
+
+  useEffect(() => {
+    // 연차 현황
+    attendanceService.getVacationBalance().then((res) => {
+      if (res.data && res.data.result) setVacationBalance(res.data.result);
+    });
+    // 연차 요청 현황(이번 달 기준)
+    const now = new Date();
+    attendanceService
+      .getPersonalStats(now.getFullYear(), now.getMonth() + 1)
+      .then((res) => {
+        if (res.result) setPersonalStats(res.result);
+      });
+  }, []);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  // === 오늘의 날씨 정보 상태 ===
+  const { todayWeatherState } = useWeather();
+
+  // 현재 시각/날짜 상태
+  const [now, setNow] = useState(() => {
+    const d = new Date();
+    return `${d.getHours().toString().padStart(2, '0')}시 ${d.getMinutes().toString().padStart(2, '0')}분 ${d.getSeconds().toString().padStart(2, '0')}초`;
+  });
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const d = new Date();
+      setNow(
+        `${d.getHours().toString().padStart(2, '0')}시 ${d.getMinutes().toString().padStart(2, '0')}분 ${d.getSeconds().toString().padStart(2, '0')}초`,
+      );
+      setDate(
+        `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`,
+      );
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 2. useEffect에서 오늘 근태 기록만으로 상태 갱신
+  useEffect(() => {
+    const fetchTodayAttendance = async () => {
+      const response = await attendanceService.getTodayAttendance();
+      setAttendanceData({
+        checkInTime: response.checkInTime,
+        checkOutTime: response.checkOutTime,
+        goOutTime: response.goOutTime,
+        returnTime: response.returnTime,
+      });
+    };
+    fetchTodayAttendance();
+  }, []);
+
+  // 3. 근태 관련 버튼 클릭 시 핸들러 예시 (실제 버튼에 연결 필요)
+  const handleCheckIn = async () => {
+    await attendanceService.checkIn();
+    await fetchTodayAttendance();
+    if (onAttendanceChange) onAttendanceChange();
+  };
+  const handleGoOut = async () => {
+    await attendanceService.goOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+    if (onAttendanceChange) onAttendanceChange();
+  };
+  const handleReturn = async () => {
+    await attendanceService.returnFromOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+    if (onAttendanceChange) onAttendanceChange();
+  };
+  const handleCheckOut = async () => {
+    await attendanceService.checkOut();
+    const today = await attendanceService.getTodayAttendance();
+    setAttendanceData({
+      checkInTime: today.checkInTime,
+      checkOutTime: today.checkOutTime,
+      goOutTime: today.goOutTime,
+      returnTime: today.returnTime,
+    });
+    if (onAttendanceChange) onAttendanceChange();
+  };
+
+  // 시간 포맷팅 함수
+  const formatTime = (time) => {
+    if (!time) return '00:00';
+    // ISO 문자열(2025-07-15T00:25:53.616548 등) → 'HH:mm'으로 변환
+    if (typeof time === 'string' && time.includes('T')) {
+      const date = new Date(time);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+      }
+    }
+    // 이미 HH:mm 형식이면 그대로 반환
+    if (typeof time === 'string' && time.match(/^\d{2}:\d{2}$/)) {
+      return time;
+    }
+    return '00:00';
+  };
+
+  // 출근 상태에 따른 상태 텍스트 반환
+  const getAttendanceStatus = () => {
+    if (attendanceData.checkOutTime) {
+      return { text: '퇴근완료', color: '#ccc' };
+    } else if (attendanceData.returnTime) {
+      return { text: '복귀완료', color: '#66be80' };
+    } else if (attendanceData.goOutTime) {
+      return { text: '외출중', color: '#f7b731' };
+    } else if (attendanceData.checkInTime) {
+      return { text: '출근중', color: '#4b7bec' };
+    } else {
+      return { text: '미출근', color: '#eb3b5a' };
+    }
+  };
+
+  const statusInfo = getAttendanceStatus();
+
   return (
-    <div className='dashboard-profile'>
-      <div className='profile-upper'>
-        <div className='profile-imgbox'>
-          <div className='profile-img-label'>Profile</div>
-          <div className='profile-img'></div>
+    <div className={styles.dashboardProfile}>
+      <div className={styles.profileUpper}>
+        {/* 프로필 이미지 영역 */}
+        <div className={styles.profileImgbox}>
+          {user?.profileImage ? (
+            <img
+              className={styles.profileImg}
+              src={user.profileImage}
+              alt='프로필'
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '10px',
+                display: 'block',
+              }}
+            />
+          ) : (
+            <div
+              className={styles.profileImg}
+              style={{
+                background: '#ededed',
+                width: '100%',
+                height: '100%',
+                borderRadius: '10px',
+              }}
+            ></div>
+          )}
         </div>
-        <div className='profile-info'>
-          <div className='profile-title'>
-            신현국 팀장<span className='profile-team'>(경영지원)</span>
+        {/* 프로필 정보 영역 */}
+        <div className={styles.profileInfo}>
+          <div className={styles.profileTitle}>
+            {user?.userName || '-'} {user?.positionName || ''}
+            <span className={styles.profileTeam}>
+              ({user?.department || ''})
+            </span>
           </div>
-          <hr />
+          <hr /> {/* 구분선 */}
           <ul>
             <li>
-              <span className='profile-pin' />
+              <span className={styles.profilePin} />
               입사일
-              <span className='profile-value'>2025-06-20</span>
+              <span className={styles.profileValue}>
+                {user?.hireDate || '-'}
+              </span>
             </li>
             <li>
-              <span className='profile-pin' />
-              출근 시간
-              <span className='profile-value'>08:50</span>
+              <span className={styles.profilePin} />
+              연차 수
+              <span className={styles.profileValue}>
+                {vacationBalance.remainingDays}일
+              </span>
             </li>
             <li>
-              <span className='profile-pin' />
-              연차 수<span className='profile-value'>10개</span>
-            </li>
-            <li>
-              <span className='profile-pin' />
+              <span className={styles.profilePin} />
               연차 요청수
-              <span className='profile-value'>1개</span>
+              <span className={styles.profileValue}>
+                {personalStats.fullDayVacationCount +
+                  personalStats.halfDayVacationCount}
+                회 (
+                {personalStats.fullDayVacationCount +
+                  personalStats.halfDayVacationCount * 0.5}
+                일)
+              </span>
             </li>
           </ul>
         </div>
       </div>
-      <div className='profile-table'>
-        <div className='profile-table-row'>
-          <div className='profile-table-cell cell-head cell-green'>출근</div>
-          <div className='profile-table-cell'>08:50</div>
-          <div className='profile-table-cell cell-head'>복귀</div>
-          <div className='profile-table-cell'>00:00</div>
+
+      {/* 현재 연월일/시각 */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: '0 0 32px 0',
+          width: '100%',
+          gap: 32,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 24,
+            fontWeight: 700,
+            color: '#25663b',
+            letterSpacing: 1,
+            fontFamily: 'inherit',
+            textAlign: 'center',
+            minWidth: 140,
+          }}
+        >
+          {date}
+        </span>
+        <span
+          style={{
+            fontSize: 24,
+            fontWeight: 700,
+            color: '#25663b',
+            letterSpacing: 1,
+            fontFamily: 'inherit',
+            textAlign: 'center',
+            minWidth: 180,
+          }}
+        >
+          {now}
+        </span>
+      </div>
+
+      {/* 출근 상태 표시 박스 완전 삭제! */}
+
+      {/* 출근표 테이블 영역 */}
+      <div className={styles.profileTable}>
+        <div className={styles.profileTableRow}>
+          <div
+            className={`${styles.profileTableCell} ${styles.cellHead} ${styles.cellGreen}`}
+          >
+            출근
+          </div>
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.checkInTime)}
+          </div>
+          <div className={`${styles.profileTableCell} ${styles.cellHead}`}>
+            퇴근
+          </div>
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.checkOutTime)}
+          </div>
         </div>
-        <div className='profile-table-row'>
-          <div className='profile-table-cell cell-head'>외출</div>
-          <div className='profile-table-cell'>00:00</div>
-          <div className='profile-table-cell cell-head cell-green'>퇴근</div>
-          <div className='profile-table-cell'>18:01</div>
+        <div className={styles.profileTableRow}>
+          <div className={`${styles.profileTableCell} ${styles.cellHead}`}>
+            외출
+          </div>
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.goOutTime)}
+          </div>
+          <div
+            className={`${styles.profileTableCell} ${styles.cellHead} ${styles.cellGreen}`}
+          >
+            복귀
+          </div>
+          <div className={styles.profileTableCell}>
+            {formatTime(attendanceData.returnTime)}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// 메인 컨테이너: 왼쪽/오른쪽 나란히
+// 메인 대시보드 컨테이너: DashboardStats와 DashboardProfile을 나란히 배치
 export default function Dashboard() {
+  const [refreshStats, setRefreshStats] = useState(0);
+
   return (
-    <div className='dashboard-main'>
-      <DashboardStats />
-      <DashboardProfile />
+    <div className={styles.dashboardMain}>
+      <DashboardStats
+        refresh={refreshStats}
+        onAttendanceChange={() => setRefreshStats((v) => v + 1)}
+      />
+      <DashboardProfile
+        onAttendanceChange={() => setRefreshStats((v) => v + 1)}
+      />
     </div>
   );
 }

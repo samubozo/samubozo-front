@@ -1,0 +1,799 @@
+.approvalWrap {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  padding: 32px 10px 24px 10px;
+  min-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 18px;
+}
+.tabBtn {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  padding: 12px 32px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    border 0.15s;
+  border: 2.5px solid transparent;
+  border-bottom: none;
+  position: relative;
+}
+.tabBtn:hover,
+.tabs button:hover {
+  background: #eafaf1;
+  color: #388e3c;
+  border-color: #48b96c;
+}
+.activeTab {
+  background: #fff;
+  color: #388e3c;
+  border: 2.5px solid #48b96c;
+  border-bottom: 2.5px solid #fff;
+  font-weight: 800;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(72, 185, 108, 0.1);
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex-wrap: nowrap;
+}
+
+.dropdown {
+  position: relative;
+  min-width: 80px;
+  font-size: 14px;
+}
+.dropdownSelected {
+  background: #fff;
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 6px 12px;
+  cursor: pointer;
+  min-width: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border 0.15s;
+}
+.dropdownArrow {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #888;
+}
+.dropdownList {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 20;
+  padding: 4px 0;
+}
+.dropdownItem {
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #333;
+  &:hover {
+    background: #eafaf1;
+    color: #388e3c;
+  }
+}
+
+.datePicker {
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #222;
+  background: #fafbfc;
+  outline: none;
+  min-width: 110px;
+  transition:
+    border 0.15s,
+    box-shadow 0.15s;
+  &:focus {
+    border-color: #388e3c;
+    background: #eafaf1;
+    box-shadow: 0 2px 8px rgba(72, 185, 108, 0.07);
+  }
+}
+
+.filterInput {
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #222;
+  background: #fafbfc;
+  outline: none;
+  min-width: 100px;
+  transition:
+    border 0.15s,
+    box-shadow 0.15s;
+  &:focus {
+    border-color: #388e3c;
+    background: #eafaf1;
+    box-shadow: 0 2px 8px rgba(72, 185, 108, 0.07);
+  }
+}
+
+.searchBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+.table th,
+.table td {
+  border: 1px solid #e0e0e0;
+  padding: 0 8px;
+  text-align: center;
+  font-size: 15px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+}
+.table th {
+  background: #f5f5f5;
+  font-weight: 700;
+  color: #333;
+}
+.table tr {
+  transition: background 0.13s;
+}
+.table tr:hover {
+  background: #f7fbe9;
+}
+.table tr:last-child td {
+  padding-bottom: 0;
+  border-bottom-width: 0;
+}
+
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+.deleteBtn {
+  background: #fff;
+  color: #888;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 7px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  &:hover {
+    background: #f5f5f5;
+    color: #d33c3c;
+  }
+}
+.rejectBtn {
+  background: #ffe6e6;
+  color: #d33c3c;
+  border: 1.5px solid #f8bcbc;
+  border-radius: 7px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  &:hover {
+    background: #f8bcbc;
+    color: #fff;
+  }
+}
+.approveBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.filterLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-right: 6px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.tableArea {
+  width: 100%;
+  /* height: 528px; */
+  /* min-height: 528px; */
+  /* max-height: 528px; */
+  overflow-y: visible;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center !important;
+  gap: 6px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+.paginationBtn {
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 4px 13px;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+  transition:
+    background 0.13s,
+    color 0.13s,
+    border 0.13s;
+}
+.paginationBtnActive {
+  background: #388e3c;
+  color: #fff;
+  border-color: #388e3c;
+  font-weight: 700;
+}
+// 모달 스타일 추가
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+  min-width: 400px;
+}
+
+.modalClose {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  &:hover {
+    color: #333;
+  }
+}
+
+// 상세 모달 스타일
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modalTitleSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modalTitle {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1;
+
+  &.statusApproved {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  &.statusRejected {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  &.statusPending {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.modalBody {
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+// 반려 모달 스타일
+.formGroup {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.textarea {
+  width: 100%;
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 12px;
+  font-size: 15px;
+  color: #222;
+  background: #fafbfc;
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  transition:
+    border 0.15s,
+    box-shadow 0.15s;
+
+  &:focus {
+    border-color: #388e3c;
+    background: #eafaf1;
+    box-shadow: 0 2px 8px rgba(72, 185, 108, 0.07);
+  }
+}
+
+.buttonRow {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.confirmBtn {
+  background: #eb3b5a;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #d32f2f;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+.cancelBtn {
+  background: #fff;
+  color: #666;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 7px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #f5f5f5;
+    color: #333;
+  }
+
+  &:disabled {
+    background: #f5f5f5;
+    color: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+.actionButtons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center; /* 가운데 정렬 추가 */
+}
+
+// HR 권한 안내 스타일
+.hrNotice {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f9f0 100%);
+  border: 1px solid #48b96c;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(72, 185, 108, 0.1);
+}
+
+.hrNoticeContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hrBadge {
+  background: #48b96c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 16px;
+  white-space: nowrap;
+}
+
+.hrMessage {
+  color: #2d5a2d;
+  font-size: 14px;
+  line-height: 1.5;
+  flex: 1;
+}
+
+// 실시간 업데이트 애니메이션
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 상세 모달 공통 스타일
+.detailSection {
+  margin-bottom: 24px;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detailCard {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.detailLabel {
+  font-size: 11px;
+  color: #6c757d;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detailValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.detailLabelBold {
+  font-weight: 500;
+}
+
+// 상태별 색상 스타일
+.statusRejected {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-left: 4px solid #dc3545;
+  color: #721c24;
+}
+
+.statusApproved {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-left: 4px solid #28a745;
+  color: #155724;
+}
+
+.statusPending {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusApproved {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusRejected {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rejectComment {
+  color: #dc3545;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.approvalInfo {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.approverInfo {
+  font-size: 11px;
+  color: #28a745;
+  font-weight: 500;
+}
+
+// 승인 정보 스타일
+.approvalCard {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.1);
+}
+
+.approvalCard .detailValue {
+  color: #155724;
+  font-weight: 600;
+}
+
+.approvalCard .detailLabel {
+  color: #155724;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+// 반려사유 라벨 강조
+.rejectLabel {
+  color: #dc3545;
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// 승인 정보 라벨 강조
+.approvalLabel {
+  color: #28a745;
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rejectInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6c757d;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.approvalInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6c757d;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.rejectInfo span,
+.approvalInfo span {
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rejectInfo span::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  background-color: #dc3545;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.approvalInfo span::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  background-color: #28a745;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.rejectReason {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #2c3e50;
+  padding: 12px 0;
+  margin: 0;
+  min-height: 60px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.statusInfo {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.statusInfoTitle {
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.statusInfoContent {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.statusInfoItem {
+  display: flex;
+  gap: 4px;
+}
+
+.statusInfoText {
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.resultCount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.filterApplied {
+  color: #48b96c;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.noData {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+  font-size: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}

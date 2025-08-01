@@ -1,0 +1,673 @@
+.messageWrap {
+  display: flex;
+  width: 100%;
+  min-height: 600px;
+  background: #fafcfb;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
+.sidebar {
+  width: 200px;
+  background: #fff;
+  border-right: 1.5px solid #c8e6c9;
+  padding: 32px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-left: 28px;
+  margin-bottom: 24px;
+}
+
+.writeBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 10px 0;
+  margin: 0 18px 18px 18px;
+  cursor: pointer;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.activeTab {
+  background: #eafaf1 !important;
+  color: #222 !important;
+  border-left: 4px solid #48b96c !important;
+  font-weight: 700 !important;
+}
+
+.sidebar button {
+  background: none;
+  border: none;
+  color: #222;
+  font-size: 17px;
+  font-weight: 500;
+  padding: 12px 0 12px 28px;
+  text-align: left;
+  cursor: pointer;
+  margin: 0 0 2px 0;
+  border-radius: 0 8px 8px 0;
+  transition: background 0.15s;
+  &:hover {
+    background: #f2f4f8;
+  }
+}
+
+.sidebarButton {
+  background: none;
+  border: none;
+  color: #222;
+  font-size: 17px;
+  font-weight: 500;
+  padding: 12px 0 12px 28px;
+  text-align: left;
+  cursor: pointer;
+  margin: 0 0 2px 0;
+  border-radius: 0 8px 8px 0;
+  transition: background 0.15s;
+  &:hover {
+    background: #f2f4f8;
+  }
+}
+
+.content {
+  flex: 1;
+  padding: 32px 32px 0 32px;
+  background: #fafcfb;
+  display: flex;
+  flex-direction: column;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.periodSelect,
+.searchTypeSelect {
+  width: 120px;
+  min-width: 100px;
+  max-width: 160px;
+  flex: 0 0 auto;
+  border: 1.5px solid #48b96c;
+  border-radius: 6px;
+  background: #fff;
+  color: #222;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 7px 32px 7px 14px;
+  appearance: none;
+  outline: none;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%2348b96c" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px 20px;
+  transition:
+    border 0.15s,
+    background 0.15s;
+}
+
+.periodSelect:focus,
+.searchTypeSelect:focus,
+.periodSelect:hover,
+.searchTypeSelect:hover {
+  border-color: #388e3c;
+  background: #d0f5e2;
+}
+
+.searchInput {
+  flex: 1 1 0;
+  min-width: 180px;
+  max-width: 400px;
+}
+
+.searchBtn {
+  width: 70px;
+  min-width: 60px;
+  flex: 0 0 auto;
+  padding: 7px 0;
+}
+
+.pageSizeSelect {
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  font-size: 15px;
+  padding: 6px 12px;
+  outline: none;
+  background: #fff;
+}
+
+.unreadOnlyLabel {
+  font-size: 15px;
+  color: #388e3c;
+  font-weight: 600;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.searchInput {
+  flex: 1;
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  font-size: 15px;
+  padding: 6px 12px;
+  outline: none;
+}
+
+.searchBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 7px 18px;
+  cursor: pointer;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.table {
+  width: 100%;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(72, 185, 108, 0.06);
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 18px;
+  overflow: hidden;
+  table-layout: auto;
+}
+
+.table th {
+  background: #e8f5e9;
+  color: #388e3c;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 10px 8px;
+  border-bottom: 1.5px solid #c8e6c9;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.table td {
+  font-size: 15px;
+  color: #222;
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+  word-break: break-word;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 체크박스 컬럼 (공통)
+.table th:first-child,
+.table td:first-child {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+}
+
+// 받은 편지함 스타일
+.table.receivedTable th:nth-child(2),
+.table.receivedTable td:nth-child(2) {
+  width: 160px;
+  min-width: 140px;
+  max-width: 180px;
+}
+
+.table.receivedTable th:nth-child(3),
+.table.receivedTable td:nth-child(3) {
+  width: auto;
+  min-width: 200px;
+  white-space: normal;
+  text-align: center;
+  padding-right: 60px;
+}
+
+.table.receivedTable th:nth-child(4),
+.table.receivedTable td:nth-child(4) {
+  width: 180px;
+  min-width: 160px;
+  max-width: 200px;
+}
+
+// 보낸 편지함 스타일
+.table.sentTable th:nth-child(2),
+.table.sentTable td:nth-child(2) {
+  width: 160px;
+  min-width: 140px;
+  max-width: 180px;
+}
+
+.table.sentTable th:nth-child(3),
+.table.sentTable td:nth-child(3) {
+  width: auto;
+  min-width: 200px;
+  white-space: normal;
+  text-align: center;
+  padding-left: 40px;
+}
+
+.table.sentTable th:nth-child(4),
+.table.sentTable td:nth-child(4) {
+  width: 160px;
+  min-width: 140px;
+  max-width: 180px;
+}
+
+.table.sentTable th:nth-child(5),
+.table.sentTable td:nth-child(5) {
+  width: 80px;
+  min-width: 80px;
+  max-width: 100px;
+}
+
+// 제목 컬럼 내부 요소들
+.titleContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 20px;
+}
+
+.noticeTag {
+  background: #ff4757;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.titleText {
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+// 보낸 쪽지함과 받은 쪽지함 모두 동일한 레이아웃 사용
+// 수신여부 컬럼만 보낸 쪽지함에서 추가로 표시됨
+
+.noData {
+  color: #bbb;
+  padding: 40px 0;
+  text-align: center;
+  font-size: 16px;
+}
+
+.unreadRow {
+  background: #f8f9fa;
+  font-weight: 700;
+}
+
+.noticeRow {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  font-weight: 600;
+}
+
+.bottomBar {
+  display: flex;
+  justify-content: center; // 페이징은 가운데 유지
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative; // 상대 위치 설정
+}
+
+.bottomBarRight {
+  position: absolute; // 절대 위치로 우측 배치
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.pagination {
+  display: flex;
+  gap: 4px;
+  justify-content: center; // 가운데 정렬 추가
+}
+
+.pageBtn {
+  background: #fff;
+  border: 1.5px solid #48b96c;
+  color: #48b96c;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  &:hover {
+    background: #eafaf1;
+  }
+}
+
+.activePage {
+  background: #48b96c;
+  color: #fff;
+  border: 1.5px solid #48b96c;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 4px 12px;
+}
+
+.deleteBtn {
+  background: #fff;
+  color: #f44336;
+  border: 1.5px solid #f44336;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 22px;
+  cursor: pointer;
+  &:hover {
+    background: #ffebee;
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modalBox {
+  background: #fff;
+  border-radius: 5px;
+  box-shadow: 0 4px 32px rgba(72, 185, 108, 0.13);
+  min-width: 420px;
+  max-width: 96vw;
+  padding: 28px 28px 18px 28px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.modalTitle {
+  font-size: 22px;
+  font-weight: 700;
+}
+.modalCloseBtn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #bbb;
+  cursor: pointer;
+  margin-left: 8px;
+  &:hover {
+    color: #f44336;
+  }
+}
+.modalField {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+.modalField label {
+  font-size: 15px;
+  color: #222;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.modalField input,
+.modalField textarea {
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  font-size: 15px;
+  padding: 8px 12px;
+  background: #fafcfb;
+  color: #333;
+  resize: none;
+}
+.modalField textarea {
+  min-height: 80px;
+  max-height: 200px;
+}
+.modalBtnRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+.modalCancelBtn {
+  background: #fff;
+  color: #555;
+  border: 1.5px solid #bbb;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 7px 28px;
+  cursor: pointer;
+  &:hover {
+    background: #f2f4f8;
+  }
+}
+.modalOkBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 7px 28px;
+  cursor: pointer;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.addUserBtn {
+  background: #eafaf1;
+  border: 1.5px solid #48b96c;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 22px;
+  margin-left: 4px;
+  transition:
+    background 0.15s,
+    border 0.15s;
+  &:hover {
+    background: #48b96c;
+    color: #fff;
+    border-color: #388e3c;
+  }
+}
+
+// quill editor spacing
+.modalField .ql-container {
+  min-height: 100px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+.modalField .ql-toolbar {
+  border-radius: 6px 6px 0 0;
+}
+
+.fileName {
+  font-size: 14px;
+  color: #388e3c;
+  margin-top: 4px;
+  word-break: break-all;
+}
+.fileLinksBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.fileLink {
+  color: #388e3c;
+  text-decoration: none;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-radius: 5px;
+  transition: background 0.13s;
+  word-break: break-all;
+}
+.fileLink::before {
+  content: '\1F4CE'; /* paperclip emoji */
+  font-size: 16px;
+  margin-right: 2px;
+  opacity: 0.7;
+}
+.fileLink:hover {
+  background: #eafaf1;
+  text-decoration: underline;
+}
+.messageContentView {
+  min-height: 80px;
+  background: #fafcfb;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1.5px solid #c8e6c9;
+  font-size: 15px;
+  color: #222;
+  margin-bottom: 2px;
+  word-break: break-word;
+}
+
+.fileList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+}
+.fileListItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.fileRemoveBtn {
+  background: #fff;
+  border: 1.5px solid #f44336;
+  color: #f44336;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  &:hover {
+    background: #f44336;
+    color: #fff;
+  }
+}
+
+.modalFieldRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.modalFieldRow label {
+  min-width: 70px;
+  font-size: 15px;
+  color: #222;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+.modalFieldRow input[type='text'],
+.modalFieldRow input[type='file'] {
+  flex: 1;
+  font-size: 15px;
+  padding: 8px 12px;
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  background: #fafcfb;
+  color: #333;
+}
+.modalFieldRow .addUserBtn {
+  margin-left: 0;
+}
+.modalFieldRow select {
+  flex: 1;
+  font-size: 15px;
+  padding: 8px 40px 8px 12px;
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  background: #fafcfb;
+  color: #333;
+  outline: none;
+  appearance: none;
+  min-width: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%2348b96c" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 24px 24px;
+}
+.modalFieldRow select:focus {
+  border-color: #48b96c;
+  background: #eafaf1;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%2348b96c" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 24px 24px;
+}
+
+.modalBox::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+.modalBox::-webkit-scrollbar-thumb {
+  background: #b2dfdb;
+  border-radius: 8px;
+  min-height: 40px;
+  transition: background 0.2s;
+}
+.modalBox::-webkit-scrollbar-thumb:hover {
+  background: #48b96c;
+}
+.modalBox::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 8px;
+}

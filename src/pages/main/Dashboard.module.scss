@@ -1,0 +1,301 @@
+.dashboardMain {
+  // .dashboard-main
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 30px;
+  padding: 40px;
+  background: #fff;
+}
+
+.dashboardStats {
+  // .dashboard-stats
+  width: 100%;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(80, 150, 120, 0.1);
+  padding: 38px 34px 32px 34px;
+  border: 1.5px solid #f1f1f1;
+  .statCircles {
+    // .stat-circles
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 40px;
+    .statCircle {
+      // .stat-circle
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      .statCount {
+        // .stat-count
+        width: 60px;
+        height: 60px;
+        background: #66be80;
+        border-radius: 50%;
+        color: #fff;
+        font-size: 1.65rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 7px;
+        box-shadow: 0 2px 4px rgba(50, 80, 70, 0.03);
+      }
+      .statLabel {
+        // .stat-label
+        color: #636a6e;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 2px;
+        letter-spacing: -0.5px;
+      }
+    }
+  }
+  .statBars {
+    // .stat-bars
+    margin-top: 10px;
+    .statBarRow {
+      // .stat-bar-row
+      margin-bottom: 40px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+      .statBarHead {
+        // .stat-bar-head
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+        .statBarLabel {
+          // .stat-bar-label
+          color: #474e52;
+          font-size: 0.93rem;
+          font-weight: 600;
+          letter-spacing: -0.2px;
+        }
+        .statBarValue {
+          // .stat-bar-value
+          color: #636a6e;
+          font-size: 0.95rem;
+          font-weight: 600;
+        }
+      }
+      .statBarBg {
+        // .stat-bar-bg
+        width: 100%;
+        height: 24px;
+        border-radius: 12px;
+        background: #e7eaed;
+        overflow: hidden;
+        .statBarFg {
+          // .stat-bar-fg
+          height: 100%;
+          background: #66be80;
+          border-radius: 12px;
+        }
+      }
+    }
+  }
+
+  // 출근 상태 표시 스타일
+  .attendanceStatus {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+
+    .statusIndicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .statusDot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+
+        &.checkedIn {
+          background: #28a745;
+          box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+        }
+
+        &.notCheckedIn {
+          background: #dc3545;
+          box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
+        }
+      }
+
+      .statusText {
+        font-size: 16px;
+        font-weight: 600;
+        color: #495057;
+      }
+    }
+
+    .checkoutInfo {
+      font-size: 14px;
+      color: #6c757d;
+      font-weight: 500;
+    }
+  }
+}
+
+/* ----- 오른쪽 ----- */
+.dashboardProfile {
+  // .dashboard-profile
+  min-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(80, 150, 120, 0.1);
+  padding: 38px 36px 32px 36px;
+  border: 1.5px solid #f1f1f1;
+  .profileUpper {
+    // .profile-upper
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+    align-items: flex-start;
+    margin-bottom: 90px;
+
+    .profileImgbox {
+      // .profile-imgbox
+      position: relative;
+      width: 220px;
+      height: 220px;
+      background: #ededed;
+      border-radius: 10px;
+      .profileImg {
+        // .profile-img
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        background: #fff;
+        /* 이미지 들어가면 background-image로 교체 */
+      }
+    }
+    .profileInfo {
+      // .profile-info
+      min-width: 260px;
+      .profileTitle {
+        // .profile-title
+        font-size: 29px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        .profileTeam {
+          // .profile-team
+          font-size: 19px;
+          color: #888;
+          font-weight: 500;
+          margin-left: 10px;
+        }
+      }
+      hr {
+        border: none;
+        border-top: 2px solid #bbb;
+        margin: 8px 0 25px 0;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        li {
+          display: flex;
+          align-items: center;
+          font-size: 18px;
+          margin-bottom: 15px;
+          .profilePin {
+            // .profile-pin
+            width: 12px;
+            height: 12px;
+            background: #66be80;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 2px 0 #111 inset;
+            display: inline-block;
+            content: '';
+          }
+          .profileValue {
+            // .profile-value
+            flex: 1;
+            text-align: right;
+            font-weight: 700;
+            font-size: 18px;
+            color: #1e1e1e;
+            margin-left: 38px;
+          }
+        }
+      }
+    }
+  }
+
+  .profileTable {
+    // .profile-table
+    width: 100%;
+    max-width: 460px;
+    border-collapse: collapse;
+    margin-top: 12px;
+    box-shadow: 0 0 0 1px #9d9d9d;
+    border-radius: 8px;
+    overflow: hidden;
+    .profileTableRow {
+      // .profile-table-row
+      display: flex;
+      .profileTableCell {
+        // .profile-table-cell
+        flex: 1;
+        text-align: center;
+        padding: 22px 0;
+        font-size: 1.36rem;
+        font-weight: 700;
+        border-right: 1px solid #9d9d9d;
+        border-bottom: 1px solid #9d9d9d;
+        background: #fff;
+        color: #25663b;
+        box-sizing: border-box;
+        &.cellHead {
+          // .cell-head
+          background: #e3f2e9;
+        }
+        &.cellGreen {
+          // .cell-green
+          background: #66be80;
+          color: #fff;
+        }
+        &:last-child {
+          border-right: none;
+        }
+      }
+      &:last-child .profileTableCell {
+        // .profile-table-cell
+        border-bottom: none;
+      }
+    }
+  }
+
+  .weatherInfoBox {
+    width: 100%;
+    background: linear-gradient(90deg, #e3f0ff 0%, #f5f8fa 100%);
+    border-radius: 14px;
+    margin-bottom: 18px;
+    padding: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #25663b;
+    letter-spacing: 0.5px;
+    border: 1.5px solid #b3d0e6;
+    box-shadow: 0 2px 12px rgba(80, 150, 200, 0.08);
+  }
+}

@@ -1,0 +1,276 @@
+.outerBg {
+  position: relative;
+  min-height: 100vh;
+  background: #fff;
+  width: 100%;
+}
+
+.registerNav {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 0.9rem;
+  color: #222;
+  z-index: 10;
+  a {
+    color: #222;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  .icon {
+    margin-left: 0.3rem;
+  }
+}
+
+.registerWrap {
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.registerContainer {
+  margin-top: 40px;
+  border: 8px solid #66be80;
+  border-radius: 24px;
+  width: 1200px;
+  background: #fff;
+  padding: 1px 36px 46px 36px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.registerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.registerLogo {
+  height: 70px;
+  position: absolute;
+  right: 44%;
+  top: 40px;
+}
+
+.registerTitle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.registerMainTitle {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 600;
+  margin-top: 15px;
+  margin-bottom: 25px;
+  letter-spacing: -1px;
+}
+
+.registerForm {
+  width: 100%;
+}
+
+.registerGrid {
+  display: flex;
+  gap: 38px;
+  margin-bottom: 36px;
+}
+
+.registerLeft,
+.registerRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 17px;
+    margin-bottom: 7px;
+    margin-top: 15px;
+    font-weight: 500;
+  }
+  input,
+  select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 2px solid #66be80;
+    border-radius: 3px;
+    font-size: 17px;
+    padding: 11px 14px;
+    outline: none;
+    margin-bottom: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    &:focus {
+      border-color: #269d51;
+    }
+  }
+}
+
+.emailRow {
+  display: flex;
+  gap: 10px;
+  input[type='email'] {
+    flex: 1;
+  }
+  .emailBtn {
+    padding: 0 24px;
+    background: #66be80;
+    color: #fff;
+    font-size: 18px;
+    border: none;
+    height: 46px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.18s;
+    &:hover {
+      background: #5ab475;
+    }
+  }
+}
+
+.rowInline {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  .birthCol,
+  .genderCol {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .genderBtns {
+    display: flex;
+    gap: 10px;
+    button {
+      flex: 1;
+      padding: 13px 0;
+      font-size: 16px;
+      background: #fff;
+      border: 2px solid #66be80;
+      color: #222;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+      &.active {
+        background: #66be80;
+        color: #fff;
+      }
+      transition:
+        background 0.18s,
+        color 0.18s;
+    }
+  }
+}
+
+.inputIcon {
+  position: relative;
+  input[type='date'] {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
+select {
+  appearance: none;
+  background: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 6L0.669873 0.75L9.33013 0.75L5 6Z' fill='%2348B96C'/%3E%3C/svg%3E%0A");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+  padding-right: 38px !important;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.registerSubmit {
+  width: 100%;
+  margin-top: 10px;
+  padding: 15px 0;
+  background: #66be80;
+  color: #fff;
+  font-size: 26px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: background 0.18s;
+  &:hover {
+    background: #5ab475;
+  }
+}
+
+.error {
+  color: #e10000;
+  font-size: 13px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.registerCloseBtn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 48px;
+  color: #bbb;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0 8px;
+  line-height: 1;
+  transition: color 0.18s;
+  &:hover {
+    color: #e10000;
+  }
+}
+
+.addressSearchBtn {
+  background: #66be80;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-size: 17px;
+  font-weight: 500;
+  padding: 11px 16px;
+  height: 45px;
+  cursor: pointer;
+  transition: background 0.18s;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  &:hover {
+    background: #5ab475;
+  }
+}
+
+@media (max-width: 900px) {
+  .registerContainer {
+    width: 97vw;
+    min-width: 0;
+    padding: 24px 8px;
+  }
+  .registerGrid {
+    flex-direction: column;
+    gap: 0;
+  }
+  .registerLeft,
+  .registerRight {
+    width: 100%;
+    min-width: 0;
+  }
+  .rowInline {
+    flex-direction: column;
+    gap: 0;
+  }
+}

@@ -1,0 +1,721 @@
+// Schedule.module.scss
+.scheduleWrapper {
+  display: flex;
+  width: 100%;
+  min-width: 1280px;
+  min-height: 100vh;
+  background: #fafcfb;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
+.sidebar {
+  width: 220px;
+  background: #fff;
+  border-right: 1.5px solid #c8e6c9;
+  padding: 24px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.sidebarTitle {
+  font-size: 22px;
+  font-weight: 700;
+  margin-left: 28px;
+  margin-bottom: 18px;
+}
+
+.categorySection {
+  margin-bottom: 18px;
+  padding-left: 18px;
+}
+
+.categoryGroupTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.categoryGroupTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+}
+
+.categoryItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 7px;
+}
+
+.categoryColor {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  margin-right: 2px;
+  border: 1.5px solid #e0e0e0;
+}
+
+.categoryName {
+  font-size: 15px;
+  flex: 1;
+  color: #333;
+}
+
+.categoryDeleteBtn {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 18px;
+  cursor: pointer;
+  margin-left: 2px;
+  &:hover {
+    color: #f44336;
+  }
+}
+
+.categoryAddBtn {
+  background: none;
+  border: none;
+  color: #48b96c;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 0 2px;
+  padding: 0;
+  height: 1.5em;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  &:hover {
+    color: #388e3c;
+  }
+}
+
+.mainContent {
+  flex: 1;
+  padding: 32px 24px 0 24px;
+  background: #fafcfb;
+}
+
+.calendarNav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.navBtn {
+  background: #e8f5e9;
+  border: none;
+  border-radius: 6px;
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  color: #388e3c;
+  font-weight: 700;
+  &:hover {
+    background: #c8e6c9;
+  }
+}
+
+.currentMonth {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 10px;
+}
+
+.todayBtn {
+  background: #fff;
+  border: 1.5px solid #48b96c;
+  color: #48b96c;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 4px 16px;
+  margin-left: 8px;
+  cursor: pointer;
+  &:hover {
+    background: #eafaf1;
+  }
+}
+
+.addEventBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 4px 16px;
+  margin-left: 8px;
+  cursor: pointer;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.disabledBtn {
+  background: #cccccc !important;
+  color: #999999 !important;
+  cursor: not-allowed !important;
+  &:hover {
+    background: #cccccc !important;
+  }
+}
+
+.noCategoryMessage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.createCategoryBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.noCategoryInModal {
+  .noCategoryWarning {
+    margin-top: 8px;
+    color: #d32f2f;
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+
+.calendarTable {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(72, 185, 108, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.calendarTable th {
+  background: #e8f5e9;
+  color: #388e3c;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 8px 0;
+  border-bottom: 1.5px solid #c8e6c9;
+}
+
+.calendarCell {
+  height: 112px;
+  vertical-align: top;
+  border-bottom: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  border-top: 1px solid #e0e0e0;
+  padding: 10px 0 4px 0;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.calendarTable tr:last-child td {
+  border-bottom: none;
+}
+
+.calendarTable td:last-child {
+  border-right: none;
+}
+
+.dateNum {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 2px;
+  padding-left: 10px; /* 왼쪽 여백 추가 */
+}
+
+.eventBar,
+.continuousEventBar,
+.continuousEventBarStart,
+.continuousEventBarMiddle,
+.continuousEventBarEnd,
+.continuousEventBarSingle {
+  margin-top: 0;
+  margin-bottom: 4px;
+  background: #b2dfdb;
+  color: #222;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 8px;
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  box-sizing: border-box;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+// 개별 border-radius는 기존대로 유지
+.eventBar {
+  border-radius: 8px;
+  overflow: visible !important;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.continuousEventBarStart {
+  border-radius: 8px 0 0 8px;
+  margin-left: 10px;
+}
+.continuousEventBarMiddle {
+  border-radius: 0;
+}
+.continuousEventBarEnd {
+  border-radius: 0 8px 8px 0;
+  margin-right: 10px;
+}
+.continuousEventBarSingle {
+  border-radius: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+// 마지막 일정바에는 margin-bottom: 0
+.calendarCell > div:last-child,
+.calendarCell > .singleEventsContainer > div:last-child {
+  margin-bottom: 0 !important;
+}
+
+.rightbar {
+  width: 260px;
+  min-width: 220px;
+  max-width: 320px;
+  background: #f8fbf7;
+  border-left: 1.5px solid #c8e6c9;
+  padding: 24px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 10;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 18px 18px 18px;
+}
+
+.searchInput {
+  flex: 1;
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  font-size: 15px;
+  padding: 6px 12px;
+  outline: none;
+}
+
+.searchBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.searchIcon {
+  font-size: 18px;
+}
+
+.eventListSection {
+  margin: 0 18px;
+}
+
+.eventListGroup {
+  margin-bottom: 18px;
+}
+
+.eventListGroupTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #388e3c;
+  padding: 6px 0 6px 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.eventListToday {
+  background: #c8e6c9;
+  color: #1b5e20;
+}
+
+.eventListPast {
+  background: #f2f4f8;
+  color: #888;
+}
+
+.eventListNoDue {
+  background: #e0f2f1;
+  color: #009688;
+}
+
+.eventListItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  margin-bottom: 6px;
+  padding: 4px 0 4px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.eventListColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 2px;
+  border: 1.5px solid #e0e0e0;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalBox {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
+  padding: 32px 32px 24px 32px;
+  min-width: 320px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.modalField {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  font-size: 16px;
+}
+
+.modalField label {
+  min-width: 48px;
+  font-weight: 500;
+}
+
+.modalField input,
+.modalField select {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.modalField textarea {
+  font-family: inherit;
+  font-size: 15px;
+  border: 1.5px solid #c8e6c9;
+  border-radius: 6px;
+  padding: 7px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dateTypeSelector {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.dateTypeSelector label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  margin-bottom: 0;
+  min-width: auto;
+}
+
+.dateTypeSelector input[type='radio'] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.dateInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.dateInputs input[type='date'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.dateInputs span {
+  font-weight: 500;
+  color: #666;
+  margin: 0 4px;
+}
+
+.dateFieldContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.noDueCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.noDueCheckbox input[type='checkbox'] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.modalBtnRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.modalOkBtn {
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 22px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:hover {
+    background: #36a05a;
+  }
+}
+
+.modalCancelBtn {
+  background: #f2f4f8;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 22px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover {
+    background: #e0e0e0;
+  }
+}
+
+.eventDetailPopup {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  z-index: 99999 !important;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 14px;
+  padding: 14px 14px 12px 14px;
+  font-size: 16px;
+  width: 260px;
+  min-width: 180px;
+  max-width: 95vw;
+  box-shadow: 0 4px 16px rgba(72, 185, 108, 0.13);
+  color: #222;
+  box-sizing: border-box;
+
+  .eventDetailTitle {
+    font-size: 1.08em;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: -0.5px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
+  }
+
+  .eventDetailRow {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    line-height: 1.4;
+    word-break: keep-all;
+    font-size: 0.98em;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .eventDetailLabel {
+    font-weight: 600;
+    color: #888;
+    min-width: 60px;
+    margin-right: 6px;
+    text-align: left;
+    font-size: 0.95em;
+    letter-spacing: -0.5px;
+  }
+
+  .eventDetailValue {
+    color: #222;
+    font-weight: 500;
+    flex: 1;
+    text-align: left;
+    font-size: 0.97em;
+    word-break: break-all;
+  }
+}
+
+.rightDetailPopupWrap {
+  position: fixed;
+  top: 80px;
+  right: 40px;
+  z-index: 100;
+}
+
+.continuousEventBar,
+.continuousEventBarStart,
+.continuousEventBarMiddle,
+.continuousEventBarEnd,
+.continuousEventBarSingle {
+  overflow: visible !important;
+}
+
+.todayCell {
+  border: 2.5px solid #48b96c !important;
+  box-shadow: 0 0 0 3px #e8f5e9;
+  border-radius: 10px;
+  z-index: 2;
+}
+
+.todayCellHighlight {
+  position: relative;
+  z-index: 3;
+  animation: todayHighlightEffect 1s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow:
+    0 0 0 8px #b9f6ca,
+    0 2px 16px 0 #48b96c44;
+  border: 2.5px solid #48b96c !important;
+  border-radius: 12px;
+}
+
+@keyframes todayHighlightEffect {
+  0% {
+    box-shadow:
+      0 0 0 0 #b9f6ca,
+      0 2px 16px 0 #48b96c44;
+    border-color: #48b96c;
+    background: rgba(72, 185, 108, 0.1);
+    opacity: 1;
+  }
+  60% {
+    box-shadow:
+      0 0 0 12px #b9f6ca,
+      0 2px 24px 0 #48b96c44;
+    border-color: #48b96c;
+    background: rgba(72, 185, 108, 0.18);
+    opacity: 1;
+  }
+  80% {
+    box-shadow:
+      0 0 0 16px #b9f6ca00,
+      0 2px 32px 0 #48b96c22;
+    border-color: #48b96c;
+    background: rgba(72, 185, 108, 0.1);
+    opacity: 1;
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 #b9f6ca00,
+      0 2px 0px 0 #48b96c00;
+    border-color: #48b96c00;
+    background: transparent;
+    opacity: 0;
+  }
+}
+
+.firstDayCell {
+  border-left: 1px solid #e0e0e0;
+  border-top: 1px solid #e0e0e0;
+}
+
+.highlightedCell {
+  border: 2.5px solid #48b96c !important;
+  box-shadow: 0 0 0 3px #e8f5e9;
+  border-radius: 10px;
+  z-index: 2;
+}

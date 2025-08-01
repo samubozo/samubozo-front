@@ -1,0 +1,517 @@
+.headerWrap {
+  width: 100%;
+  background: #fff;
+  min-width: 1280px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #e4e4e4;
+  position: relative;
+  overflow: visible;
+}
+
+.headerFixedLeft {
+  position: absolute;
+  top: 100px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 18px;
+  z-index: 10;
+}
+
+.gmt {
+  font-weight: 500;
+}
+
+.userInfo {
+  font-weight: 400;
+}
+
+.adminCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  input[type='checkbox'] {
+    margin: 0 2px 0 0;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+  }
+
+  span {
+    font-size: 16px;
+    font-weight: 400;
+  }
+}
+
+.headerMainRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  min-height: 82px;
+  padding-top: 25px;
+  overflow: visible;
+}
+
+.headerMainLeft {
+  flex: 1;
+  position: relative;
+}
+
+.userInfoBottomLeft {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  margin-left: 12px;
+  margin-bottom: 0;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.headerLogoRow {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 14px;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.headerLogo {
+  width: 120px;
+  height: 65px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.weatherAnimation {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  /* Make sure the animation covers the logo */
+}
+
+.headerLogoTitle {
+  font-size: 29px;
+  font-weight: bold;
+  color: #66be80;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.headerMainRight {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.headerRight {
+  position: absolute;
+  right: 3px;
+  top: 10px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.headerLink {
+  color: #222;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+.headerDivider {
+  margin: 0 9px;
+  color: #aaa;
+}
+
+.headerIcons {
+  display: inline-flex;
+  align-items: center;
+}
+
+.icon {
+  margin-left: 5px;
+  border: 0;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 24px; // 종 아이콘과 동일하게
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.headerNav {
+  margin-top: 10px;
+  background: #66be80;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 44px;
+}
+
+.headerNavList {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.navLink {
+  font-size: 20px;
+  padding: 0 40px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.navLink.active {
+  background: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  color: #222;
+}
+
+.navLink:hover:not(.active) {
+  background: #5caf7b;
+}
+
+.headerChatbotWrap {
+  position: relative;
+  display: inline-block;
+  z-index: 100;
+  margin-left: 24px;
+}
+
+.notificationIcon {
+  position: relative;
+  display: inline-block;
+}
+
+.notificationIndicator {
+  position: absolute;
+  top: -2px;
+  right: -8px;
+  z-index: 10;
+}
+
+.notificationBadge {
+  background: linear-gradient(135deg, #ff4757 0%, #ff3742 100%);
+  color: white;
+  border-radius: 8px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  padding: 0 3px;
+  box-shadow: 0 2px 6px rgba(255, 71, 87, 0.4);
+  border: 1.5px solid #ffffff;
+  font-family:
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  letter-spacing: -0.2px;
+  animation: bounce 1.5s ease-in-out infinite;
+  z-index: 10;
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-2px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
+.notificationBadge:hover {
+  animation: none;
+  transform: scale(1.2);
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.6);
+}
+
+.noNotification {
+  padding: 40px 0;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  background: #fafbfc;
+  border-radius: 0 0 12px 12px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+.notificationDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  min-width: 340px;
+  max-width: 420px;
+  margin-top: 8px;
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.notificationHeader {
+  padding: 0;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.notificationTabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.notificationTab {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.notificationTab:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.notificationTab.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: #fff;
+  font-weight: 600;
+}
+
+.notificationList {
+  padding: 8px 0;
+}
+
+.read,
+.unread {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  background: #fff;
+  transition: background 0.2s;
+}
+
+.unread {
+  background: #f8f9ff;
+  font-weight: 600;
+}
+
+.read {
+  color: #888;
+}
+
+.read:hover,
+.unread:hover {
+  background: #e3f2fd;
+}
+
+.notificationFooter {
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  text-align: center;
+}
+
+.markAllReadBtn {
+  background: none;
+  border: none;
+  color: #007bff;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.markAllReadBtn:hover {
+  background: #e3f2fd;
+}
+
+.logoWeatherWrap {
+  width: 400px;
+  height: 65px;
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+}
+
+@keyframes cloudMoveFloat {
+  0% {
+    transform: translateX(0px) translateY(0px);
+  }
+  25% {
+    transform: translateX(10px) translateY(2px);
+  }
+  50% {
+    transform: translateX(20px) translateY(0px);
+  }
+  75% {
+    transform: translateX(10px) translateY(-2px);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px);
+  }
+}
+
+.cloud-move-float {
+  animation: cloudMoveFloat 8s ease-in-out infinite;
+}
+
+.cloudButtonMove {
+  animation: cloudButtonMove 6s ease-in-out infinite;
+  position: absolute;
+  x: 195;
+  y: -5;
+  width: 45px;
+  height: 45px;
+  z-index: 3;
+}
+
+@keyframes cloudButtonMove {
+  0% {
+    transform: translateX(0px);
+  }
+  25% {
+    transform: translateX(8px);
+  }
+  50% {
+    transform: translateX(15px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+.sunAnimated {
+  animation: sunMoveRotate 4s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes sunMoveRotate {
+  0% {
+    transform: translateX(0px) translateY(0px) rotate(-8deg);
+  }
+  25% {
+    transform: translateX(20px) translateY(0px) rotate(6deg);
+  }
+  50% {
+    transform: translateX(40px) translateY(0px) rotate(-8deg);
+  }
+  75% {
+    transform: translateX(20px) translateY(0px) rotate(6deg);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px) rotate(-8deg);
+  }
+}
+
+.sunflowerAppear {
+  animation:
+    sunflowerScaleIn 0.7s cubic-bezier(0.23, 1.1, 0.32, 1) 1,
+    sunflowerWobble 2.2s ease-in-out 0.7s infinite;
+  transform-origin: 50% 80%;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+@keyframes sunflowerScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-10deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1) rotate(6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes sunflowerWobble {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  20% {
+    transform: scale(1.04) rotate(4deg);
+  }
+  40% {
+    transform: scale(0.98) rotate(-3deg);
+  }
+  60% {
+    transform: scale(1.03) rotate(2deg);
+  }
+  80% {
+    transform: scale(1) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}

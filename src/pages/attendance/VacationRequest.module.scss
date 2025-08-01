@@ -1,0 +1,175 @@
+.vacationOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vacationRequest {
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  min-width: 520px;
+  max-width: 580px;
+  width: 580px;
+  box-sizing: border-box;
+  font-family: 'Noto Sans KR', sans-serif;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+}
+
+.vacationRequest h2 {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.7rem;
+  letter-spacing: -1px;
+}
+
+.vacationRequest form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vacationRequest label {
+  min-width: 90px;
+  max-width: 90px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 1rem;
+  color: #222;
+  font-weight: 500;
+  text-align: right;
+  margin-right: 4px;
+}
+
+.vacationRequest .row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.vacationRequest input[type='date'],
+.vacationRequest select,
+.vacationRequest input[type='text'],
+.vacationRequest textarea {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 1rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #b7d7c2;
+  border-radius: 4px;
+  font-weight: 700;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.vacationRequest textarea {
+  padding: 0.5rem 0.7rem;
+  font-weight: 500;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.vacationRequest .periodInput {
+  flex: 1;
+}
+
+.vacationRequest .periodTilde {
+  margin: 0 -5px;
+  align-self: center;
+  font-weight: 600;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.vacationRequest .reasonInput {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vacationRequest input[readonly] {
+  background: #fafbfa;
+  color: #888;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+.vacationRequest .errorInput {
+  border-color: #f44336;
+  background-color: #fff5f5;
+}
+
+.vacationRequest .errorMessage {
+  color: #f44336;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 4px;
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+.vacationRequest .button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 1rem;
+}
+
+.vacationRequest .confirm-btn {
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  &:hover {
+    background: linear-gradient(135deg, #388e3c, #2e7d32);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.vacationRequest .cancel-btn {
+  background: linear-gradient(135deg, #f8f9f5, #e6f2e2);
+  color: #25663b;
+  border: 2px solid #b2dfdb;
+  border-radius: 10px;
+  padding: 0.7rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  &:hover {
+    background: linear-gradient(135deg, #e6f2e2, #c8e6c9);
+    border-color: #4caf50;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
