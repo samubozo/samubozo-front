@@ -5,7 +5,6 @@ import '@toast-ui/editor/dist/toastui-editor.css';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, MESSAGE, HR } from '../../configs/host-config';
 import { useLocation } from 'react-router-dom';
-import SuccessModal from '../../components/SuccessModal';
 
 const periodOptions = [
   { value: 'all', label: '전체기간' },
@@ -296,8 +295,6 @@ function MessageWriteModal({
   const [files, setFiles] = useState([]);
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [isNotice, setIsNotice] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const editorRef = React.useRef();
 
   // JWT에서 권한 추출 함수
@@ -381,17 +378,13 @@ function MessageWriteModal({
     const validFiles = [];
     for (const file of newFiles) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        setSuccessMessage(
+        alert(
           `허용되지 않은 파일 형식입니다.\n(이미지, PDF, 문서, 엑셀, 텍스트, ZIP만 첨부 가능)`,
         );
-        setShowSuccessModal(true);
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
-        setSuccessMessage(
-          `파일 "${file.name}"은(는) 50MB를 초과하여 첨부할 수 없습니다.`,
-        );
-        setShowSuccessModal(true);
+        alert(`파일 "${file.name}"은(는) 50MB를 초과하여 첨부할 수 없습니다.`);
         continue;
       }
       validFiles.push(file);
@@ -423,13 +416,11 @@ function MessageWriteModal({
       return;
     }
     if (!subject.trim()) {
-      setSuccessMessage('제목을 입력해주세요.');
-      setShowSuccessModal(true);
+      alert('제목을 입력해주세요.');
       return;
     }
     if (!content.trim()) {
-      setSuccessMessage('내용을 입력해주세요.');
-      setShowSuccessModal(true);
+      alert('내용을 입력해주세요.');
       return;
     }
 
@@ -684,17 +675,6 @@ function MessageWriteModal({
         onClose={() => setShowUserSearch(false)}
         onSelect={handleAddReceiver}
       />
-
-      {/* 성공 모달 */}
-      {showSuccessModal && (
-        <SuccessModal
-          message={successMessage}
-          onClose={() => {
-            setShowSuccessModal(false);
-            setSuccessMessage('');
-          }}
-        />
-      )}
     </>
   );
 }
@@ -726,8 +706,6 @@ const Message = () => {
   // 데이터 상태
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -1045,8 +1023,7 @@ const Message = () => {
     console.log('쪽지 전송 완료:', messageData);
     // API 응답 데이터 확인
     if (messageData && messageData.success !== false) {
-      setSuccessMessage('쪽지가 성공적으로 전송되었습니다.');
-      setShowSuccessModal(true);
+      alert('쪽지가 성공적으로 전송되었습니다.');
       setShowWrite(false);
       setReplyData(null); // 답장 데이터 초기화
       console.log('모달 닫기 및 답장 데이터 초기화 완료');
@@ -1260,7 +1237,7 @@ const Message = () => {
           </button>
         </div>
         <table
-          className={`${styles.table} ${tab === 'sent' ? styles.sentTable : ''}`}
+          className={`${styles.table} ${tab === 'sent' ? styles.sentTable : styles.receivedTable}`}
         >
           <thead>
             <tr>
@@ -1308,35 +1285,17 @@ const Message = () => {
               </tr>
             ) : paged.length === 0 ? (
               <tr>
-                <td>
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '100%',
-                      height: '100%',
-                      cursor: 'pointer',
-                      padding: 6,
-                    }}
-                  >
-                    <input
-                      type='checkbox'
-                      disabled
-                      style={{
-                        opacity: 0.5,
-                        pointerEvents: 'none',
-                        cursor: 'pointer',
-                      }}
-                    />
-                  </label>
-                </td>
-                <td></td>
-                <td style={{ textAlign: 'center', color: '#bbb' }}>
+                <td
+                  colSpan={tab === 'sent' ? 5 : 4}
+                  style={{
+                    textAlign: 'center',
+                    color: '#bbb',
+                    padding: '12px 0',
+                    height: '48px',
+                  }}
+                >
                   쪽지가 없습니다.
                 </td>
-                <td></td>
-                {tab === 'sent' && <td></td>}
               </tr>
             ) : (
               (() => {
@@ -1395,28 +1354,11 @@ const Message = () => {
                         : msg.receiverName || '받는사람 없음'}
                     </td>
                     <td>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                        }}
-                      >
-                        {msg.isNotice && (
-                          <span
-                            style={{
-                              background: '#ff4757',
-                              color: 'white',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              fontWeight: 'bold',
-                            }}
-                          >
-                            공지
-                          </span>
-                        )}
-                        {msg.subject || '제목 없음'}
+                      <div className={styles.titleContent}>
+                        {msg.isNotice && <span>[공지]</span>}
+                        <span className={styles.titleText}>
+                          {msg.subject || '제목 없음'}
+                        </span>
                       </div>
                     </td>
                     <td>
@@ -1469,7 +1411,8 @@ const Message = () => {
             {checked.length > 0 &&
               (() => {
                 // 공지 쪽지 삭제 권한 확인
-                const currentUserId = sessionStorage.getItem('USER_ID');
+                const currentUserId =
+                  sessionStorage.getItem('USER_EMPLOYEE_NO');
                 const selectedMessages = paged.filter((msg) =>
                   checked.includes(msg.id || msg.messageId),
                 );
@@ -1477,16 +1420,46 @@ const Message = () => {
                   (msg) => msg.isNotice === true,
                 );
 
-                // 공지 쪽지가 있고, 현재 사용자가 작성자가 아닌 경우 삭제 버튼 숨김
+                console.log('삭제 버튼 디버깅:', {
+                  currentUserId,
+                  checked,
+                  selectedMessages,
+                  noticeMessages,
+                  tab,
+                });
+
+                // 공지 쪽지가 있는 경우, 현재 사용자가 작성자인 것만 필터링
                 if (noticeMessages.length > 0) {
-                  const unauthorizedNotices = noticeMessages.filter(
-                    (msg) => msg.senderId != currentUserId,
+                  const authorizedNotices = noticeMessages.filter(
+                    (msg) => msg.senderId == currentUserId,
                   );
-                  if (unauthorizedNotices.length > 0) {
+                  const normalMessages = selectedMessages.filter(
+                    (msg) => msg.isNotice !== true,
+                  );
+
+                  // 공지 쪽지는 작성자만 삭제 가능, 일반 쪽지는 모두 삭제 가능
+                  const canDeleteMessages = [
+                    ...authorizedNotices,
+                    ...normalMessages,
+                  ];
+
+                  console.log('공지 쪽지 권한 확인:', {
+                    authorizedNotices,
+                    normalMessages,
+                    canDeleteMessages,
+                    selectedMessages,
+                    canDeleteMessagesLength: canDeleteMessages.length,
+                    selectedMessagesLength: selectedMessages.length,
+                  });
+
+                  // 선택된 모든 쪽지가 삭제 가능한 것인지 확인
+                  if (canDeleteMessages.length !== selectedMessages.length) {
+                    console.log('삭제 버튼 숨김: 권한 없음');
                     return null; // 삭제 버튼 숨김
                   }
                 }
 
+                console.log('삭제 버튼 표시');
                 return (
                   <button className={styles.deleteBtn} onClick={handleDelete}>
                     {tab === 'sent'
@@ -1529,17 +1502,6 @@ const Message = () => {
           initialReceiver={replyData?.receiver}
           initialSubject={replyData?.subject}
         />
-
-        {/* 성공 모달 */}
-        {showSuccessModal && (
-          <SuccessModal
-            message={successMessage}
-            onClose={() => {
-              setShowSuccessModal(false);
-              setSuccessMessage('');
-            }}
-          />
-        )}
       </div>
     </div>
   );
