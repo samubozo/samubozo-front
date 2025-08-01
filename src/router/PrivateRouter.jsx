@@ -13,7 +13,7 @@ const PrivateRouter = ({ element, requiredRole }) => {
   const token = sessionStorage.getItem('ACCESS_TOKEN');
   if (!isLoggedIn || !token) {
     alert('로그인 안함!');
-    return <Navigate to='/login' replace />;
+    return <Navigate to='/' replace />;
   }
 
   if (requiredRole && userRole !== requiredRole) {
