@@ -5,23 +5,51 @@ import { Navigate } from 'react-router-dom';
 // 라우터 쪽에서 로그인 여부나 권한을 검사하는 기능을 담당하는 PrivateRouter 생성.
 const PrivateRouter = ({ element, requiredRole }) => {
   const { isLoggedIn, userRole, isInit } = useContext(AuthContext);
-
-  // Context 데이터가 초기화되지 않았다면 밑에 로직이 실행되지 않게끔 로딩 페이지 먼저 리턴.
-  // 초기화가 완료되면 PrivateRouter가 다시 렌더링 시도를 할 겁니다.
-  if (!isInit) return <div>Loading...</div>;
-
   const token = sessionStorage.getItem('ACCESS_TOKEN');
-  if (!isLoggedIn || !token) {
-    alert('로그인 안함!');
-    return <Navigate to='/login' replace />;
+
+  // 1. Context 초기화 대기
+  if (!isInit) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '16px',
+          color: '#666',
+        }}
+      >
+        로딩 중...
+      </div>
+    );
   }
 
-  if (requiredRole && userRole !== requiredRole) {
-    alert('권한 없음!');
+  // 2. 토큰 존재 여부 체크 (가장 기본적인 인증)
+  if (!token) {
+    console.log('PrivateRouter: 토큰 없음 - 로그인 페이지로 리다이렉트');
     return <Navigate to='/' replace />;
   }
 
-  // 로그인도 했고, 권한에도 문제가 없다면 원래 렌더링 하고자 했던 컴포넌트를 렌더링.
+  // 3. Context 로그인 상태 체크 (추가 보안)
+  if (!isLoggedIn) {
+    console.log(
+      'PrivateRouter: Context에서 로그인 안됨 - 로그인 페이지로 리다이렉트',
+    );
+    return <Navigate to='/' replace />;
+  }
+
+  // 4. 권한 체크 (필요한 경우만)
+  if (requiredRole && userRole !== requiredRole) {
+    console.log('PrivateRouter: 권한 없음 - 로그인 페이지로 리다이렉트', {
+      requiredRole,
+      userRole,
+    });
+    return <Navigate to='/' replace />;
+  }
+
+  // 5. 모든 인증 통과 - 컴포넌트 렌더링
+  console.log('PrivateRouter: 인증 성공 - 컴포넌트 렌더링');
   return element;
 };
 

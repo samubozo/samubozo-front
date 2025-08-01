@@ -111,10 +111,16 @@ export const AuthContextProvider = (props) => {
 
   // 첫 렌더링 시에 이전 로그인 정보를 확인해서 로그인 상태 유지 시키기.
   useEffect(() => {
-    if (sessionStorage.getItem('ACCESS_TOKEN')) {
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
+    if (token) {
       setIsLoggedIn(true);
       setUserRole(sessionStorage.getItem('USER_ROLE'));
+    } else {
+      // 토큰이 없으면 즉시 로그아웃 상태로 설정
+      setIsLoggedIn(false);
+      setUserRole('');
     }
+    // 즉시 초기화 완료로 설정
     setIsInit(true);
   }, []);
 

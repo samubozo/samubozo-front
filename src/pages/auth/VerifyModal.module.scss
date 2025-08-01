@@ -1,5 +1,4 @@
 .modalDim {
-  // .modal-dim
   position: fixed;
   z-index: 99999;
   left: 0;
@@ -13,7 +12,6 @@
 }
 
 .verifyModal {
-  // .verify-modal
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 3px 18px 0 rgba(0, 0, 0, 0.13);
@@ -26,7 +24,6 @@
 }
 
 .modalTitle {
-  // .modal-title
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 22px;
@@ -34,7 +31,6 @@
 }
 
 .modalEmail {
-  // .modal-email
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 28px;
@@ -42,7 +38,6 @@
 }
 
 .modalRow {
-  // .modal-row
   display: flex;
   align-items: center;
   width: 100%;
@@ -50,7 +45,6 @@
 }
 
 .modalTimer {
-  // .modal-timer
   min-width: 58px;
   color: #ff3030;
   font-size: 18px;
@@ -60,7 +54,6 @@
 }
 
 .modalInput {
-  // .modal-input
   flex: 1;
   height: 38px;
   font-size: 19px;
@@ -72,7 +65,6 @@
 }
 
 .modalResend {
-  // .modal-resend
   background: none;
   border: none;
   color: #2476ff;
@@ -84,7 +76,6 @@
 }
 
 .modalBtns {
-  // .modal-btns
   width: 100%;
   display: flex;
   justify-content: flex-end;
@@ -92,7 +83,6 @@
 }
 
 .modalComplete {
-  // .modal-complete
   background: #66be80;
   color: #fff;
   font-size: 18px;
@@ -108,7 +98,6 @@
 }
 
 .modalCancel {
-  // .modal-cancel
   background: none;
   border: none;
   color: #9c9c9c;

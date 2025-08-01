@@ -28,7 +28,7 @@ const fetchEmployees = async ({
   isHR = false,
 } = {}) => {
   try {
-    // ✅ HR이 아니면 본인 정보만 반환
+    //  HR이 아니면 본인 정보만 반환
     if (!isHR) {
       const payload = parseJwt(sessionStorage.getItem('ACCESS_TOKEN'));
 
@@ -52,7 +52,7 @@ const fetchEmployees = async ({
       ];
     }
 
-    // ✅ HR이면 전체 호출
+    //  HR이면 전체 호출
     let url = `${API_BASE_URL}${HR}/user/list`;
     let params = { page, size };
 
@@ -87,7 +87,7 @@ const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
-const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
+const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
   const [form, setForm] = useState({
     payMonthStr: '',
     basePayroll: '',
@@ -96,7 +96,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
     bonus: '',
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
   // 숫자만 추출 후 콤마 포맷
   const formatNumber = (value) => {
@@ -116,7 +115,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
     try {
       const [yearStr, monthStr] = form.payMonthStr.split('-');
       const year = parseInt(yearStr);
@@ -154,7 +152,8 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
       if (fetchPayroll) {
         fetchPayroll(year, month, employee.id);
       }
-      setMessage('저장되었습니다.');
+      showModal?.('급여가 저장되었습니다.');
+
       setForm({
         payMonthStr: '',
         basePayroll: '',
@@ -163,8 +162,7 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
         bonus: '',
       });
     } catch (err) {
-      console.error('급여 저장 요청 실패:', err); // 저장 실패 로그
-      setMessage('저장 실패: ' + (err?.response?.data?.message || '오류'));
+      showModal?.('저장 실패: ' + (err?.response?.data?.message || '오류'));
     } finally {
       setLoading(false);
     }
@@ -280,18 +278,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll }) => {
           >
             {loading ? '등록/수정 중...' : '등록 / 수정'}
           </button>
-          {message && (
-            <div
-              style={{
-                textAlign: 'center',
-                color: message.includes('실패') ? 'red' : 'green',
-                paddingTop: 8,
-                fontWeight: 500,
-              }}
-            >
-              {message}
-            </div>
-          )}
         </div>
       </form>
     </div>
@@ -323,7 +309,6 @@ const PayrollManagement = () => {
   useEffect(() => {
     const token = sessionStorage.getItem('ACCESS_TOKEN');
     const payload = parseJwt(token);
-    console.log('✅ JWT payload:', payload); // 추가
     setIsHR(payload?.role === 'Y');
   }, []);
 
@@ -359,7 +344,7 @@ const PayrollManagement = () => {
 
     if (year && month) {
       axiosInstance
-        .get(url, { headers, params }) // ✅ 동적으로 지정된 url 사용
+        .get(url, { headers, params }) // 동적으로 지정된 url 사용
         .then((res) => {
           const result = res.data.result;
           setPayrollData({
@@ -405,17 +390,23 @@ const PayrollManagement = () => {
   };
 
   useEffect(() => {
+    if (!user) return;
+
+    const token = sessionStorage.getItem('ACCESS_TOKEN');
+    const payload = parseJwt(token);
+    const hrRole = payload?.role === 'Y';
+    setIsHR(hrRole);
+
     const loadEmployees = async () => {
-      console.log('🚀 isHR 전달됨:', isHR); // 확인
-      const employees = await fetchEmployees({ isHR, includeRetired: true });
-      console.log('📦 직원 목록:', employees); // 확인
+      const employees = await fetchEmployees({
+        isHR: hrRole,
+        includeRetired: true,
+      });
       setEmployeeData(employees);
     };
 
-    if (user && isHR !== null) {
-      loadEmployees();
-    }
-  }, [user, isHR]);
+    loadEmployees();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -465,7 +456,7 @@ const PayrollManagement = () => {
           bankName: data.bankName || '',
           accountNumber: data.accountNumber || '',
           accountHolder: data.accountHolder || data.userName,
-          isRetired: data.activate !== 'Y' ? 'Y' : 'N', // ✅ 추가!
+          isRetired: data.activate !== 'Y' ? 'Y' : 'N',
         });
 
         if (isHR && selectedMonth) {
@@ -490,20 +481,23 @@ const PayrollManagement = () => {
   const allowance = payrollData.positionAllowance || 0;
   const meal = payrollData.mealAllowance || 0;
   const bonus = payrollData.bonus || 0;
-  const nonTaxableMeal = Math.min(meal, 100000);
-  const taxableMeal = Math.max(meal - 100000, 0);
-  const taxable = base + allowance + taxableMeal + bonus;
+  const overtime = payrollData.overtimePay || 0;
+  const nonTaxableMeal = Math.min(meal, 200000);
+  const taxableMeal = Math.max(meal - 200000, 0);
+  const taxable = base + allowance + taxableMeal + bonus + overtime;
   const nonTaxable = nonTaxableMeal;
   const total = taxable + nonTaxable;
 
   // 공제항목 계산
-  const pension = Math.floor(taxable * 0.045);
-  const health = Math.floor(taxable * 0.07);
-  const employment = Math.floor(taxable * 0.008);
-  const incomeTax = Math.floor(taxable * 0.03);
-  const localTax = Math.floor(incomeTax * 0.1);
+  const pension = Math.floor(taxable * 0.045); // 국민연금 (4.5%)
+  const health = Math.floor(taxable * 0.03545); // 건강보험 (3.545%)
+  const care = Math.floor(health * 0.1281); // 장기요양보험 (건강보험의 12.81%)
+  const employment = Math.floor(taxable * 0.008); // 고용보험 (0.8%)
+  const incomeTax = Math.floor(taxable * 0.03); // 소득세 (3%)
+  const localTax = Math.floor(incomeTax * 0.1); // 지방소득세 (소득세의 10%)
 
-  const totalDeduction = pension + health + employment + incomeTax + localTax;
+  const totalDeduction =
+    pension + health + care + employment + incomeTax + localTax;
   const netPay = total - totalDeduction;
 
   const printRef = useRef(null);
@@ -528,11 +522,13 @@ const PayrollManagement = () => {
 
     try {
       await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
-      alert('야근수당이 계산되어 저장되었습니다.');
+      setSuccessMessage('야근수당이 계산되어 저장되었습니다.');
+      setShowSuccessModal(true);
       fetchPayroll(year, month, selectedEmployee.id); // 화면 반영
     } catch (err) {
       console.error('야근수당 계산 실패:', err);
-      alert('야근수당 계산에 실패했습니다.');
+      setSuccessMessage('야근수당 계산에 실패했습니다.');
+      setShowSuccessModal(true);
     }
   };
 
@@ -541,7 +537,7 @@ const PayrollManagement = () => {
 
     const emp = selectedEmployee;
     const [year, month] = selectedMonth.split('-');
-    const formattedMonth = `${year}년 ${month}월`; // ✅ 여기서 변환
+    const formattedMonth = `${year}년 ${month}월`;
     const employeeInfoHTML = `
     <div style="margin-bottom: 20px;">
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -700,14 +696,18 @@ const PayrollManagement = () => {
           </tr>
           <tr>
             <td>식대</td><td>${meal.toLocaleString()}</td>
-            <td>고용보험</td><td>${employment.toLocaleString()}</td>
+            <td>장기요양보험</td><td>${care.toLocaleString()}</td>
           </tr>
           <tr>
             <td>성과급</td><td>${bonus.toLocaleString()}</td>
-            <td>소득세</td><td>${incomeTax.toLocaleString()}</td>
+            <td>고용보험</td><td>${employment.toLocaleString()}</td>
           </tr>
           <tr>
             <td>야근수당</td><td>${(payrollData.overtimePay ?? 0).toLocaleString()}</td>
+            <td>소득세</td><td>${incomeTax.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td><td></td></td>
             <td>지방소득세</td><td>${localTax.toLocaleString()}</td>
           </tr>
           <tr>
@@ -823,7 +823,7 @@ const PayrollManagement = () => {
                     <input
                       type='checkbox'
                       checked={selectedEmployeeId === emp.id}
-                      onChange={() => handleEmployeeClick(emp)} // ✅ 단일 선택
+                      onChange={() => handleEmployeeClick(emp)} // 단일 선택
                       onClick={(e) => e.stopPropagation()}
                     />
                   </td>
@@ -840,7 +840,7 @@ const PayrollManagement = () => {
             {(() => {
               const total = filteredEmployees.length;
               const retiredCount = filteredEmployees.filter(
-                (emp) => emp.isRetired === 'Y', // ✅ 고친 부분
+                (emp) => emp.isRetired === 'Y',
               ).length;
               const activeCount = total - retiredCount;
 
@@ -926,6 +926,10 @@ const PayrollManagement = () => {
                   <td>{health ? health.toLocaleString() : ''}</td>
                 </tr>
                 <tr>
+                  <td>장기요양보험</td>
+                  <td>{health ? care.toLocaleString() : ''}</td>
+                </tr>
+                <tr>
                   <td>고용보험</td>
                   <td>{employment ? employment.toLocaleString() : ''}</td>
                 </tr>
@@ -995,6 +999,10 @@ const PayrollManagement = () => {
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
           fetchPayroll={fetchPayroll}
+          showModal={(msg) => {
+            setSuccessMessage(msg);
+            setShowSuccessModal(true);
+          }}
         />
       )}
 
@@ -1002,10 +1010,9 @@ const PayrollManagement = () => {
       {showSuccessModal && (
         <SuccessModal
           message={successMessage}
-          onClose={() => {
-            setShowSuccessModal(false);
-            setSuccessMessage('');
-          }}
+          onClose={() => setShowSuccessModal(false)}
+          autoClose={true}
+          autoCloseDelay={2000}
         />
       )}
     </div>

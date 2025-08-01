@@ -230,14 +230,14 @@ const Header = ({ showChatbot }) => {
             isRefreshingTokenRef.current = false;
             sessionStorage.clear();
             localStorage.removeItem('REFRESH_TOKEN');
-            window.location.href = '/login';
+            window.location.href = '/';
             return;
           });
       } else {
         console.error('리프레시 토큰 없음 - 로그인 페이지로 이동');
         isRefreshingTokenRef.current = false;
         sessionStorage.clear();
-        window.location.href = '/login';
+        window.location.href = '/';
         return;
       }
     }
@@ -302,14 +302,14 @@ const Header = ({ showChatbot }) => {
             console.error('토큰 갱신 실패 - 재연결 중단');
             sessionStorage.clear();
             localStorage.removeItem('REFRESH_TOKEN');
-            window.location.href = '/login';
+            window.location.href = '/';
             return;
           }
         } else {
           console.error('리프레시 토큰 없음 - 재연결 중단');
           sessionStorage.clear();
           localStorage.removeItem('REFRESH_TOKEN');
-          window.location.href = '/login';
+          window.location.href = '/';
           return;
         }
       }

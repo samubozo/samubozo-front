@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './VerifyModal.module.scss';
 
-const VERIFY_TIME = 1800; // 30분
+const VERIFY_TIME = 1800;
 
 const pad = (n) => n.toString().padStart(2, '0');
 
@@ -11,7 +11,6 @@ const VerifyModal = ({ email, onClose, onResend, onComplete }) => {
 
   const timerRef = useRef();
 
-  // 타이머 동작 (1초씩 감소)
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
@@ -19,27 +18,23 @@ const VerifyModal = ({ email, onClose, onResend, onComplete }) => {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  // 재발송 로직
   const handleResend = async () => {
-    if (timer > 0) return; // 0일 때만 허용
+    if (timer > 0) return;
     await onResend?.();
     setTimer(VERIFY_TIME);
     setCode('');
   };
 
-  // 완료 버튼 클릭
   const handleComplete = () => {
     if (code.length !== 6) return;
     onComplete?.(code);
   };
 
-  // 숫자만 입력되게 처리
   const handleInput = (e) => {
     const value = e.target.value.replace(/[^0-9]/g, '');
     setCode(value);
   };
 
-  // mm:ss 변환
   const min = pad(Math.floor(timer / 60));
   const sec = pad(timer % 60);
   const timerStr = `${min}:${sec}`;
@@ -59,7 +54,7 @@ const VerifyModal = ({ email, onClose, onResend, onComplete }) => {
             value={code}
             onChange={handleInput}
             maxLength={6}
-            disabled={timer === 0 ? false : false} // 디자인 건들지 말라 했으니 0이어도 입력만 비활성화 X
+            disabled={timer === 0 ? false : false}
             placeholder='인증번호'
           />
           <button

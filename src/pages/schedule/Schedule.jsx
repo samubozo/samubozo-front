@@ -5,7 +5,6 @@ import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, SCHEDULE } from '../../configs/host-config';
 import { HexColorPicker } from 'react-colorful';
 import debounce from 'lodash/debounce';
-import SuccessModal from '../../components/SuccessModal';
 
 // 색상 대비 계산 함수
 function getContrastColor(backgroundColor) {
@@ -57,18 +56,41 @@ function getMonthDays(year, month) {
   return days;
 }
 
-function isSameDay(date, dateStr) {
-  return date.toISOString().slice(0, 10) === dateStr;
+// 모든 날짜를 YYYY-MM-DD 형식의 문자열로 변환하는 헬퍼 함수
+// 이렇게 하면 Date 객체 생성 시 발생할 수 있는 시간대 문제를 피할 수 있습니다.
+function formatDateToYYYYMMDD(date) {
+  if (!date) return null;
+  // Date 객체가 아니라 문자열일 경우 바로 반환
+  if (typeof date === 'string' && date.length >= 10) {
+    return date.slice(0, 10);
+  }
+  // Date 객체일 경우 YYYY-MM-DD로 포맷
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
-function isBetween(date, start, end) {
-  if (!start) return false;
-  const effectiveEnd = end || start;
-  const d = date.toISOString().slice(0, 10);
-  return d >= start && d <= effectiveEnd;
+function isSameDay(dateA, dateB) {
+  const strA = formatDateToYYYYMMDD(dateA);
+  const strB = formatDateToYYYYMMDD(dateB);
+  return strA === strB;
 }
 
-function toDateOnly(d) {
+function isBetween(targetDate, startDate, endDate) {
+  const targetStr = formatDateToYYYYMMDD(targetDate);
+  const startStr = formatDateToYYYYMMDD(startDate);
+  const endStr = formatDateToYYYYMMDD(endDate || startDate); // endDate가 없으면 startDate로 간주
+  return targetStr >= startStr && targetStr <= endStr;
+}
+
+// toDateOnly는 이제 formatDateToYYYYMMDD로 대체될 수 있습니다.
+// 이전 함수와 유사하게 Date 객체를 "날짜만" 포함한 Date 객체로 만들려면 사용
+function toDateOnlyObject(d) {
+  if (!(d instanceof Date)) {
+    d = new Date(d); // 문자열이나 다른 형태로 들어올 경우 Date 객체로 변환 시도
+  }
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
@@ -95,8 +117,6 @@ function Schedule() {
   const [editEvent, setEditEvent] = useState(null); // 수정할 일정 상태
   const [popupHover, setPopupHover] = useState(false);
   const hideTimerRef = useRef(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [highlightedEventId, setHighlightedEventId] = useState(null);
 
   // 카테고리 데이터 처리 함수 (checked 필드 기본값 설정)
@@ -188,8 +208,7 @@ function Schedule() {
             checked: prevMap.has(cat.id) ? prevMap.get(cat.id) : true,
           }));
         });
-        setSuccessMessage('카테고리가 정상적으로 추가되었습니다.');
-        setShowSuccessModal(true);
+        alert('카테고리가 정상적으로 추가되었습니다.');
       })
       .catch(() => {});
     setShowCategoryModal(null);
@@ -259,8 +278,7 @@ function Schedule() {
             .get(`${API_BASE_URL}${SCHEDULE}/events/all-day`)
             .then((res) => setRightTodos(res.data || []));
         }
-        setSuccessMessage('일정이 정상적으로 추가되었습니다.');
-        setShowSuccessModal(true);
+        alert('일정이 정상적으로 추가되었습니다.');
       })
       .catch((err) => {
         console.error('일정 추가 에러:', err);
@@ -278,43 +296,49 @@ function Schedule() {
   );
 
   // 1. 현재 달의 시작/끝 구하기
-  const monthStart = new Date(currentYear, currentMonth, 1);
-  const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+  const monthStart = toDateOnlyObject(new Date(currentYear, currentMonth, 1));
+  const monthEnd = toDateOnlyObject(new Date(currentYear, currentMonth + 1, 0));
 
-  // 2. 월별 할일만 필터링
+  // 2. 월별 할일만 필터링 (모든 날짜를 toDateOnlyObject로 변환하여 비교 일관성 확보)
   const filteredEvents = visibleEvents.filter((e) => {
-    const start = new Date(e.startDate);
-    const end = new Date(e.endDate || e.startDate);
+    if (!e.startDate) return false; // 시작일 없는 이벤트는 월별 필터링에서 제외
+
+    const start = toDateOnlyObject(new Date(e.startDate));
+    const end = toDateOnlyObject(new Date(e.endDate || e.startDate));
     // 일정이 이번 달에 걸쳐 있으면 표시
     return end >= monthStart && start <= monthEnd;
   });
 
   // 3. 오늘 기준 분류
   const now = new Date();
-  // 한국 시간 기준 날짜
-  const koreaNow = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-  const todayStr = koreaNow.toISOString().slice(0, 10);
-  const tomorrow = new Date(koreaNow);
-  tomorrow.setDate(koreaNow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  const todayStr = formatDateToYYYYMMDD(now); // YYYY-MM-DD 문자열 포맷 사용
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const tomorrowStr = formatDateToYYYYMMDD(tomorrow); // YYYY-MM-DD 문자열 포맷 사용
 
+  // TODO 타입 중 기한 없는 할일을 제외한 모든 이벤트
   const rightNormal = filteredEvents.filter(
-    (e) => e.type !== 'TODO' || e.startDate,
+    (e) => e.type !== 'TODO' || e.startDate, // e.startDate가 없으면 rightTodos로 빠짐
   );
 
   const pastEvents = rightNormal.filter(
-    (e) => (e.endDate || e.startDate) < todayStr,
+    (e) => formatDateToYYYYMMDD(e.endDate || e.startDate) < todayStr,
   );
+  // '오늘' 이벤트 정의: 시작일이 오늘이거나 그 이전이고, 종료일(혹은 시작일)이 오늘이거나 그 이후인 이벤트
   const todayEvents = rightNormal.filter(
-    (e) => e.startDate <= todayStr && (e.endDate || e.startDate) >= todayStr,
+    (e) =>
+      formatDateToYYYYMMDD(e.startDate) <= todayStr &&
+      formatDateToYYYYMMDD(e.endDate || e.startDate) >= todayStr,
   );
   const tomorrowEvents = rightNormal.filter(
     (e) =>
-      e.startDate <= tomorrowStr &&
-      (e.endDate || e.startDate) >= tomorrowStr &&
-      e.startDate !== todayStr,
+      formatDateToYYYYMMDD(e.startDate) <= tomorrowStr &&
+      formatDateToYYYYMMDD(e.endDate || e.startDate) >= tomorrowStr &&
+      formatDateToYYYYMMDD(e.startDate) !== todayStr, // 오늘 시작하는 이벤트는 제외
   );
-  const futureEvents = rightNormal.filter((e) => e.startDate > tomorrowStr);
+  const futureEvents = rightNormal.filter(
+    (e) => formatDateToYYYYMMDD(e.startDate) > tomorrowStr,
+  );
 
   // 연속 일정 바 렌더링: 한 달 내에서 start~end가 겹치는 일정은 한 번만 표시
   function getEventBarsForMonth(year, month, events) {
@@ -340,7 +364,7 @@ function Schedule() {
       const end = new Date(ev.endDate || ev.startDate);
       const isSingleDay =
         !ev.endDate ||
-        toDateOnly(start).getTime() === toDateOnly(end).getTime();
+        formatDateToYYYYMMDD(start) === formatDateToYYYYMMDD(end); // Date 객체 대신 문자열 비교
 
       if (isSingleDay) {
         console.log('당일 일정이므로 연속 일정 바로 처리하지 않음:', ev.title);
@@ -351,21 +375,16 @@ function Schedule() {
         start: start.toISOString(),
         end: end.toISOString(),
       });
-      if (
-        (start.getFullYear() < year ||
-          (start.getFullYear() === year && start.getMonth() <= month)) &&
-        (end.getFullYear() > year ||
-          (end.getFullYear() === year && end.getMonth() >= month))
-      ) {
-        const barStart =
-          start.getFullYear() === year && start.getMonth() === month
-            ? start.getDate()
-            : 1;
+      // 이 부분의 월 비교 로직도 formatDateToYYYYMMDD를 사용하는 방식으로 일관성 확보
+      const monthStartStr = formatDateToYYYYMMDD(new Date(year, month, 1));
+      const monthEndStr = formatDateToYYYYMMDD(new Date(year, month + 1, 0));
+      const eventStartStr = formatDateToYYYYMMDD(start);
+      const eventEndStr = formatDateToYYYYMMDD(end);
+
+      if (eventEndStr >= monthStartStr && eventStartStr <= monthEndStr) {
+        const barStart = eventStartStr < monthStartStr ? 1 : start.getDate();
         const lastDay = new Date(year, month + 1, 0).getDate();
-        const barEnd =
-          end.getFullYear() === year && end.getMonth() === month
-            ? end.getDate()
-            : lastDay;
+        const barEnd = eventEndStr > monthEndStr ? lastDay : end.getDate();
         bars.push({ ...ev, barStart, barEnd });
         console.log('바 추가됨:', { barStart, barEnd });
       }
@@ -423,12 +442,10 @@ function Schedule() {
       })
       .then((res) => {
         setRightTodos(res.data || []);
-        setSuccessMessage('일정이 정상적으로 삭제되었습니다.');
-        setShowSuccessModal(true);
+        alert('일정이 정상적으로 삭제되었습니다.');
       })
       .catch((err) => {
-        setSuccessMessage('일정 삭제 중 오류가 발생했습니다.');
-        setShowSuccessModal(true);
+        alert('일정 삭제 중 오류가 발생했습니다.');
         console.error('일정 삭제 에러:', err);
       });
   };
@@ -453,13 +470,11 @@ function Schedule() {
       })
       .then((res) => {
         setRightTodos(res.data || []);
-        setSuccessMessage('일정이 정상적으로 수정되었습니다.');
-        setShowSuccessModal(true);
+        alert('일정이 정상적으로 수정되었습니다.');
         setEditEvent(null);
       })
       .catch((err) => {
-        setSuccessMessage('일정 수정 중 오류가 발생했습니다.');
-        setShowSuccessModal(true);
+        alert('일정 수정 중 오류가 발생했습니다.');
         console.error('일정 수정 에러:', err);
       });
   };
@@ -586,12 +601,10 @@ function Schedule() {
     // visibleEvents에서 해당 일정 찾기
     const event = visibleEvents.find((e) => e.id === highlightedEventId);
     if (!event || !event.startDate) return false;
-    const cellDate = toDateOnly(date).getTime();
-    const start = toDateOnly(new Date(event.startDate)).getTime();
-    const end = toDateOnly(
-      new Date(event.endDate || event.startDate),
-    ).getTime();
-    return cellDate >= start && cellDate <= end;
+    const cellDateStr = formatDateToYYYYMMDD(date);
+    const startStr = formatDateToYYYYMMDD(event.startDate);
+    const endStr = formatDateToYYYYMMDD(event.endDate || event.startDate);
+    return cellDateStr >= startStr && cellDateStr <= endStr;
   };
 
   return (
@@ -729,44 +742,39 @@ function Schedule() {
                 cells.push(<td key={`empty-${i}`}></td>);
               }
               days.forEach((date, idx) => {
-                const dateStr = date.toISOString().slice(0, 10);
+                const dateStr = formatDateToYYYYMMDD(date); // YYYY-MM-DD 문자열
                 // 1일 셀에만 별도 클래스 추가
                 const isFirstDay = date.getDate() === 1;
                 // 1. 연속 일정 바(해당 날짜가 bar의 실제 start~end에 포함되는 모든 바)
                 const barsForCell = eventBars.filter((bar) => {
-                  const start = toDateOnly(new Date(bar.startDate));
-                  const end = toDateOnly(new Date(bar.endDate));
-                  const cellDate = toDateOnly(date);
-                  return cellDate >= start && cellDate <= end;
+                  const currentDate = date.getDate(); // 현재 셀의 날짜 (1-31)
+                  return currentDate >= bar.barStart && currentDate <= bar.barEnd;
+                }).sort((a, b) => {
+                  const durationA = new Date(a.endDate).getTime() - new Date(a.startDate).getTime();
+                  const durationB = new Date(b.endDate).getTime() - new Date(b.startDate).getTime();
+                  return durationB - durationA; // 긴 일정이 먼저 오도록 내림차순 정렬
                 });
                 // 2. 당일 단일 일정(기한 없는 할일은 무조건 제외)
                 const dayEvents = visibleEvents.filter((e) => {
-                  if (e.type === 'TODO' && !e.startDate && !e.endDate)
-                    return false;
-                  if (!e.startDate) return false;
-                  // 연속 일정 바로 처리되는 일정은 무조건 제외
-                  if (eventBarIds.has(e.id)) return false;
-                  // 날짜 비교도 toDateOnly로 보정
-                  const start = toDateOnly(new Date(e.startDate));
-                  const end = toDateOnly(new Date(e.endDate || e.startDate));
-                  const cellDate = toDateOnly(date);
-                  const isInRange = cellDate >= start && cellDate <= end;
-                  return isInRange;
+                  if (e.type === 'TODO' && (!e.startDate || !e.endDate))
+                    return false; // 기한 없는 할 일 제외
+                  if (eventBarIds.has(e.id)) return false; // 연속 일정 바로 처리되는 일정 제외
+                  return isSameDay(date, e.startDate); // 해당 날짜에 시작하는 단일 일정
                 });
+
                 cells.push(
                   <td
                     key={dateStr}
                     className={
                       styles.calendarCell +
-                      (isFirstDay ? ' ' + styles.firstDayCell : '') +
-                      (toDateOnly(date).getTime() ===
-                      toDateOnly(today).getTime()
+                      (isSameDay(date, today)
                         ? ' ' +
                           styles.todayCell +
                           (highlightTodayCell
                             ? ' ' + styles.todayCellHighlight
                             : '')
                         : '') +
+                      (isFirstDay ? ' ' + styles.firstDayCell : '') + // 첫째 날 클래스는 뒤로
                       (isCellHighlighted(date)
                         ? ' ' + styles.highlightedCell
                         : '')
@@ -774,35 +782,70 @@ function Schedule() {
                   >
                     <div className={styles.dateNum}>{date.getDate()}</div>
 
-                    {/* 연속 일정 바: 해당 날짜가 barStart~barEnd에 포함되는 모든 바 (먼저 렌더링) */}
+                    {/* 연속 일정 바 */}
                     {barsForCell.map((bar) => {
                       const cat = categories.find(
                         (c) => c.id === bar.categoryId,
                       );
-
-                      // 연속 일정 바의 위치에 따른 라운딩 클래스 결정
-                      const currentDate = date.getDate(); // 현재 셀의 날짜 (1-31)
-                      const barStart = bar.barStart; // 해당 월에서의 시작일
-                      const barEnd = bar.barEnd; // 해당 월에서의 종료일
+                      const currentDate = date.getDate();
+                      const barStartDayInMonth =
+                        formatDateToYYYYMMDD(bar.startDate).substring(0, 7) ===
+                        formatDateToYYYYMMDD(
+                          new Date(currentYear, currentMonth, 1),
+                        ).substring(0, 7)
+                          ? new Date(bar.startDate).getDate()
+                          : 1; // 바 시작일이 현재 월에 있으면 그 날짜, 아니면 1일
+                      const barEndDayInMonth =
+                        formatDateToYYYYMMDD(
+                          bar.endDate || bar.startDate,
+                        ).substring(0, 7) ===
+                        formatDateToYYYYMMDD(
+                          new Date(currentYear, currentMonth, 1),
+                        ).substring(0, 7)
+                          ? new Date(bar.endDate || bar.startDate).getDate()
+                          : new Date(
+                              currentYear,
+                              currentMonth + 1,
+                              0,
+                            ).getDate(); // 바 종료일이 현재 월에 있으면 그 날짜, 아니면 월의 마지막 날
 
                       let barClassName = styles.continuousEventBar;
 
-                      // 당일 일정인 경우 (barStart와 barEnd가 같음)
-                      if (barStart === barEnd) {
-                        barClassName = styles.continuousEventBarSingle;
-                      } else {
-                        // 구간 일정의 첫 번째 날
-                        if (currentDate === barStart) {
-                          barClassName = styles.continuousEventBarStart;
-                        }
-                        // 구간 일정의 마지막 날
-                        else if (currentDate === barEnd) {
-                          barClassName = styles.continuousEventBarEnd;
-                        }
-                        // 구간 일정의 중간 날
-                        else {
-                          barClassName = styles.continuousEventBarMiddle;
-                        }
+                      // 이벤트의 실제 시작일이 현재 월의 1일보다 이전인지 확인
+                      const isEventTrueStartBeforeCurrentMonth = new Date(bar.startDate).getFullYear() < currentYear ||
+                                                                 (new Date(bar.startDate).getFullYear() === currentYear && new Date(bar.startDate).getMonth() < currentMonth);
+
+                      // 이벤트의 실제 종료일이 현재 월의 말일보다 이후인지 확인
+                      const isEventTrueEndAfterCurrentMonth = new Date(bar.endDate || bar.startDate).getFullYear() > currentYear ||
+                                                              (new Date(bar.endDate || bar.startDate).getFullYear() === currentYear && new Date(bar.endDate || bar.startDate).getMonth() > currentMonth);
+
+                      // Case 1: 이벤트가 현재 월을 완전히 포함하는 경우 (이전 월에서 시작하여 다음 월로 이어짐)
+                      if (isEventTrueStartBeforeCurrentMonth && isEventTrueEndAfterCurrentMonth) {
+                          barClassName = styles.continuousEventBarMiddle; // 양쪽 라운딩 없음
+                      }
+                      // Case 2: 이벤트가 이전 월에서 시작하여 현재 월에서 끝나는 경우
+                      else if (isEventTrueStartBeforeCurrentMonth && currentDate === barEndDayInMonth) {
+                          barClassName = styles.continuousEventBarEnd; // 오른쪽 라운딩
+                      }
+                      // Case 3: 이벤트가 현재 월에서 시작하여 다음 월로 이어지는 경우
+                      else if (isEventTrueEndAfterCurrentMonth && currentDate === barStartDayInMonth) {
+                          barClassName = styles.continuousEventBarStart; // 왼쪽 라운딩
+                      }
+                      // Case 4: 이벤트가 현재 월 내에서 시작하고 끝나는 경우 (단일 월 내 다일 일정)
+                      else if (currentDate === barStartDayInMonth && currentDate === barEndDayInMonth) {
+                          barClassName = styles.continuousEventBarSingleDayBar; // 양쪽 라운딩 (단일 일자 바)
+                      }
+                      // Case 5: 이벤트가 현재 월 내에서 시작하는 경우 (다음 날로 이어짐)
+                      else if (currentDate === barStartDayInMonth) {
+                          barClassName = styles.continuousEventBarStart; // 왼쪽 라운딩
+                      }
+                      // Case 6: 이벤트가 현재 월 내에서 끝나는 경우 (이전 날부터 이어짐)
+                      else if (currentDate === barEndDayInMonth) {
+                          barClassName = styles.continuousEventBarEnd; // 오른쪽 라운딩
+                      }
+                      // Case 7: 이벤트가 현재 월 내에서 중간에 있는 경우
+                      else {
+                          barClassName = styles.continuousEventBarMiddle; // 라운딩 없음
                       }
 
                       return (
@@ -1281,17 +1324,6 @@ function Schedule() {
           defaultEvent={editEvent}
         />
       )}
-
-      {/* 성공 모달 */}
-      {showSuccessModal && (
-        <SuccessModal
-          message={successMessage}
-          onClose={() => {
-            setShowSuccessModal(false);
-            setSuccessMessage('');
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -1546,10 +1578,7 @@ function CategoryModal({ onClose, onAdd, defaultType = 'PERSONAL' }) {
                     userDeptId === 'null' ||
                     userDeptId === 'undefined')
                 ) {
-                  setSuccessMessage(
-                    '부서 정보가 없습니다. 다시 로그인 해주세요.',
-                  );
-                  setShowSuccessModal(true);
+                  alert('부서 정보가 없습니다. 다시 로그인 해주세요.');
                   return;
                 }
                 const data =
