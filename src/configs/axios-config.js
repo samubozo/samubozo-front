@@ -55,7 +55,7 @@ axiosInstance.interceptors.response.use(
     if (error.response?.data?.statusMessage === 'EXPIRED_RT') {
       sessionStorage.clear();
       localStorage.removeItem('REFRESH_TOKEN');
-      window.location.href = '/login';
+      window.location.href = '/';
       return Promise.reject(error);
     }
 
@@ -81,7 +81,7 @@ axiosInstance.interceptors.response.use(
           if (rememberedEmails) {
             localStorage.setItem('rememberedEmails', rememberedEmails);
           }
-          window.location.href = '/login';
+          window.location.href = '/';
           return Promise.reject(error);
         }
 
@@ -107,7 +107,7 @@ axiosInstance.interceptors.response.use(
           if (rememberedEmails) {
             localStorage.setItem('rememberedEmails', rememberedEmails);
           }
-          window.location.href = '/login';
+          window.location.href = '/';
           return Promise.reject(new Error('리프레시 응답에 accessToken 없음'));
         }
 
@@ -130,7 +130,7 @@ axiosInstance.interceptors.response.use(
         if (rememberedEmails) {
           localStorage.setItem('rememberedEmails', rememberedEmails);
         }
-        window.location.href = '/login';
+        window.location.href = '/';
         return Promise.reject(refreshError);
       }
     }
