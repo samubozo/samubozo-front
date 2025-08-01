@@ -25,6 +25,8 @@ jobs:
 
       - name: Build React App # 4. React 프로젝트 빌드
         run: CI=false npm run build
+        env:
+          VITE_KMA_API_KEY: ${{ secrets.VITE_KMA_API_KEY }}
 
       - name: Configure AWS credentials # 5. AWS 자격 증명 설정 (AWS 공식 액션)
         uses: aws-actions/configure-aws-credentials@v4
