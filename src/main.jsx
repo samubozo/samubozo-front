@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.jsx';
 import { BrowserRouter } from 'react-router-dom';
+import './utils/networkInterceptor'; // 네트워크 404 에러 처리
 
 // Prism.js 언어 모듈 에러 숨기기
 const originalError = console.error;
