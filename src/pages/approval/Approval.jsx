@@ -90,6 +90,10 @@ function Approval() {
   const [showCertModal, setShowCertModal] = useState(false);
   const [certModalLoading, setCertModalLoading] = useState(false);
 
+  // 실시간 업데이트를 위한 상태 추가
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+  const [dataVersion, setDataVersion] = useState(0); // 데이터 버전 관리
+
   // 증명서 신청 핸들러
   const handleCertModalOpen = () => {
     setShowCertModal(true);
@@ -219,7 +223,9 @@ function Approval() {
       setToast({ message: '승인 처리 완료', type: 'success' });
       // 승인 후 처리완료 탭으로 자동 이동
       setApprovalStatus('processed');
-      fetchData();
+
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
     } catch (err) {
       setToast({
         message: err.message || '승인 처리 중 오류가 발생했습니다.',
@@ -285,14 +291,8 @@ function Approval() {
       setRejectTargetId(null);
       setSelected([]);
 
-      // 데이터 새로고침
-      if (tab === 'leave') {
-        fetchData();
-      } else if (tab === 'absence') {
-        fetchAbsenceDataFromHook();
-      } else if (tab === 'certificate') {
-        fetchData();
-      }
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
     } catch (err) {
       setToast({
         message: err.message || '반려 처리 중 오류가 발생했습니다.',
@@ -547,69 +547,33 @@ function Approval() {
 
   // 부재 승인 핸들러 추가
   const handleAbsenceApprove = async (absenceId) => {
-    // HR 권한 체크
-    if (!isHR) {
-      setToast({
-        message: 'HR 권한이 필요합니다.',
-        type: 'error',
-      });
-      return;
-    }
-
     try {
-      setLoading(true); // 로딩 시작
       await approvalService.approveHRAbsence(absenceId);
-      setSuccessMessage('부재가 승인되었습니다.');
-      setShowSuccessModal(true);
+      setToast({ message: '부재 승인 처리 완료', type: 'success' });
 
-      // 승인 후 데이터 새로고침
-      setTimeout(() => {
-        fetchAbsenceDataFromHook();
-      }, 1000);
-    } catch (error) {
-      console.error('부재 승인 실패:', error);
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
+    } catch (err) {
       setToast({
-        message:
-          '부재 승인 중 오류가 발생했습니다: ' +
-          (error.message || '알 수 없는 오류'),
+        message: err.message || '부재 승인 처리 중 오류가 발생했습니다.',
         type: 'error',
       });
-    } finally {
-      setLoading(false); // 로딩 종료
     }
   };
 
   // 부재 반려 핸들러 추가
   const handleAbsenceReject = async (absenceId, comment) => {
-    // HR 권한 체크
-    if (!isHR) {
-      setToast({
-        message: 'HR 권한이 필요합니다.',
-        type: 'error',
-      });
-      return;
-    }
-
     try {
-      setLoading(true); // 로딩 시작
       await approvalService.rejectHRAbsence(absenceId, comment);
-      setSuccessMessage('부재가 반려되었습니다.');
-      setShowSuccessModal(true);
+      setToast({ message: '부재 반려 처리 완료', type: 'success' });
 
-      // 반려 후 데이터 새로고침
-      setTimeout(() => {
-        fetchAbsenceDataFromHook();
-      }, 1000);
-    } catch (error) {
-      console.error('부재 반려 실패:', error);
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
+    } catch (err) {
       setToast({
-        message:
-          '부재 반려 중 오류가 발생했습니다: ' +
-          (error.message || '알 수 없는 오류'),
+        message: err.message || '부재 반려 처리 중 오류가 발생했습니다.',
         type: 'error',
       });
-    } finally {
-      setLoading(false); // 로딩 종료
     }
   };
 
@@ -716,6 +680,60 @@ function Approval() {
     if (s === 'APPROVED') return '승인';
     if (s === 'REJECTED') return '반려';
     return status;
+  };
+
+  // 데이터 버전 업데이트 함수 (변경사항 발생 시 호출)
+  const updateDataVersion = () => {
+    setDataVersion((prev) => prev + 1);
+    setLastUpdateTime(Date.now());
+    console.log(
+      'Approval 페이지 데이터 버전 업데이트:',
+      new Date().toLocaleTimeString(),
+    );
+  };
+
+  // 데이터 새로고침 함수 (실시간 업데이트용)
+  const refreshData = async () => {
+    try {
+      await fetchData();
+      updateDataVersion();
+      console.log(
+        'Approval 페이지 데이터 수동 새로고침 완료:',
+        new Date().toLocaleTimeString(),
+      );
+    } catch (error) {
+      console.error('Approval 페이지 데이터 새로고침 실패:', error);
+    }
+  };
+
+  // 실시간 업데이트 상태 표시를 위한 함수
+  const getLastUpdateTimeString = () => {
+    const now = Date.now();
+    const diff = now - lastUpdateTime;
+    const seconds = Math.floor(diff / 1000);
+
+    if (seconds < 60) {
+      return `${seconds}초 전`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes}분 전`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      return `${hours}시간 전`;
+    }
+  };
+
+  // 수동 새로고침 버튼 핸들러
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    try {
+      await refreshData();
+      setToast({ message: '데이터가 새로고침되었습니다.', type: 'success' });
+    } catch (error) {
+      setToast({ message: '새로고침 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

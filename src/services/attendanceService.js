@@ -103,7 +103,7 @@ export const attendanceService = {
 
   // 부재 등록
   registerAbsence: async (absenceData) => {
-    // absenceData: { type, startDate, endDate, time, reason }
+    // absenceData: { type, startDate, endDate, startTime, endTime, reason, urgency }
     const response = await axiosInstance.post(
       `${API_BASE_URL}${ATTENDANCE}/absence`,
       absenceData,
@@ -112,15 +112,16 @@ export const attendanceService = {
   },
 
   // 내 부재 목록 조회 (userId 없이 /my 엔드포인트 사용)
-  getAbsences: async ({ year, month }) => {
-    const params = {};
-    if (year) params.year = year;
-    if (month) params.month = month;
-    const response = await axiosInstance.get(
-      `${API_BASE_URL}${ATTENDANCE}/absence/my`,
-      { params },
-    );
-    return response.data;
+  getAbsences: async () => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${ATTENDANCE}/absence/my`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('부재 API 호출 실패:', error);
+      throw error;
+    }
   },
 
   // 단일 부재 상세 조회
@@ -133,6 +134,7 @@ export const attendanceService = {
 
   // 부재 수정
   updateAbsence: async (absenceId, updateData) => {
+    // updateData: { type, startDate, endDate, startTime, endTime, reason, urgency }
     const response = await axiosInstance.put(
       `${API_BASE_URL}${ATTENDANCE}/absence/${absenceId}`,
       updateData,

@@ -4,8 +4,6 @@ import styles from './AbsenceEditModal.module.scss';
 const typeOptions = [
   { value: 'BUSINESS_TRIP', label: '출장' },
   { value: 'TRAINING', label: '연수' },
-  { value: 'ANNUAL_LEAVE', label: '연차' },
-  { value: 'HALF_DAY_LEAVE', label: '반차' },
   { value: 'SHORT_LEAVE', label: '외출' },
   { value: 'SICK_LEAVE', label: '병가' },
   { value: 'OFFICIAL_LEAVE', label: '공가' },

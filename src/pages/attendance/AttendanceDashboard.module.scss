@@ -487,6 +487,48 @@
   }
 }
 
+.vacationBtn {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+  &:hover {
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    box-shadow: 0 3px 6px rgba(33, 150, 243, 0.4);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.pendingBtn {
+  background: linear-gradient(135deg, #e6ba2a, #e8a507);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+  &:hover {
+    background: linear-gradient(135deg, #ffb300, #ff8f00);
+    box-shadow: 0 3px 6px rgba(255, 193, 7, 0.4);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 .todayRow,
 .todayRow td {
   background: #fffde7 !important;
@@ -596,3 +638,36 @@
 }
 
 // 불필요한 스타일 제거됨
+
+// 반려된 부재/휴가 스타일 (빨간색)
+.rejectedBtn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+  border: 1px solid #ff4757;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: line-through;
+  opacity: 0.8;
+
+  &:hover {
+    background: linear-gradient(135deg, #ff5252 0%, #d63031 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+  }
+}
+
+// 반려 사유 툴팁 스타일
+.tooltipRejectReason {
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(255, 71, 87, 0.1);
+  border-left: 3px solid #ff4757;
+  border-radius: 2px;
+  font-size: 11px;
+  color: #ff4757;
+  font-weight: 500;
+}
