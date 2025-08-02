@@ -250,8 +250,9 @@ export const useApprovalData = (
           processedAt: formatDate(
             row.approveDate || row.rejectedAt || row.processedAt || '',
           ),
+          reason: row.reason || '', // reason 필드 추가
           rejectComment:
-            row.rejectComment || (row.status === 'REJECTED' ? row.purpose : ''), // 반려 사유 추가 (임시 해결책)
+            row.rejectComment || (row.status === 'REJECTED' ? row.reason : ''), // 반려 사유 수정
         }));
         setCertData(mappedCertData);
       } else if (tab === 'absence') {

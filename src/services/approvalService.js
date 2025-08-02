@@ -227,6 +227,28 @@ export const approvalService = {
     }
   },
 
+  // HR용 처리된 결재 목록 조회
+  async getHRProcessedApprovals() {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${APPROVAL}/processed`,
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // HR용 전체 결재 목록 조회
+  async getHRAllApprovals() {
+    try {
+      const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // 15. HR 휴가 신청 승인 (공통 API 사용)
   async approveHRVacation(approvalId) {
     return this.approveApprovalRequest(approvalId, null); // employeeNo는 헤더에서 자동 설정
@@ -349,6 +371,20 @@ export const approvalService = {
       return response.data;
     } catch (error) {
       const msg = error.response?.data?.message || '증명서 상세 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 26. 새로운 증명서 결재 요청 생성
+  async requestCertificateApproval(certificateData) {
+    try {
+      const response = await axiosInstance.post(
+        `${API_BASE_URL}${CERTIFICATE}/certificate`,
+        certificateData,
+      );
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '증명서 결재 요청 실패';
       throw new Error(msg);
     }
   },
@@ -543,5 +579,78 @@ export const approvalService = {
       params,
     });
     return response.data;
+  },
+
+  // ===== 새로운 통합 API 메서드들 =====
+
+  // 36. 새로운 통합 API를 사용한 결재 내역 조회
+  async getApprovalsWithFilters({ applicantId, status, requestType } = {}) {
+    try {
+      const params = {};
+      if (applicantId) params.applicantId = applicantId;
+      if (status) params.status = status;
+      if (requestType) params.requestType = requestType;
+
+      const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '결재 내역 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 37. HR용 대기중 결재 조회 (새로운 API 사용)
+  async getHRPendingApprovalsNew(applicantId = null, requestType = null) {
+    try {
+      const params = { status: 'PENDING' };
+      if (applicantId) params.applicantId = applicantId;
+      if (requestType) params.requestType = requestType;
+
+      const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '대기중 결재 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 38. HR용 처리완료 결재 조회 (새로운 API 사용)
+  async getHRProcessedApprovalsNew(applicantId = null, requestType = null) {
+    try {
+      const params = { status: 'PROCESSED' };
+      if (applicantId) params.applicantId = applicantId;
+      if (requestType) params.requestType = requestType;
+
+      const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '처리완료 결재 조회 실패';
+      throw new Error(msg);
+    }
+  },
+
+  // 39. 특정 직원의 증명서 결재 내역 조회 (새로운 API 사용)
+  async getEmployeeCertificates(employeeId, status = null) {
+    try {
+      const params = {
+        applicantId: employeeId,
+        requestType: 'CERTIFICATE',
+      };
+      if (status) params.status = status;
+
+      const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`, {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || '직원 증명서 내역 조회 실패';
+      throw new Error(msg);
+    }
   },
 };

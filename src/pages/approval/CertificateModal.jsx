@@ -86,7 +86,7 @@ function CertificateModal({
           if (onClose) onClose();
         }}
         autoClose={true}
-        autoCloseDelay={2000}
+        autoCloseDelay={3000}
       />
     );
   }

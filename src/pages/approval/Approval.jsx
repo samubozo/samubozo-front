@@ -105,8 +105,9 @@ function Approval() {
   const handleCertModalSubmit = async (form) => {
     setCertModalLoading(true);
     try {
-      // 신청(POST)
-      const response = await approvalService.applyCertificate(form);
+      // 증명서 신청 (백엔드에서 자동으로 결재 요청까지 처리)
+      await approvalService.applyCertificate(form);
+
       await fetchData();
       // 모달은 CertificateModal에서 성공 후에 닫도록 함
       return true; // 성공 시 true 반환 (CertificateModal에서 성공 모달 표시)
@@ -386,7 +387,7 @@ function Approval() {
       const searchFields = [
         row.applicant,
         row.approver,
-        row.purpose,
+        row.reason,
         row.applicantDepartment,
       ].filter((field) => field); // null/undefined 제거
 
@@ -422,7 +423,7 @@ function Approval() {
       const searchFields = [
         row.applicant,
         row.approver,
-        row.purpose,
+        row.reason,
         row.applicantDepartment,
       ].filter((field) => field);
 
@@ -853,6 +854,7 @@ function Approval() {
             onEditCert={null}
             onPrintCert={null}
             onRowClick={handleRowClick}
+            statusToKor={statusToKor}
           />
         ) : tab === 'certificate' ? (
           <ApprovalTable
@@ -873,6 +875,7 @@ function Approval() {
               /* 추후 구현 */
             }}
             onRowClick={handleRowClick}
+            statusToKor={statusToKor}
           />
         ) : (
           <ApprovalTable
@@ -891,6 +894,7 @@ function Approval() {
             onEditCert={null}
             onPrintCert={null}
             onRowClick={handleRowClick}
+            statusToKor={statusToKor}
             typeToKor={(type) => {
               const absenceTypeMap = {
                 BUSINESS_TRIP: '출장',
@@ -1040,18 +1044,6 @@ function Approval() {
                       ? '증명서 신청 상세'
                       : '부재 신청 상세'}
                 </h3>
-                <div
-                  className={`${styles.statusBadge} ${
-                    detailData.status === '승인'
-                      ? styles.statusApproved
-                      : detailData.status === '반려'
-                        ? styles.statusRejected
-                        : styles.statusPending
-                  }`}
-                >
-                  <div className={styles.statusDot}></div>
-                  {detailData.status}
-                </div>
               </div>
               <button
                 className={styles.modalClose}
@@ -1067,185 +1059,333 @@ function Approval() {
             <div className={styles.modalBody}>
               {/* 기본 정보 */}
               <div className={styles.detailSection}>
-                <div className={styles.detailGrid}>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>신청자</div>
-                    <div className={styles.detailValue}>
-                      {detailData.applicant}
-                    </div>
-                  </div>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>부서</div>
-                    <div className={styles.detailValue}>
-                      {detailData.applicantDepartment || detailData.department}
-                    </div>
-                  </div>
+                <div className={styles.detailTable}>
                   {tab === 'leave' ? (
                     <>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>휴가 유형</div>
-                        <div className={styles.detailValue}>
-                          {detailData.type}
+                      <div className={styles.certificateInfo}>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicant || '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>기간</div>
-                        <div className={styles.detailValue}>
-                          {detailData.period}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부서</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicantDepartment ||
+                              detailData.department ||
+                              '-'}
+                          </div>
                         </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>휴가 유형</div>
+                          <div className={styles.infoValue}>
+                            {detailData.type || '-'}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>기간</div>
+                          <div className={styles.infoValue}>
+                            {detailData.period || '-'}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청일자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applyDate || '-'}
+                          </div>
+                        </div>
+                        {detailData.reason && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>사유</div>
+                            <div className={styles.infoValue}>
+                              {detailData.reason || '-'}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '대기' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>처리상태</div>
+                            <div className={styles.infoValue}>
+                              <span
+                                className={`${styles.statusBadge} ${styles.status대기}`}
+                              >
+                                대기
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '승인' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {detailData.status === '반려' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>반려사유</div>
+                              <div className={styles.infoValue}>
+                                {detailData.rejectComment || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </>
                   ) : tab === 'certificate' ? (
                     <>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>증명서 유형</div>
-                        <div className={styles.detailValue}>
-                          {detailData.type}
+                      <div className={styles.certificateInfo}>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicant || '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>신청일자</div>
-                        <div className={styles.detailValue}>
-                          {detailData.applyDate}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부서</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicantDepartment ||
+                              detailData.department ||
+                              '-'}
+                          </div>
                         </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>증명서 유형</div>
+                          <div className={styles.infoValue}>
+                            {detailData.type || '-'}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청일자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applyDate || '-'}
+                          </div>
+                        </div>
+                        {detailData.status !== '반려' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>용도</div>
+                            <div className={styles.infoValue}>
+                              {detailData.reason || '-'}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '대기' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>처리상태</div>
+                            <div className={styles.infoValue}>
+                              <span
+                                className={`${styles.statusBadge} ${styles.status대기}`}
+                              >
+                                대기
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '승인' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {detailData.status === '반려' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>반려사유</div>
+                              <div className={styles.infoValue}>
+                                {detailData.rejectComment || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>부재 유형</div>
-                        <div className={styles.detailValue}>
-                          {(() => {
-                            const absenceTypeMap = {
-                              BUSINESS_TRIP: '출장',
-                              TRAINING: '연수',
-                              ANNUAL_LEAVE: '연차',
-                              HALF_DAY_LEAVE: '반차',
-                              SHORT_LEAVE: '외출',
-                              SICK_LEAVE: '병가',
-                              OFFICIAL_LEAVE: '공가',
-                              ETC: '기타',
-                            };
-                            return (
-                              absenceTypeMap[detailData.type] || detailData.type
-                            );
-                          })()}
+                      <div className={styles.certificateInfo}>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicant || '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>긴급도</div>
-                        <div className={styles.detailValue}>
-                          {(() => {
-                            const urgencyMap = {
-                              NORMAL: '일반',
-                              URGENT: '긴급',
-                            };
-                            return (
-                              urgencyMap[detailData.urgency] ||
-                              detailData.urgency
-                            );
-                          })()}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부서</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicantDepartment ||
+                              detailData.department ||
+                              '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>신청일</div>
-                        <div className={styles.detailValue}>
-                          {detailData.applyDate}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부재 유형</div>
+                          <div className={styles.infoValue}>
+                            {(() => {
+                              const absenceTypeMap = {
+                                BUSINESS_TRIP: '출장',
+                                TRAINING: '연수',
+                                ANNUAL_LEAVE: '연차',
+                                HALF_DAY_LEAVE: '반차',
+                                SHORT_LEAVE: '외출',
+                                SICK_LEAVE: '병가',
+                                OFFICIAL_LEAVE: '공가',
+                                ETC: '기타',
+                              };
+                              return (
+                                absenceTypeMap[detailData.type] ||
+                                detailData.type
+                              );
+                            })()}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>시간</div>
-                        <div className={styles.detailValue}>
-                          {detailData.startTime && detailData.endTime
-                            ? `${detailData.startTime.substring(0, 5)} ~ ${detailData.endTime.substring(0, 5)}`
-                            : '-'}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>긴급도</div>
+                          <div className={styles.infoValue}>
+                            {(() => {
+                              const urgencyMap = {
+                                NORMAL: '일반',
+                                URGENT: '긴급',
+                              };
+                              return (
+                                urgencyMap[detailData.urgency] ||
+                                detailData.urgency
+                              );
+                            })()}
+                          </div>
                         </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청일</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applyDate || '-'}
+                          </div>
+                        </div>
+                        {detailData.startTime && detailData.endTime && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>시간</div>
+                            <div className={styles.infoValue}>
+                              {`${detailData.startTime.substring(0, 5)} ~ ${detailData.endTime.substring(0, 5)}`}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.reason && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>사유</div>
+                            <div className={styles.infoValue}>
+                              {detailData.reason || '-'}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '대기' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>처리상태</div>
+                            <div className={styles.infoValue}>
+                              <span
+                                className={`${styles.statusBadge} ${styles.status대기}`}
+                              >
+                                대기
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '승인' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {detailData.status === '반려' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>반려사유</div>
+                              <div className={styles.infoValue}>
+                                {detailData.rejectComment || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </>
                   )}
                 </div>
               </div>
-
-              {/* 기간/용도 (휴가가 아닌 경우만) */}
-              {tab !== 'leave' && tab !== 'certificate' && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>기간</div>
-                    <div className={styles.detailValue}>
-                      {detailData.period}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 사유 (대기 상태일 때만) */}
-              {detailData.status === '대기' && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>사유</div>
-                    <div className={styles.detailValue}>
-                      {detailData.reason || '-'}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 승인/반려 정보 */}
-              {(detailData.status === '승인' ||
-                detailData.status === '반려') && (
-                <div className={styles.detailSection}>
-                  {detailData.status === '승인' ? (
-                    <>
-                      <div
-                        className={`${styles.detailLabel} ${styles.approvalLabel}`}
-                      >
-                        승인 정보
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailValue}>
-                          <div className={styles.approvalInfo}>
-                            <span>
-                              결재자:{' '}
-                              {detailData.approver ||
-                                detailData.approverName ||
-                                '-'}
-                            </span>
-                            <span>
-                              처리일자: {detailData.processedAt || '-'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        className={`${styles.detailLabel} ${styles.rejectLabel}`}
-                      >
-                        반려사유
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailValue}>
-                          <div className={styles.rejectInfo}>
-                            <span>
-                              결재자:{' '}
-                              {detailData.approver ||
-                                detailData.approverName ||
-                                '-'}
-                            </span>
-                            <span>
-                              처리일자: {detailData.processedAt || '-'}
-                            </span>
-                          </div>
-                          <div className={styles.rejectReason}>
-                            {detailData.rejectComment || '-'}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>

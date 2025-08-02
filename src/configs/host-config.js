@@ -11,15 +11,12 @@ const clientHostName = window.location.hostname;
 
 let backendHostName;
 
-if (
-  clientHostName === 'localhost' ||
-  clientHostName === 'page-samubozo.s3-website.ap-northeast-2.amazonaws.com'
-) {
+if (clientHostName === 'localhost') {
   // 개발 중
   backendHostName = 'http://localhost:8000';
-} else if (clientHostName === 'samubozo.co.kr') {
+} else if (clientHostName === 'playdatashop8917.store') {
   // 배포해서 현재 서비스 중
-  backendHostName = 'https://api.samubozo.co.kr';
+  backendHostName = 'https://api.playdatashop8917.store';
 }
 
 export const API_BASE_URL = backendHostName;
@@ -30,6 +27,7 @@ export const CHATBOT = '/chatbot-service/chatbot';
 export const ATTENDANCE = '/attendance-service/attendance';
 export const VACATION = '/vacation-service/vacations';
 export const MESSAGE = '/message-service/messages';
-export const NOTIFICATION = '/notification-service/notifications';
+export const NOTIFICATION = '/message-service/notifications';
 export const SCHEDULE = '/schedule-service/schedule';
+export const APPROVAL = '/approval-service/approvals';
 export const PAYROLL = '/payroll-service/payroll';
