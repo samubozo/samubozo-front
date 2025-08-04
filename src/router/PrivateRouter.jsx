@@ -32,16 +32,11 @@ const PrivateRouter = ({ element, requiredRole }) => {
 
   // 3. Context 로그인 상태 체크 (추가 보안)
   if (!isLoggedIn) {
-      'PrivateRouter: Context에서 로그인 안됨 - 로그인 페이지로 리다이렉트',
-    );
     return <Navigate to='/' replace />;
   }
 
   // 4. 권한 체크 (필요한 경우만)
   if (requiredRole && userRole !== requiredRole) {
-      requiredRole,
-      userRole,
-    });
     return <Navigate to='/' replace />;
   }
 

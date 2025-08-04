@@ -57,26 +57,13 @@ const Header = ({ showChatbot }) => {
       );
 
       // 각 알림의 읽음 상태 확인
-      response.data.forEach((notification, index) => {
-          id: notification.notificationId || notification.messageId,
-          type: notification.type,
-          message: notification.message,
-          isRead: notification.isRead,
-          readAt: notification.readAt,
-          createdAt: notification.createdAt,
-        });
-      });
+      response.data.forEach((notification, index) => {});
 
       setNotifications(response.data);
 
       // 알림 목록 업데이트 후 읽지 않은 개수 계산
       const unreadCount = response.data.filter((n) => !n.isRead).length;
-        '읽지 않은 알림들:',
-        response.data.filter((n) => !n.isRead),
-      );
-        '읽은 알림들:',
-        response.data.filter((n) => n.isRead),
-      );
+
       setUnreadCount(unreadCount);
     } catch (error) {
       console.error('알림 목록 조회 실패:', error);
@@ -89,7 +76,6 @@ const Header = ({ showChatbot }) => {
   // 알림 읽음 처리
   const markNotificationAsRead = async (notificationId) => {
     try {
-
       if (!notificationId) {
         console.error('알림 ID가 없습니다');
         return;
@@ -172,7 +158,6 @@ const Header = ({ showChatbot }) => {
 
     // 토큰이 만료되었으면 갱신 시도
     if (payload.exp * 1000 < Date.now()) {
-
       // 이미 갱신 중이면 중복 시도 방지
       if (isRefreshingTokenRef.current) {
         return;
@@ -242,7 +227,6 @@ const Header = ({ showChatbot }) => {
 
       // 500 에러나 서버 오류일 때는 재연결 중단
       if (eventSource.readyState === EventSource.CLOSED) {
-
         // 최대 재연결 횟수 초과 시 중단
         if (sseRetryCountRef.current >= SSE_MAX_RETRY_COUNT) {
           console.error('SSE 최대 재연결 횟수 초과 - 재연결 중단');
@@ -465,7 +449,6 @@ const Header = ({ showChatbot }) => {
 
   // 알림 아이콘 렌더링
   const NotificationIcon = () => {
-
     return (
       <div className={styles.notificationIcon}>
         <svg
@@ -647,17 +630,6 @@ const Header = ({ showChatbot }) => {
 
               {/* 맑음일 때만 해바라기 표시 (로고에 겹치게) */}
               {(() => {
-                // 디버깅을 위한 로그
-                  testWeather,
-                  todayWeatherState,
-                  testWeatherSky: testWeather?.sky,
-                  testWeatherPty: testWeather?.pty,
-                  actualSky: todayWeatherState?.SKY,
-                  actualPty: todayWeatherState?.PTY,
-                  actualSkyKR: todayWeatherState?.SKY_KR,
-                  actualPtyKR: todayWeatherState?.PTY_KR,
-                });
-
                 // 테스트 날씨인 경우
                 if (
                   testWeather &&
@@ -680,9 +652,6 @@ const Header = ({ showChatbot }) => {
                     todayWeatherState.PTY === 0 ||
                     todayWeatherState.PTY_KR === '없음';
 
-                    isSunny,
-                    noPrecipitation,
-                  });
                   return isSunny && noPrecipitation;
                 }
 

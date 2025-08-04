@@ -342,16 +342,8 @@ function Schedule() {
   // 연속 일정 바 렌더링: 한 달 내에서 start~end가 겹치는 일정은 한 번만 표시
   function getEventBarsForMonth(year, month, events) {
     const bars = [];
-      year,
-      month,
-      eventsCount: events.length,
-    });
+
     events.forEach((ev) => {
-        id: ev.id,
-        title: ev.title,
-        startDate: ev.startDate,
-        endDate: ev.endDate,
-      });
       // 기한 없는 할일은 달력에 표시 X
       if (ev.type === 'TODO' && (!ev.startDate || !ev.endDate)) return;
       if (!ev.startDate) return;
@@ -367,9 +359,6 @@ function Schedule() {
         return;
       }
 
-        start: start.toISOString(),
-        end: end.toISOString(),
-      });
       // 이 부분의 월 비교 로직도 formatDateToYYYYMMDD를 사용하는 방식으로 일관성 확보
       const monthStartStr = formatDateToYYYYMMDD(new Date(year, month, 1));
       const monthEndStr = formatDateToYYYYMMDD(new Date(year, month + 1, 0));
@@ -739,14 +728,22 @@ function Schedule() {
                 // 1일 셀에만 별도 클래스 추가
                 const isFirstDay = date.getDate() === 1;
                 // 1. 연속 일정 바(해당 날짜가 bar의 실제 start~end에 포함되는 모든 바)
-                const barsForCell = eventBars.filter((bar) => {
-                  const currentDate = date.getDate(); // 현재 셀의 날짜 (1-31)
-                  return currentDate >= bar.barStart && currentDate <= bar.barEnd;
-                }).sort((a, b) => {
-                  const durationA = new Date(a.endDate).getTime() - new Date(a.startDate).getTime();
-                  const durationB = new Date(b.endDate).getTime() - new Date(b.startDate).getTime();
-                  return durationB - durationA; // 긴 일정이 먼저 오도록 내림차순 정렬
-                });
+                const barsForCell = eventBars
+                  .filter((bar) => {
+                    const currentDate = date.getDate(); // 현재 셀의 날짜 (1-31)
+                    return (
+                      currentDate >= bar.barStart && currentDate <= bar.barEnd
+                    );
+                  })
+                  .sort((a, b) => {
+                    const durationA =
+                      new Date(a.endDate).getTime() -
+                      new Date(a.startDate).getTime();
+                    const durationB =
+                      new Date(b.endDate).getTime() -
+                      new Date(b.startDate).getTime();
+                    return durationB - durationA; // 긴 일정이 먼저 오도록 내림차순 정렬
+                  });
                 // 2. 당일 단일 일정(기한 없는 할일은 무조건 제외)
                 const dayEvents = visibleEvents.filter((e) => {
                   if (e.type === 'TODO' && (!e.startDate || !e.endDate))
@@ -805,40 +802,61 @@ function Schedule() {
                       let barClassName = styles.continuousEventBar;
 
                       // 이벤트의 실제 시작일이 현재 월의 1일보다 이전인지 확인
-                      const isEventTrueStartBeforeCurrentMonth = new Date(bar.startDate).getFullYear() < currentYear ||
-                                                                 (new Date(bar.startDate).getFullYear() === currentYear && new Date(bar.startDate).getMonth() < currentMonth);
+                      const isEventTrueStartBeforeCurrentMonth =
+                        new Date(bar.startDate).getFullYear() < currentYear ||
+                        (new Date(bar.startDate).getFullYear() ===
+                          currentYear &&
+                          new Date(bar.startDate).getMonth() < currentMonth);
 
                       // 이벤트의 실제 종료일이 현재 월의 말일보다 이후인지 확인
-                      const isEventTrueEndAfterCurrentMonth = new Date(bar.endDate || bar.startDate).getFullYear() > currentYear ||
-                                                              (new Date(bar.endDate || bar.startDate).getFullYear() === currentYear && new Date(bar.endDate || bar.startDate).getMonth() > currentMonth);
+                      const isEventTrueEndAfterCurrentMonth =
+                        new Date(bar.endDate || bar.startDate).getFullYear() >
+                          currentYear ||
+                        (new Date(
+                          bar.endDate || bar.startDate,
+                        ).getFullYear() === currentYear &&
+                          new Date(bar.endDate || bar.startDate).getMonth() >
+                            currentMonth);
 
                       // Case 1: 이벤트가 현재 월을 완전히 포함하는 경우 (이전 월에서 시작하여 다음 월로 이어짐)
-                      if (isEventTrueStartBeforeCurrentMonth && isEventTrueEndAfterCurrentMonth) {
-                          barClassName = styles.continuousEventBarMiddle; // 양쪽 라운딩 없음
+                      if (
+                        isEventTrueStartBeforeCurrentMonth &&
+                        isEventTrueEndAfterCurrentMonth
+                      ) {
+                        barClassName = styles.continuousEventBarMiddle; // 양쪽 라운딩 없음
                       }
                       // Case 2: 이벤트가 이전 월에서 시작하여 현재 월에서 끝나는 경우
-                      else if (isEventTrueStartBeforeCurrentMonth && currentDate === barEndDayInMonth) {
-                          barClassName = styles.continuousEventBarEnd; // 오른쪽 라운딩
+                      else if (
+                        isEventTrueStartBeforeCurrentMonth &&
+                        currentDate === barEndDayInMonth
+                      ) {
+                        barClassName = styles.continuousEventBarEnd; // 오른쪽 라운딩
                       }
                       // Case 3: 이벤트가 현재 월에서 시작하여 다음 월로 이어지는 경우
-                      else if (isEventTrueEndAfterCurrentMonth && currentDate === barStartDayInMonth) {
-                          barClassName = styles.continuousEventBarStart; // 왼쪽 라운딩
+                      else if (
+                        isEventTrueEndAfterCurrentMonth &&
+                        currentDate === barStartDayInMonth
+                      ) {
+                        barClassName = styles.continuousEventBarStart; // 왼쪽 라운딩
                       }
                       // Case 4: 이벤트가 현재 월 내에서 시작하고 끝나는 경우 (단일 월 내 다일 일정)
-                      else if (currentDate === barStartDayInMonth && currentDate === barEndDayInMonth) {
-                          barClassName = styles.continuousEventBarSingleDayBar; // 양쪽 라운딩 (단일 일자 바)
+                      else if (
+                        currentDate === barStartDayInMonth &&
+                        currentDate === barEndDayInMonth
+                      ) {
+                        barClassName = styles.continuousEventBarSingleDayBar; // 양쪽 라운딩 (단일 일자 바)
                       }
                       // Case 5: 이벤트가 현재 월 내에서 시작하는 경우 (다음 날로 이어짐)
                       else if (currentDate === barStartDayInMonth) {
-                          barClassName = styles.continuousEventBarStart; // 왼쪽 라운딩
+                        barClassName = styles.continuousEventBarStart; // 왼쪽 라운딩
                       }
                       // Case 6: 이벤트가 현재 월 내에서 끝나는 경우 (이전 날부터 이어짐)
                       else if (currentDate === barEndDayInMonth) {
-                          barClassName = styles.continuousEventBarEnd; // 오른쪽 라운딩
+                        barClassName = styles.continuousEventBarEnd; // 오른쪽 라운딩
                       }
                       // Case 7: 이벤트가 현재 월 내에서 중간에 있는 경우
                       else {
-                          barClassName = styles.continuousEventBarMiddle; // 라운딩 없음
+                        barClassName = styles.continuousEventBarMiddle; // 라운딩 없음
                       }
 
                       return (
