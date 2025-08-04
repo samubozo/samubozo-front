@@ -54,7 +54,6 @@ function UserSearchModal({ open, onClose, onSelect }) {
           (user) => user.employeeNo != currentEmployeeNo,
         );
 
-        console.log(
           '전체 사용자:',
           data.length,
           '필터링 후:',
@@ -335,12 +334,10 @@ function MessageWriteModal({
   // 초기값 설정
   useEffect(() => {
     if (open) {
-      console.log('MessageWriteModal 열림:', {
         initialReceiver,
         initialSubject,
       });
       if (initialReceiver) {
-        console.log('초기 receiver 설정:', initialReceiver);
         setReceivers([initialReceiver]);
       } else {
         setReceivers([]);
@@ -432,9 +429,6 @@ function MessageWriteModal({
         isNotice: isNotice,
       };
 
-      console.log('전송할 데이터:', requestData);
-      console.log('isNotice 값:', isNotice);
-      console.log('isNotice 타입:', typeof isNotice);
 
       const formData = new FormData();
       formData.append(
@@ -727,20 +721,17 @@ const Message = () => {
   useEffect(() => {
     // 탭 변경 중에는 URL 파라미터 처리하지 않음
     if (isTabChanging) {
-      console.log('탭 변경 중이므로 URL 파라미터 처리 건너뜀');
       return;
     }
 
     const urlParams = new URLSearchParams(location.search);
     const messageId = urlParams.get('messageId');
-    console.log('URL 파라미터 확인:', messageId);
 
     if (
       messageId &&
       !modalMsg &&
       messageId !== sessionStorage.getItem('lastProcessedMessageId')
     ) {
-      console.log('URL 파라미터로 쪽지 열기:', messageId);
       sessionStorage.setItem('lastProcessedMessageId', messageId);
       setTimeout(() => {
         fetchMessageDetail(messageId);
@@ -762,7 +753,6 @@ const Message = () => {
         unreadOnly,
       };
 
-      console.log('받은쪽지 조회 파라미터:', params);
 
       const response = await axiosInstance.get(
         `${API_BASE_URL}${MESSAGE}/received`,
@@ -770,7 +760,6 @@ const Message = () => {
       );
 
       if (response && response.data) {
-        console.log('받은쪽지 조회 성공:', response.data);
         // 응답이 배열인 경우 그대로 사용, 객체인 경우 content 사용
         const messages = Array.isArray(response.data)
           ? response.data
@@ -803,7 +792,6 @@ const Message = () => {
         searchValue,
       };
 
-      console.log('보낸쪽지 조회 파라미터:', params);
 
       const response = await axiosInstance.get(
         `${API_BASE_URL}${MESSAGE}/sent`,
@@ -811,7 +799,6 @@ const Message = () => {
       );
 
       if (response && response.data) {
-        console.log('보낸쪽지 조회 성공:', response.data);
         // 응답이 배열인 경우 그대로 사용, 객체인 경우 content 사용
         const messages = Array.isArray(response.data)
           ? response.data
@@ -835,7 +822,6 @@ const Message = () => {
   const fetchMessageDetail = async (messageId) => {
     // 데이터 로딩 중이거나 탭 변경 중에는 모달 열지 않음
     if (isLoadingData || isTabChanging) {
-      console.log('데이터 로딩 중이거나 탭 변경 중이므로 모달 열지 않음');
       return;
     }
 
@@ -846,13 +832,6 @@ const Message = () => {
       return;
     }
 
-    console.log('=== 쪽지 상세 조회 시작 ===');
-    console.log('messageId:', messageId);
-    console.log('현재 탭:', tab);
-    console.log('현재 모달 상태:', !!modalMsg);
-    console.log('데이터 로딩 상태:', isLoadingData);
-    console.log('탭 변경 상태:', isTabChanging);
-    console.log('현재 로그인한 사용자:', {
       employeeNo: sessionStorage.getItem('USER_EMPLOYEE_NO'),
       userId: sessionStorage.getItem('USER_ID'),
       userName: sessionStorage.getItem('USER_NAME'),
@@ -862,16 +841,12 @@ const Message = () => {
     try {
       // 모든 쪽지 상세조회는 동일한 엔드포인트 사용
       const endpoint = `${API_BASE_URL}${MESSAGE}/${messageId}`;
-      console.log('요청 엔드포인트:', endpoint);
 
       const response = await axiosInstance.get(endpoint);
 
       // 응답 데이터 확인
       if (response && response.data) {
-        console.log('쪽지 상세 조회 성공:', response.data);
-        console.log('모달 열기 전 상태:', !!modalMsg);
         setModalMsg(response.data);
-        console.log('모달 열기 후 상태:', true);
         // 읽음 처리 후 목록 새로고침
         if (tab === 'received') {
           fetchReceivedMessages();
@@ -900,11 +875,6 @@ const Message = () => {
   // 페이징 처리 (API에서 페이징 처리하므로 단순히 표시만)
   const paged = data;
 
-  console.log('=== 페이징 정보 ===');
-  console.log('현재 페이지:', page);
-  console.log('전체 페이지:', totalPages);
-  console.log('데이터 개수:', data.length);
-  console.log('페이지당 크기:', PAGE_SIZE);
 
   // 체크박스 핸들러
   const handleCheck = (id) => {
@@ -971,14 +941,12 @@ const Message = () => {
             endpoint = `${API_BASE_URL}${MESSAGE}/${messageId}/recall`;
           }
 
-          console.log(
             `${tab === 'received' ? '삭제' : '발신 취소'} 요청:`,
             endpoint,
           );
 
           await axiosInstance.delete(endpoint);
           successCount++;
-          console.log(
             `${tab === 'received' ? '삭제' : '발신 취소'} 성공:`,
             messageId,
           );
@@ -1020,13 +988,11 @@ const Message = () => {
 
   // 쪽지 전송 완료
   const handleSendComplete = (messageData) => {
-    console.log('쪽지 전송 완료:', messageData);
     // API 응답 데이터 확인
     if (messageData && messageData.success !== false) {
       alert('쪽지가 성공적으로 전송되었습니다.');
       setShowWrite(false);
       setReplyData(null); // 답장 데이터 초기화
-      console.log('모달 닫기 및 답장 데이터 초기화 완료');
 
       // 보낸 편지함 탭으로 이동
       setTab('sent');
@@ -1043,8 +1009,6 @@ const Message = () => {
 
   // 답장 처리
   const handleReply = (message) => {
-    console.log('답장 처리:', message);
-    console.log('메시지 데이터 구조:', {
       senderId: message.senderId,
       senderName: message.senderName,
       sender: message.sender,
@@ -1071,7 +1035,6 @@ const Message = () => {
       dept: deptName,
     };
 
-    console.log('구성된 receiver:', receiver);
 
     // 답장 제목 설정 (원본 제목에 "Re:" 추가)
     const replySubject = message.subject
@@ -1099,7 +1062,6 @@ const Message = () => {
 
   const handleTabChange = (newTab) => {
     localStorage.setItem('messageTab', newTab);
-    console.log('탭 변경:', tab, '->', newTab);
     setIsTabChanging(true);
     setTab(newTab);
 
@@ -1116,7 +1078,6 @@ const Message = () => {
 
   // 검색 처리
   const handleSearch = () => {
-    console.log('검색 실행:', {
       tab,
       searchType,
       searchValue,
@@ -1420,7 +1381,6 @@ const Message = () => {
                   (msg) => msg.isNotice === true,
                 );
 
-                console.log('삭제 버튼 디버깅:', {
                   currentUserId,
                   checked,
                   selectedMessages,
@@ -1443,7 +1403,6 @@ const Message = () => {
                     ...normalMessages,
                   ];
 
-                  console.log('공지 쪽지 권한 확인:', {
                     authorizedNotices,
                     normalMessages,
                     canDeleteMessages,
@@ -1454,12 +1413,10 @@ const Message = () => {
 
                   // 선택된 모든 쪽지가 삭제 가능한 것인지 확인
                   if (canDeleteMessages.length !== selectedMessages.length) {
-                    console.log('삭제 버튼 숨김: 권한 없음');
                     return null; // 삭제 버튼 숨김
                   }
                 }
 
-                console.log('삭제 버튼 표시');
                 return (
                   <button className={styles.deleteBtn} onClick={handleDelete}>
                     {tab === 'sent'

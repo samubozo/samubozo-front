@@ -265,13 +265,9 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
         error.message ||
         '휴가 신청 중 오류가 발생했습니다.';
 
-      console.log('백엔드 에러 메시지:', errorMessage);
-      console.log('에러 메시지 타입:', typeof errorMessage);
-      console.log(
         '백엔드 에러 메시지가 문자열인지 확인:',
         typeof errorMessage === 'string',
       );
-      console.log(
         '백엔드 에러 메시지가 객체인지 확인:',
         typeof errorMessage === 'object',
       );
@@ -283,7 +279,6 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
         errorText = JSON.stringify(errorMessage);
       }
 
-      console.log('처리할 에러 텍스트:', errorText);
 
       setSuccessMessage(errorText);
       setShowSuccessModal(true);

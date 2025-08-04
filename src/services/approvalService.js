@@ -23,9 +23,6 @@ export const approvalService = {
       });
       return true;
     } catch (error) {
-      console.log('approvalService requestVacation 에러:', error);
-      console.log('에러 응답 데이터:', error.response?.data);
-      console.log('에러 메시지:', error.message);
       // 원본 에러 객체를 그대로 던져서 원본 정보를 보존
       throw error;
     }
@@ -428,17 +425,14 @@ export const approvalService = {
         return response.data;
       } else if (status === 'processed') {
         // 처리된 휴가 신청 조회 - 기존 API 사용
-        console.log('처리된 휴가 신청 조회 API 호출: getProcessedApprovals');
         const response = await axiosInstance.get(
           `${API_BASE_URL}${APPROVAL}/processed-by-me`,
         );
-        console.log('처리된 휴가 신청 조회 결과:', response.data);
 
         // 휴가 신청만 필터링 (requestType이 'VACATION'인 것만)
         const vacationData = Array.isArray(response.data)
           ? response.data.filter((item) => item.requestType === 'VACATION')
           : [];
-        console.log('휴가 신청만 필터링된 결과:', vacationData);
 
         return vacationData;
       } else {

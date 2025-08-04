@@ -71,7 +71,6 @@ axiosInstance.interceptors.response.use(
         const refreshToken = localStorage.getItem('REFRESH_TOKEN');
 
         if (!employeeNo || !refreshToken) {
-          console.log(
             '리프레시 토큰 또는 employeeNo가 없습니다. 재로그인이 필요합니다.',
           );
           // 저장된 이메일 배열 보존
