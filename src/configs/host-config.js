@@ -17,7 +17,10 @@ if (
 ) {
   // 개발 중
   backendHostName = 'http://localhost:8000';
-} else if (clientHostName === 'samubozo.co.kr') {
+} else if (
+  clientHostName === 'samubozo.co.kr' ||
+  clientHostName === 'www.samubozo.co.kr'
+) {
   // 배포해서 현재 서비스 중
   backendHostName = 'https://api.samubozo.co.kr';
 }
