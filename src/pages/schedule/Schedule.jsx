@@ -5,6 +5,8 @@ import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, SCHEDULE } from '../../configs/host-config';
 import { HexColorPicker } from 'react-colorful';
 import debounce from 'lodash/debounce';
+import SuccessModal from '../../components/SuccessModal';
+import ConfirmModal from '../../components/ComfirmModal';
 
 // 색상 대비 계산 함수
 function getContrastColor(backgroundColor) {
@@ -118,6 +120,16 @@ function Schedule() {
   const [popupHover, setPopupHover] = useState(false);
   const hideTimerRef = useRef(null);
   const [highlightedEventId, setHighlightedEventId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(''); // 모달창 통일
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [eventToDelete, setEventToDelete] = useState(null);
+
+  const showModal = (msg) => {
+    setSuccessMessage(msg);
+    setShowSuccessModal(true);
+  };
 
   // 카테고리 데이터 처리 함수 (checked 필드 기본값 설정)
   const processCategoriesData = (categoriesData) => {
@@ -207,44 +219,79 @@ function Schedule() {
             checked: prevMap.has(cat.id) ? prevMap.get(cat.id) : true,
           }));
         });
-        alert('카테고리가 정상적으로 추가되었습니다.');
+        showModal?.('카테고리가 정상적으로 추가되었습니다.');
       })
       .catch(() => {});
     setShowCategoryModal(null);
   };
   // 카테고리 삭제
   const handleCategoryDelete = (id) => {
-    // 1. 해당 카테고리의 남은 일정 찾기
     const eventsInCategory = events.filter((e) => e.categoryId === id);
     if (eventsInCategory.length > 0) {
-      // 2. 가장 과거 일정 찾기 (startDate 기준)
       const oldestEvent = eventsInCategory.reduce((min, e) =>
         new Date(e.startDate) < new Date(min.startDate) ? e : min,
       );
-      // 3. 달력 이동 + 하이라이트
       const start = new Date(oldestEvent.startDate);
       setCurrentYear(start.getFullYear());
       setCurrentMonth(start.getMonth());
       setHighlightedEventId(oldestEvent.id);
       setTimeout(() => setHighlightedEventId(null), 2000);
-      // 4. 안내 메시지
-      alert(
-        '해당 카테고리에 속한 일정이 남아있어 삭제할 수 없습니다. 먼저 일정을 모두 삭제해 주세요.',
+      showModal(
+        '해당 카테고리에 일정이 남아 있습니다. 삭제 전 모든 일정을 제거해주세요.',
       );
       return;
     }
-    // 5. 실제 카테고리 삭제 로직 실행
-    if (!window.confirm('정말로 이 카테고리를 삭제하시겠습니까?')) return;
-    axiosInstance
-      .delete(`${API_BASE_URL}${SCHEDULE}/categories/${id}`)
-      .then(() => axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/categories`))
-      .then((res) => {
-        setCategories((prev) => prev.filter((cat) => cat.id !== id));
-        alert('카테고리가 정상적으로 삭제되었습니다.');
-      })
-      .catch(() => {});
-    setShowCategoryModal(null);
+
+    // confirm창 띄움
+    setCategoryToDelete(id);
+    setConfirmVisible(true);
   };
+
+  // 확인 눌렀을 때
+  const confirmDelete = () => {
+    setConfirmVisible(false);
+
+    if (categoryToDelete) {
+      axiosInstance
+        .delete(`${API_BASE_URL}${SCHEDULE}/categories/${categoryToDelete}`)
+        .then(() => axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/categories`))
+        .then((res) => {
+          setCategories((prev) =>
+            prev.filter((cat) => cat.id !== categoryToDelete),
+          );
+          showModal('카테고리가 정상적으로 삭제되었습니다.');
+        })
+        .catch(() => {
+          showModal('카테고리 삭제 중 오류가 발생했습니다.');
+        });
+      setShowCategoryModal(null);
+      setCategoryToDelete(null);
+    }
+
+    if (eventToDelete) {
+      axiosInstance
+        .delete(`${API_BASE_URL}${SCHEDULE}/events/${eventToDelete.id}`)
+        .then(() =>
+          axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events`, {
+            params: { year: currentYear, month: currentMonth + 1 },
+          }),
+        )
+        .then((res) => {
+          setEvents(res.data || []);
+          return axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events/all-day`);
+        })
+        .then((res) => {
+          setRightTodos(res.data || []);
+          showModal('일정이 정상적으로 삭제되었습니다.');
+        })
+        .catch((err) => {
+          showModal('일정 삭제 중 오류가 발생했습니다.');
+          console.error('일정 삭제 에러:', err);
+        });
+      setEventToDelete(null);
+    }
+  };
+
   // 카테고리 체크박스 토글 (프론트 상태만 변경)
   const handleCategoryCheck = (id) => {
     setCategories((prev) => {
@@ -277,7 +324,7 @@ function Schedule() {
             .get(`${API_BASE_URL}${SCHEDULE}/events/all-day`)
             .then((res) => setRightTodos(res.data || []));
         }
-        alert('일정이 정상적으로 추가되었습니다.');
+        showModal('일정이 정상적으로 추가되었습니다.');
       })
       .catch((err) => {
         console.error('일정 추가 에러:', err);
@@ -408,28 +455,8 @@ function Schedule() {
 
   // 일정 삭제 핸들러
   const handleEventDelete = (event) => {
-    if (!window.confirm('정말로 이 일정을 삭제하시겠습니까?')) return;
-    axiosInstance
-      .delete(`${API_BASE_URL}${SCHEDULE}/events/${event.id}`)
-      .then(() => {
-        // 일반 일정 목록 갱신
-        return axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events`, {
-          params: { year: currentYear, month: currentMonth + 1 },
-        });
-      })
-      .then((res) => {
-        setEvents(res.data || []);
-        // 기한 없는 할일도 갱신 (삭제된 일정이 기한 없는 할일일 수 있음)
-        return axiosInstance.get(`${API_BASE_URL}${SCHEDULE}/events/all-day`);
-      })
-      .then((res) => {
-        setRightTodos(res.data || []);
-        alert('일정이 정상적으로 삭제되었습니다.');
-      })
-      .catch((err) => {
-        alert('일정 삭제 중 오류가 발생했습니다.');
-        console.error('일정 삭제 에러:', err);
-      });
+    setEventToDelete(event);
+    setConfirmVisible(true);
   };
   // 일정 수정 핸들러(모달 오픈)
   const handleEventEdit = (event) => {
@@ -452,11 +479,11 @@ function Schedule() {
       })
       .then((res) => {
         setRightTodos(res.data || []);
-        alert('일정이 정상적으로 수정되었습니다.');
+        showModal('일정이 정상적으로 수정되었습니다.');
         setEditEvent(null);
       })
       .catch((err) => {
-        alert('일정 수정 중 오류가 발생했습니다.');
+        showModal('일정 수정 중 오류가 발생했습니다.');
         console.error('일정 수정 에러:', err);
       });
   };
@@ -1335,6 +1362,30 @@ function Schedule() {
           defaultEvent={editEvent}
         />
       )}
+      {confirmVisible && (
+        <ConfirmModal
+          message={
+            categoryToDelete
+              ? '정말로 이 카테고리를 삭제하시겠습니까?'
+              : '정말로 이 일정을 삭제하시겠습니까?'
+          }
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setConfirmVisible(false);
+            setCategoryToDelete(null);
+            setEventToDelete(null);
+          }}
+        />
+      )}
+
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => setShowSuccessModal(false)}
+          autoClose={true}
+          autoCloseDelay={2000}
+        />
+      )}
     </div>
   );
 }
@@ -1589,7 +1640,10 @@ function CategoryModal({ onClose, onAdd, defaultType = 'PERSONAL' }) {
                     userDeptId === 'null' ||
                     userDeptId === 'undefined')
                 ) {
-                  alert('부서 정보가 없습니다. 다시 로그인 해주세요.');
+                  setSuccessMessage(
+                    '부서 정보가 없습니다. 다시 로그인 해주세요.',
+                  );
+                  setShowSuccessModal(true);
                   return;
                 }
                 const data =
