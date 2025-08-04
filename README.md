@@ -2516,3 +2516,10 @@ axiosInstance.interceptors.response.use(
 | **근태 통계 조회** | 프론트엔드 임시 처리 | ```json<br>{<br>  "totalWorkDays": 22,<br>  "presentDays": 20,<br>  "absentDays": 2,<br>  "lateDays": 1,<br>  "earlyLeaveDays": 0,<br>  "overtimeHours": 8.5,<br>  "vacationDays": 3,<br>  "remainingVacationDays": 9<br>}``` |
 
 ---
+## 19. 프론트 산출물
+| 항목            | 설명                                                       | 링크                                                                                                                          |
+| ------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **SPA 사이트**   | HTML/CSS 및 React 기반으로 구현된 Single Page Application 화면입니다. | [바로가기](https://docs.google.com/presentation/d/1QPH_a_SbA9Prx8tY9vkx3q0ChUDgY2dpKlQRjMaksHU/edit?slide=id.g37403646136_0_54) |
+| **UI 테스트케이스** | 화면별 동작 조건 및 UI 요소 확인을 위한 테스트케이스 시트입니다.                   | [바로가기](https://docs.google.com/spreadsheets/d/1UsKpccKQ-8yc9CB_e4zhdY36uG0mdO1JOmcdBQPqZLw/edit?gid=0)                      |
+| **스토리보드**     | 주요 화면 및 사용자 흐름(UX)을 시각적으로 설계한 자료입니다.                     | [바로가기](https://docs.google.com/presentation/d/1RFQ1HssEGSqt68dFfy3TgiM3i_e9Z2JfSMNbOpt1oPk/edit?slide=id.p6)                |
+| **소스코드**      | React 기반의 SPA 프론트엔드 소스코드 (GitHub Repository)입니다.         | [바로가기](https://github.com/samubozo/samubozo-front)                                                                          |
