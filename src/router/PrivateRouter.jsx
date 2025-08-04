@@ -27,13 +27,11 @@ const PrivateRouter = ({ element, requiredRole }) => {
 
   // 2. 토큰 존재 여부 체크 (가장 기본적인 인증)
   if (!token) {
-    console.log('PrivateRouter: 토큰 없음 - 로그인 페이지로 리다이렉트');
     return <Navigate to='/' replace />;
   }
 
   // 3. Context 로그인 상태 체크 (추가 보안)
   if (!isLoggedIn) {
-    console.log(
       'PrivateRouter: Context에서 로그인 안됨 - 로그인 페이지로 리다이렉트',
     );
     return <Navigate to='/' replace />;
@@ -41,7 +39,6 @@ const PrivateRouter = ({ element, requiredRole }) => {
 
   // 4. 권한 체크 (필요한 경우만)
   if (requiredRole && userRole !== requiredRole) {
-    console.log('PrivateRouter: 권한 없음 - 로그인 페이지로 리다이렉트', {
       requiredRole,
       userRole,
     });
@@ -49,7 +46,6 @@ const PrivateRouter = ({ element, requiredRole }) => {
   }
 
   // 5. 모든 인증 통과 - 컴포넌트 렌더링
-  console.log('PrivateRouter: 인증 성공 - 컴포넌트 렌더링');
   return element;
 };
 

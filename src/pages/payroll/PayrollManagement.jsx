@@ -144,7 +144,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
         positionName: employee.position,
       };
 
-      console.log('🚀 급여 저장 요청 payload:', payload);
 
       await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
 

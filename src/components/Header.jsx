@@ -15,7 +15,6 @@ import {
   NOTIFICATION,
 } from '../configs/host-config';
 import WeatherWidget from './WeatherWidget';
-console.log(styles);
 
 const Header = ({ showChatbot }) => {
   const location = useLocation();
@@ -53,16 +52,12 @@ const Header = ({ showChatbot }) => {
   // 알림 목록 조회
   const fetchNotifications = async () => {
     try {
-      console.log('알림 목록 조회 시작');
       const response = await axiosInstance.get(
         `${API_BASE_URL}${NOTIFICATION}`,
       );
-      console.log('알림 목록 조회 성공:', response.data);
-      console.log('알림 데이터 구조 확인:', response.data);
 
       // 각 알림의 읽음 상태 확인
       response.data.forEach((notification, index) => {
-        console.log(`알림 ${index + 1}:`, {
           id: notification.notificationId || notification.messageId,
           type: notification.type,
           message: notification.message,
@@ -76,18 +71,12 @@ const Header = ({ showChatbot }) => {
 
       // 알림 목록 업데이트 후 읽지 않은 개수 계산
       const unreadCount = response.data.filter((n) => !n.isRead).length;
-      console.log('=== 읽지 않은 알림 개수 계산 ===');
-      console.log('전체 알림 개수:', response.data.length);
-      console.log('읽지 않은 알림 개수:', unreadCount);
-      console.log(
         '읽지 않은 알림들:',
         response.data.filter((n) => !n.isRead),
       );
-      console.log(
         '읽은 알림들:',
         response.data.filter((n) => n.isRead),
       );
-      console.log('=== 계산 완료 ===');
       setUnreadCount(unreadCount);
     } catch (error) {
       console.error('알림 목록 조회 실패:', error);
@@ -100,7 +89,6 @@ const Header = ({ showChatbot }) => {
   // 알림 읽음 처리
   const markNotificationAsRead = async (notificationId) => {
     try {
-      console.log('알림 읽음 처리 시작:', notificationId);
 
       if (!notificationId) {
         console.error('알림 ID가 없습니다');
@@ -110,14 +98,12 @@ const Header = ({ showChatbot }) => {
       const response = await axiosInstance.patch(
         `${API_BASE_URL}${NOTIFICATION}/${notificationId}/read`,
       );
-      console.log('알림 읽음 처리 성공:', response.data);
       // 읽음 처리 후 목록 다시 조회 (개수는 목록에서 계산됨)
       await fetchNotifications();
     } catch (error) {
       console.error('알림 읽음 처리 실패:', error);
       // 403 에러인 경우에도 UI 업데이트를 위해 로컬 상태 업데이트
       if (error.response?.status === 403) {
-        console.log('권한 없음 - 로컬 상태만 업데이트');
         setNotifications((prev) =>
           prev.map((notification) => {
             const currentId =
@@ -183,22 +169,12 @@ const Header = ({ showChatbot }) => {
     const userRole = payload.userRole;
 
     // 디버깅: SSE 연결 파라미터 로그
-    console.log('=== SSE 연결 시도 ===');
-    console.log('accessToken:', accessToken ? '존재함' : '없음');
-    console.log('employeeNo:', employeeNo);
-    console.log('userEmail:', userEmail);
-    console.log('userRole:', userRole);
-    console.log('토큰 만료시간:', new Date(payload.exp * 1000));
-    console.log('현재시간:', new Date());
-    console.log('토큰 만료됨:', payload.exp * 1000 < Date.now());
 
     // 토큰이 만료되었으면 갱신 시도
     if (payload.exp * 1000 < Date.now()) {
-      console.log('토큰 만료됨 - 갱신 시도');
 
       // 이미 갱신 중이면 중복 시도 방지
       if (isRefreshingTokenRef.current) {
-        console.log('토큰 갱신 중 - 중복 시도 방지');
         return;
       }
 
@@ -216,7 +192,6 @@ const Header = ({ showChatbot }) => {
               res.data.accessToken || res.data.result?.accessToken;
             if (newAccessToken) {
               sessionStorage.setItem('ACCESS_TOKEN', newAccessToken);
-              console.log('토큰 갱신 성공');
               isRefreshingTokenRef.current = false;
               // 무한 재귀 방지: 1초 후에 재연결
               setTimeout(() => {
@@ -267,7 +242,6 @@ const Header = ({ showChatbot }) => {
 
       // 500 에러나 서버 오류일 때는 재연결 중단
       if (eventSource.readyState === EventSource.CLOSED) {
-        console.log('SSE 연결 종료됨 - 메세지 서버 상태 확인 필요');
 
         // 최대 재연결 횟수 초과 시 중단
         if (sseRetryCountRef.current >= SSE_MAX_RETRY_COUNT) {
@@ -316,7 +290,6 @@ const Header = ({ showChatbot }) => {
 
       // 일반적인 네트워크 오류가 아닌 경우 재연결 중단
       setSseConnectionStatus('disconnected');
-      console.log('SSE 일반 오류 - 재연결 시도하지 않음');
     };
 
     eventSource.onopen = () => {
@@ -324,7 +297,6 @@ const Header = ({ showChatbot }) => {
       sseRetryDelayRef.current = 10000; // 10초로 초기화
       sseRetryCountRef.current = 0; // 재연결 횟수 초기화
       setSseConnectionStatus('connected');
-      console.log('SSE 연결 성공 - 재연결 딜레이 초기화됨');
     };
 
     return () => {
@@ -351,7 +323,6 @@ const Header = ({ showChatbot }) => {
           `${API_BASE_URL}${HR}/users/detail`,
         );
         const userInfo = res.data.result;
-        console.log(userInfo);
 
         // 불필요한 항목들 제거
         sessionStorage.removeItem('USER_ID');
@@ -459,11 +430,9 @@ const Header = ({ showChatbot }) => {
   // 모든 알림 읽음 처리
   const handleMarkAllAsRead = async () => {
     try {
-      console.log('모든 알림 읽음 처리 시작');
       const unreadNotifications = notifications.filter((n) => !n.isRead);
 
       if (unreadNotifications.length === 0) {
-        console.log('읽지 않은 알림이 없습니다');
         return;
       }
 
@@ -473,7 +442,6 @@ const Header = ({ showChatbot }) => {
           unreadNotifications.map((notification) => {
             const notificationId =
               notification.notificationId || notification.messageId;
-            console.log('읽음 처리할 알림 ID:', notificationId);
             if (notificationId) {
               return markNotificationAsRead(notificationId);
             } else {
@@ -497,11 +465,6 @@ const Header = ({ showChatbot }) => {
 
   // 알림 아이콘 렌더링
   const NotificationIcon = () => {
-    console.log('=== NotificationIcon 렌더링 ===');
-    console.log('현재 unreadCount:', unreadCount);
-    console.log('unreadCount > 0:', unreadCount > 0);
-    console.log('표시할 개수:', unreadCount > 99 ? '99+' : unreadCount);
-    console.log('=== 렌더링 완료 ===');
 
     return (
       <div className={styles.notificationIcon}>
@@ -638,7 +601,6 @@ const Header = ({ showChatbot }) => {
 
   // 수동 SSE 재연결 함수
   const manualReconnectSSE = () => {
-    console.log('수동 SSE 재연결 시도');
     sseRetryCountRef.current = 0; // 카운터 초기화
     sseRetryDelayRef.current = 10000; // 딜레이 초기화
     setSseConnectionStatus('connecting');
@@ -686,7 +648,6 @@ const Header = ({ showChatbot }) => {
               {/* 맑음일 때만 해바라기 표시 (로고에 겹치게) */}
               {(() => {
                 // 디버깅을 위한 로그
-                console.log('해바라기 조건 체크:', {
                   testWeather,
                   todayWeatherState,
                   testWeatherSky: testWeather?.sky,
@@ -719,7 +680,6 @@ const Header = ({ showChatbot }) => {
                     todayWeatherState.PTY === 0 ||
                     todayWeatherState.PTY_KR === '없음';
 
-                  console.log('실제 날씨 해바라기 조건:', {
                     isSunny,
                     noPrecipitation,
                   });

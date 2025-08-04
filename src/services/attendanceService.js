@@ -153,7 +153,6 @@ export const attendanceService = {
     try {
       // 실제로는 백엔드 API를 호출해야 하지만, 현재 백엔드에 해당 API가 없으므로
       // 프론트엔드에서 임시로 처리
-      console.log('근태 수정 데이터:', { attendanceId, updateData });
 
       return {
         success: true,
@@ -173,7 +172,6 @@ export const attendanceService = {
     try {
       // 실제로는 백엔드 API를 호출해야 하지만, 현재 백엔드에 해당 API가 없으므로
       // 프론트엔드에서 임시로 처리
-      console.log('근태 삭제:', attendanceId);
 
       return {
         success: true,

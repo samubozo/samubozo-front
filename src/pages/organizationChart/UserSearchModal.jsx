@@ -8,7 +8,6 @@ import { API_BASE_URL, HR } from '../../configs/host-config';
 
 // --- MUI Autocomplete 기반 UserSearchModal ---
 function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
-  console.log('UserSearchModal 렌더링됨', open, 'hrRoleFilter:', hrRoleFilter);
 
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +16,6 @@ function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
 
   // API 호출 함수
   const fetchUsers = async (keyword) => {
-    console.log('fetchUsers 호출됨', keyword, 'hrRoleFilter:', hrRoleFilter);
     setLoading(true);
     try {
       let params = {};
@@ -35,7 +33,6 @@ function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
         params.hrRole = 'Y';
       }
 
-      console.log('API 요청 파라미터:', params);
 
       // 이름/부서명 동시 검색: 백엔드가 둘 다 있으면 AND, 둘 중 하나만 있으면 OR로 동작할 수 있음
       // 실제로는 둘 다 보내면 AND, 하나만 보내면 해당 조건만 적용됨
@@ -43,28 +40,19 @@ function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
       const res = await axiosInstance.get(`${API_BASE_URL}${HR}/users/search`, {
         params,
       });
-      console.log('API 응답:', res);
-      console.log('res.data.result:', res.data.result);
 
       // API 응답 구조: { statusCode: 200, statusMessage: "Success", result: [...] }
       const usersData = res.data.result || [];
-      console.log('usersData:', usersData);
-      console.log('usersData 타입:', typeof usersData);
-      console.log('Array.isArray(usersData):', Array.isArray(usersData));
 
       setOptions(usersData);
-      console.log('옵션 배열:', usersData);
     } catch (e) {
       setOptions([]);
-      console.log('API 에러:', e);
-      console.log('에러 상세:', e.response?.data);
     }
     setLoading(false);
   };
 
   // inputValue 변경 시 debounce로 API 호출
   useEffect(() => {
-    console.log(
       'useEffect 실행됨',
       inputValue,
       open,
@@ -174,7 +162,6 @@ function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
             )}
             inputValue={inputValue}
             onInputChange={(_, value) => {
-              console.log('onInputChange 발생', value);
               setInputValue(value);
             }}
             onChange={(_, value) => {

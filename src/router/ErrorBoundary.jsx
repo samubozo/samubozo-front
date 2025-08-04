@@ -16,7 +16,6 @@ class ErrorBoundary extends Component {
         console.warn('404 에러 (개발 환경):', error.message);
       } else {
         // 프로덕션 환경: 404 에러를 조용히 처리
-        console.log('404 에러 조용히 처리됨 (프로덕션)');
       }
       return { hasError: false }; // 에러가 없었다고 처리
     }

@@ -126,12 +126,10 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      console.log('로그인 시도', email, password);
       const res = await axiosInstance.post(`${API_BASE_URL}${AUTH}/login`, {
         email,
         password,
       });
-      console.log('로그인 응답:', res.data);
 
       if (
         res.data &&
@@ -146,17 +144,9 @@ const Login = () => {
         const employeeNo = res.data.result.employeeNo;
         const role = res.data.result.role;
         const provider = res.data.result.provider;
-        console.log('로그인 응답 accessToken:', accessToken);
-        console.log('로그인 응답 refreshToken:', refreshToken);
-        console.log('로그인 응답 id:', id);
-        console.log('로그인 응답 employeeNo:', employeeNo);
-        console.log('로그인 응답 role:', role);
-        console.log('로그인 응답 provider:', provider);
-        console.log('전체 로그인 응답 result:', res.data.result);
         if (typeof onLogin === 'function') {
           await onLogin({ accessToken, refreshToken, id, role, provider });
         }
-        console.log('sessionStorage에 저장할 ACCESS_TOKEN:', accessToken);
         sessionStorage.setItem('ACCESS_TOKEN', accessToken);
         localStorage.setItem('REFRESH_TOKEN', refreshToken);
 
@@ -164,11 +154,9 @@ const Login = () => {
           updateRememberedEmails(email, true);
         }
       } else {
-        console.log('로그인 응답에 토큰 없음:', res.data);
       }
       navigate('/dashboard');
     } catch (e) {
-      console.log('로그인 에러', e);
       if (e.response?.status === 403) {
         setSuccessMessage('정지된 계정입니다. 관리자에게 문의하세요.');
         setShowSuccessModal(true);

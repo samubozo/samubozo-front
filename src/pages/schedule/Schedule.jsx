@@ -174,7 +174,6 @@ function Schedule() {
         params: { year: currentYear, month: currentMonth + 1 },
       })
       .then((res) => {
-        console.log('일정 데이터:', res.data);
         setEvents(res.data || []); // res.data.result 대신 res.data 사용
       })
       .catch((err) => {
@@ -343,13 +342,11 @@ function Schedule() {
   // 연속 일정 바 렌더링: 한 달 내에서 start~end가 겹치는 일정은 한 번만 표시
   function getEventBarsForMonth(year, month, events) {
     const bars = [];
-    console.log('getEventBarsForMonth 호출:', {
       year,
       month,
       eventsCount: events.length,
     });
     events.forEach((ev) => {
-      console.log('일정 처리:', {
         id: ev.id,
         title: ev.title,
         startDate: ev.startDate,
@@ -367,11 +364,9 @@ function Schedule() {
         formatDateToYYYYMMDD(start) === formatDateToYYYYMMDD(end); // Date 객체 대신 문자열 비교
 
       if (isSingleDay) {
-        console.log('당일 일정이므로 연속 일정 바로 처리하지 않음:', ev.title);
         return;
       }
 
-      console.log('날짜 처리:', {
         start: start.toISOString(),
         end: end.toISOString(),
       });
@@ -386,10 +381,8 @@ function Schedule() {
         const lastDay = new Date(year, month + 1, 0).getDate();
         const barEnd = eventEndStr > monthEndStr ? lastDay : end.getDate();
         bars.push({ ...ev, barStart, barEnd });
-        console.log('바 추가됨:', { barStart, barEnd });
       }
     });
-    console.log('최종 바 개수:', bars.length);
     return bars;
   }
   const eventBars = getEventBarsForMonth(
