@@ -54,11 +54,6 @@ function UserSearchModal({ open, onClose, onSelect }) {
           (user) => user.employeeNo != currentEmployeeNo,
         );
 
-          '전체 사용자:',
-          data.length,
-          '필터링 후:',
-          filteredData.length,
-        );
         setUserList(filteredData);
       })
       .catch(() => setUserList([]))
@@ -334,9 +329,6 @@ function MessageWriteModal({
   // 초기값 설정
   useEffect(() => {
     if (open) {
-        initialReceiver,
-        initialSubject,
-      });
       if (initialReceiver) {
         setReceivers([initialReceiver]);
       } else {
@@ -428,7 +420,6 @@ function MessageWriteModal({
         content: content.trim(),
         isNotice: isNotice,
       };
-
 
       const formData = new FormData();
       formData.append(
@@ -753,7 +744,6 @@ const Message = () => {
         unreadOnly,
       };
 
-
       const response = await axiosInstance.get(
         `${API_BASE_URL}${MESSAGE}/received`,
         { params },
@@ -791,7 +781,6 @@ const Message = () => {
         searchType,
         searchValue,
       };
-
 
       const response = await axiosInstance.get(
         `${API_BASE_URL}${MESSAGE}/sent`,
@@ -831,13 +820,6 @@ const Message = () => {
       alert('메시지 ID가 유효하지 않습니다.');
       return;
     }
-
-      employeeNo: sessionStorage.getItem('USER_EMPLOYEE_NO'),
-      userId: sessionStorage.getItem('USER_ID'),
-      userName: sessionStorage.getItem('USER_NAME'),
-      accessToken: sessionStorage.getItem('ACCESS_TOKEN') ? '있음' : '없음',
-    });
-
     try {
       // 모든 쪽지 상세조회는 동일한 엔드포인트 사용
       const endpoint = `${API_BASE_URL}${MESSAGE}/${messageId}`;
@@ -874,7 +856,6 @@ const Message = () => {
 
   // 페이징 처리 (API에서 페이징 처리하므로 단순히 표시만)
   const paged = data;
-
 
   // 체크박스 핸들러
   const handleCheck = (id) => {
@@ -941,15 +922,8 @@ const Message = () => {
             endpoint = `${API_BASE_URL}${MESSAGE}/${messageId}/recall`;
           }
 
-            `${tab === 'received' ? '삭제' : '발신 취소'} 요청:`,
-            endpoint,
-          );
-
           await axiosInstance.delete(endpoint);
           successCount++;
-            `${tab === 'received' ? '삭제' : '발신 취소'} 성공:`,
-            messageId,
-          );
         } catch (error) {
           console.error(
             `${tab === 'received' ? '삭제' : '발신 취소'} 실패:`,
@@ -1009,12 +983,6 @@ const Message = () => {
 
   // 답장 처리
   const handleReply = (message) => {
-      senderId: message.senderId,
-      senderName: message.senderName,
-      sender: message.sender,
-      subject: message.subject,
-    });
-
     // 보낸 사람 정보 구성 - 다양한 필드명 시도
     let deptName = '부서 정보 없음';
 
@@ -1034,7 +1002,6 @@ const Message = () => {
       name: message.senderName || '보낸사람 없음',
       dept: deptName,
     };
-
 
     // 답장 제목 설정 (원본 제목에 "Re:" 추가)
     const replySubject = message.subject
@@ -1078,13 +1045,6 @@ const Message = () => {
 
   // 검색 처리
   const handleSearch = () => {
-      tab,
-      searchType,
-      searchValue,
-      period,
-      unreadOnly,
-    });
-
     // 페이지를 1로 리셋하고 검색 실행
     setPage(1);
     setChecked([]);
@@ -1381,13 +1341,6 @@ const Message = () => {
                   (msg) => msg.isNotice === true,
                 );
 
-                  currentUserId,
-                  checked,
-                  selectedMessages,
-                  noticeMessages,
-                  tab,
-                });
-
                 // 공지 쪽지가 있는 경우, 현재 사용자가 작성자인 것만 필터링
                 if (noticeMessages.length > 0) {
                   const authorizedNotices = noticeMessages.filter(
@@ -1402,14 +1355,6 @@ const Message = () => {
                     ...authorizedNotices,
                     ...normalMessages,
                   ];
-
-                    authorizedNotices,
-                    normalMessages,
-                    canDeleteMessages,
-                    selectedMessages,
-                    canDeleteMessagesLength: canDeleteMessages.length,
-                    selectedMessagesLength: selectedMessages.length,
-                  });
 
                   // 선택된 모든 쪽지가 삭제 가능한 것인지 확인
                   if (canDeleteMessages.length !== selectedMessages.length) {

@@ -244,10 +244,6 @@ export const WeatherProvider = ({ children }) => {
             longitude = coords.longitude;
             setCachedLocation(latitude, longitude);
           } catch (browserLocationError) {
-              '브라우저 위치 정보 실패, IP 기반 위치 서비스 시도:',
-              browserLocationError.message,
-            );
-
             try {
               // 여러 무료 위치 서비스 백업 시스템 시도
               const locationData = await getLocationFromMultipleServices();
@@ -255,9 +251,6 @@ export const WeatherProvider = ({ children }) => {
               longitude = locationData.longitude;
               setCachedLocation(latitude, longitude);
             } catch (ipLocationError) {
-                '모든 위치 서비스 실패, 기본 위치 사용:',
-                ipLocationError.message,
-              );
               // 서울 서초구 좌표를 기본값으로 사용
               latitude = 37.4837;
               longitude = 127.0324;
@@ -265,7 +258,6 @@ export const WeatherProvider = ({ children }) => {
             }
           }
         } else {
-
           try {
             // 여러 무료 위치 서비스 백업 시스템 시도
             const locationData = await getLocationFromMultipleServices();
@@ -273,9 +265,6 @@ export const WeatherProvider = ({ children }) => {
             longitude = locationData.longitude;
             setCachedLocation(latitude, longitude);
           } catch (ipLocationError) {
-              '모든 위치 서비스 실패, 기본 위치 사용:',
-              ipLocationError.message,
-            );
             // 서울 서초구 좌표를 기본값으로 사용
             latitude = 37.4837;
             longitude = 127.0324;
@@ -298,7 +287,6 @@ export const WeatherProvider = ({ children }) => {
 
       const { base_date, base_time } = getKmaBaseDateTime();
       const url = `${KMA_API_ENDPOINT}/getVilageFcst?serviceKey=${KMA_API_KEY}&numOfRows=100&pageNo=1&dataType=JSON&base_date=${base_date}&base_time=${base_time}&nx=${grid.x}&ny=${grid.y}`;
-
 
       const response = await fetch(url);
       const data = await response.json();

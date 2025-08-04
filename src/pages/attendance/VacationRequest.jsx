@@ -265,20 +265,12 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
         error.message ||
         '휴가 신청 중 오류가 발생했습니다.';
 
-        '백엔드 에러 메시지가 문자열인지 확인:',
-        typeof errorMessage === 'string',
-      );
-        '백엔드 에러 메시지가 객체인지 확인:',
-        typeof errorMessage === 'object',
-      );
-
       let errorText = errorMessage;
 
       // 백엔드에서 객체로 오는 경우 처리
       if (typeof errorMessage === 'object' && errorMessage !== null) {
         errorText = JSON.stringify(errorMessage);
       }
-
 
       setSuccessMessage(errorText);
       setShowSuccessModal(true);
