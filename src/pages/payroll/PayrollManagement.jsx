@@ -144,7 +144,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
         positionName: employee.position,
       };
 
-
       await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
 
       // ✅ 저장 성공 후 급여 다시 조회
@@ -710,8 +709,8 @@ const PayrollManagement = () => {
             <td>지방소득세</td><td>${localTax.toLocaleString()}</td>
           </tr>
           <tr>
-            <td class="summary">지급합계</td><td class="summary">${total.toLocaleString()}</td>
-            <td class="summary">공제합계</td><td class="summary">${totalDeduction.toLocaleString()}</td>
+            <td class="summary">지급합계 (원)</td><td class="summary">${total.toLocaleString()}</td>
+            <td class="summary">공제합계 (원)</td><td class="summary">${totalDeduction.toLocaleString()}</td>
           </tr>
           <tr>
             <td colspan="2" class="summary">실수령액</td>
@@ -862,7 +861,7 @@ const PayrollManagement = () => {
               <thead>
                 <tr>
                   <th>급여항목</th>
-                  <th>금액</th>
+                  <th>금액 (원)</th>
                 </tr>
               </thead>
               <tbody>
@@ -912,7 +911,7 @@ const PayrollManagement = () => {
               <thead>
                 <tr>
                   <th>공제항목</th>
-                  <th>금액</th>
+                  <th>금액 (원)</th>
                 </tr>
               </thead>
               <tbody>
@@ -964,7 +963,7 @@ const PayrollManagement = () => {
               <thead>
                 <tr>
                   <th>총 항목</th>
-                  <th>금액</th>
+                  <th>금액 (원)</th>
                 </tr>
               </thead>
               <tbody>

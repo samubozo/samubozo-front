@@ -8,7 +8,6 @@ import { API_BASE_URL, HR } from '../../configs/host-config';
 
 // --- MUI Autocomplete 기반 UserSearchModal ---
 function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
-
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState([]);
@@ -33,7 +32,6 @@ function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
         params.hrRole = 'Y';
       }
 
-
       // 이름/부서명 동시 검색: 백엔드가 둘 다 있으면 AND, 둘 중 하나만 있으면 OR로 동작할 수 있음
       // 실제로는 둘 다 보내면 AND, 하나만 보내면 해당 조건만 적용됨
       // 여기서는 둘 다 같은 값으로 보내서 이름 또는 부서명에 포함된 사용자 모두 반환
@@ -53,12 +51,6 @@ function UserSearchModal({ open, onClose, onSelect, hrRoleFilter = false }) {
 
   // inputValue 변경 시 debounce로 API 호출
   useEffect(() => {
-      'useEffect 실행됨',
-      inputValue,
-      open,
-      'hrRoleFilter:',
-      hrRoleFilter,
-    );
     if (!open) return;
     setOptions([]);
     setLoading(true);
