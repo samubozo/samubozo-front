@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import styles from './VacationRequest.module.scss';
 import { approvalService } from '../../services/approvalService';
+import { attendanceService } from '../../services/attendanceService';
 import AuthContext from '../../context/UserContext';
 import SuccessModal from '../../components/SuccessModal';
 
@@ -32,7 +33,12 @@ function toInputDate(str) {
   return str.replace(/\./g, '-');
 }
 
-const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
+const VacationRequest = ({
+  onClose,
+  editData = null,
+  vacationBalance,
+  onSuccess,
+}) => {
   const [requestDate, setRequestDate] = useState(todayStr);
   // 휴가 유형을 Enum 값으로 관리
   const [vacationType, setVacationType] = useState(
@@ -50,35 +56,69 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const [reasonError, setReasonError] = useState('');
   const [overlapError, setOverlapError] = useState('');
   const [myVacations, setMyVacations] = useState([]);
+  const [myAbsences, setMyAbsences] = useState([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // 내 휴가 목록 불러오기
+  // 내 휴가 및 부재 목록 불러오기
   useEffect(() => {
-    async function fetchMyVacations() {
+    async function fetchMyData() {
       try {
-        const res = await approvalService.getMyVacationRequests();
-        const vacations = res.result || res.data || res || [];
-        vacations.forEach((v, i) => {});
+        // 휴가 목록 불러오기
+        const vacationRes = await approvalService.getMyVacationRequests();
+        const vacations =
+          vacationRes.result || vacationRes.data || vacationRes || [];
         // 승인/처리중 상태만 필터링 (다양한 필드명 시도)
-        const filtered = vacations.filter((v) => {
+        const filteredVacations = vacations.filter((v) => {
           const status = v.vacationStatus || v.status || v.approvalStatus;
-          return ['PENDING', 'APPROVED', 'PROCESSING'].includes(status);
+          const isIncluded = [
+            'PENDING',
+            'APPROVED',
+            'PROCESSING',
+            'PENDING_APPROVAL',
+          ].includes(status);
+          return isIncluded;
         });
-        setMyVacations(filtered);
+        setMyVacations(filteredVacations);
+
+        // 부재 목록 불러오기
+        const absenceRes = await attendanceService.getAbsences();
+        const absences =
+          absenceRes.result || absenceRes.data || absenceRes || [];
+        // 승인/처리중 상태만 필터링
+        const filteredAbsences = absences.filter((a) => {
+          const status = a.absenceStatus || a.status || a.approvalStatus;
+          const isIncluded = ['PENDING', 'APPROVED', 'PROCESSING'].includes(
+            status,
+          );
+          return isIncluded;
+        });
+        setMyAbsences(filteredAbsences);
+
+        setDataLoaded(true);
       } catch (e) {
+        console.error('휴가 신청 모달 - 데이터 로딩 실패:', e);
         setMyVacations([]);
+        setMyAbsences([]);
+        setDataLoaded(true);
       }
     }
-    fetchMyVacations();
+    fetchMyData();
   }, []);
 
-  // 날짜 겹침 검사 함수
+  // 날짜 겹침 검사 함수 (휴가 + 부재)
   useEffect(() => {
-    if (!myVacations.length) {
+    // 데이터가 로드되지 않았으면 검사하지 않음
+    if (!dataLoaded) {
+      return;
+    }
+
+    if (!myVacations.length && !myAbsences.length) {
       setOverlapError('');
       return;
     }
+
     // 신청하려는 기간 계산
     let reqStart = startDate;
     let reqEnd = endDate;
@@ -87,23 +127,44 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
     }
     const reqStartDate = new Date(reqStart);
     const reqEndDate = new Date(reqEnd);
+
     // 본인 수정모드일 때는 자기 자신 제외
     const filteredVacations = editData
       ? myVacations.filter((v) => v.id !== editData.id)
       : myVacations;
-    // 겹치는 휴가가 있는지 검사
-    const overlap = filteredVacations.find((v) => {
+
+    // 해당 기간에 겹치는 휴가가 있는지 검사
+    const vacationOverlap = filteredVacations.find((v) => {
       const vStart = new Date(v.startDate);
       const vEnd = new Date(v.endDate);
-      // 기간이 겹치면 true
-      return reqStartDate <= vEnd && reqEndDate >= vStart;
+      const isOverlap = reqStartDate <= vEnd && reqEndDate >= vStart;
+      return isOverlap;
     });
-    if (overlap) {
+
+    // 해당 기간에 겹치는 부재가 있는지 검사
+    const absenceOverlap = myAbsences.find((a) => {
+      const aStart = new Date(a.startDate);
+      const aEnd = new Date(a.endDate);
+      const isOverlap = reqStartDate <= aEnd && reqEndDate >= aStart;
+      return isOverlap;
+    });
+
+    if (vacationOverlap) {
       setOverlapError('이미 해당 기간에 신청된 휴가가 있습니다.');
+    } else if (absenceOverlap) {
+      setOverlapError('해당 기간에 이미 신청한 부재가 있습니다.');
     } else {
       setOverlapError('');
     }
-  }, [startDate, endDate, vacationType, myVacations, editData]);
+  }, [
+    startDate,
+    endDate,
+    vacationType,
+    myVacations,
+    myAbsences,
+    editData,
+    dataLoaded,
+  ]);
 
   const authCtx = useContext(AuthContext);
   const applicantId = authCtx?.user?.employeeNo || null;
@@ -119,45 +180,8 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 날짜 겹침 유효성 검사
+    // 날짜 겹침 유효성 검사 (UI에서 이미 처리됨)
     if (overlapError) {
-      alert(overlapError);
-      return;
-    }
-
-    // 추가 중복 검사 - 현재 신청하려는 기간과 겹치는 휴가가 있는지 다시 확인
-    const currentRequestStart = new Date(startDate);
-    const currentRequestEnd = new Date(
-      vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
-        ? startDate
-        : endDate,
-    );
-
-    const hasOverlap = myVacations.some((vacation) => {
-      // 수정 모드일 때는 자기 자신 제외
-      if (editData && vacation.id === editData.id) {
-        return false;
-      }
-
-      const vacationStart = new Date(vacation.startDate);
-      const vacationEnd = new Date(vacation.endDate);
-      const vacationStatus =
-        vacation.vacationStatus || vacation.status || vacation.approvalStatus;
-
-      // 기간이 겹치고, 승인/처리중 상태인 경우
-      const isOverlapping =
-        currentRequestStart <= vacationEnd &&
-        currentRequestEnd >= vacationStart;
-      const isActiveStatus = ['PENDING', 'APPROVED', 'PROCESSING'].includes(
-        vacationStatus,
-      );
-
-      return isOverlapping && isActiveStatus;
-    });
-
-    if (hasOverlap) {
-      setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
-      setShowSuccessModal(true);
       return;
     }
 
@@ -184,45 +208,6 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
     setLoading(true);
 
     try {
-      // API 호출 전에 최신 휴가 데이터를 다시 가져와서 중복 검사
-      const latestRes = await approvalService.getMyVacationRequests();
-      const latestVacations =
-        latestRes.result || latestRes.data || latestRes || [];
-
-      // 휴가 데이터 구조 확인
-      const activeVacations = latestVacations.filter((v) => {
-        const status = v.vacationStatus || v.status || v.approvalStatus;
-        return ['PENDING', 'APPROVED', 'PROCESSING'].includes(status);
-      });
-
-      // 최신 데이터로 중복 검사
-      const currentRequestStart = new Date(startDate);
-      const currentRequestEnd = new Date(
-        vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
-          ? startDate
-          : endDate,
-      );
-
-      const hasLatestOverlap = activeVacations.some((vacation) => {
-        if (editData && vacation.id === editData.id) return false;
-
-        const vacationStart = new Date(vacation.startDate);
-        const vacationEnd = new Date(vacation.endDate);
-
-        const isOverlapping =
-          currentRequestStart <= vacationEnd &&
-          currentRequestEnd >= vacationStart;
-
-        return isOverlapping;
-      });
-
-      if (hasLatestOverlap) {
-        setSuccessMessage('이미 처리 중인 휴가 신청이 있습니다.');
-        setShowSuccessModal(true);
-        setLoading(false);
-        return;
-      }
-
       // 반차는 startDate, endDate 동일하게
       const reqStart =
         vacationType === 'AM_HALF_DAY' || vacationType === 'PM_HALF_DAY'
@@ -254,38 +239,75 @@ const VacationRequest = ({ onClose, editData = null, vacationBalance }) => {
         });
         setSuccessMessage('휴가 신청이 완료되었습니다.');
         setShowSuccessModal(true);
+
+        // 성공 시 부모 컴포넌트에 알림
+        if (onSuccess) {
+          onSuccess();
+        }
       }
 
       // 성공 시 모달은 SuccessModal에서 처리하도록 onClose() 호출 제거
     } catch (error) {
       console.error('휴가 신청 에러:', error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        '휴가 신청 중 오류가 발생했습니다.';
+      console.error('에러 응답:', error.response);
+      console.error('에러 상태:', error.response?.status);
+      console.error('에러 데이터:', error.response?.data);
 
-      console.log('백엔드 에러 메시지:', errorMessage);
-      console.log('에러 메시지 타입:', typeof errorMessage);
-      console.log(
-        '백엔드 에러 메시지가 문자열인지 확인:',
-        typeof errorMessage === 'string',
-      );
-      console.log(
-        '백엔드 에러 메시지가 객체인지 확인:',
-        typeof errorMessage === 'object',
-      );
+      // 409 CONFLICT 에러 처리
+      if (error.response && error.response.status === 409) {
+        let errorMessage = '해당 기간에 이미 신청된 휴가가 있습니다.';
 
-      let errorText = errorMessage;
+        // 다양한 에러 응답 구조 시도
+        if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data) {
+          errorMessage = JSON.stringify(error.response.data);
+        }
 
-      // 백엔드에서 객체로 오는 경우 처리
-      if (typeof errorMessage === 'object' && errorMessage !== null) {
-        errorText = JSON.stringify(errorMessage);
+        console.log('최종 에러 메시지:', errorMessage);
+        setSuccessMessage(errorMessage);
+      } else {
+        // 500 에러 시 중복 신청 가능성 고려
+        let errorMessage = '휴가 신청 중 오류가 발생했습니다.';
+
+        if (error.response?.status === 500) {
+          errorMessage =
+            '해당 기간에 이미 신청된 휴가가 있거나, 중복 신청으로 인한 오류가 발생했습니다.';
+        } else {
+          errorMessage =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            error.message ||
+            '휴가 신청 중 오류가 발생했습니다.';
+        }
+
+        console.log('백엔드 에러 메시지:', errorMessage);
+        console.log('에러 메시지 타입:', typeof errorMessage);
+        console.log(
+          '백엔드 에러 메시지가 문자열인지 확인:',
+          typeof errorMessage === 'string',
+        );
+        console.log(
+          '백엔드 에러 메시지가 객체인지 확인:',
+          typeof errorMessage === 'object',
+        );
+
+        let errorText = errorMessage;
+
+        // 백엔드에서 객체로 오는 경우 처리
+        if (typeof errorMessage === 'object' && errorMessage !== null) {
+          errorText = JSON.stringify(errorMessage);
+        }
+
+        console.log('처리할 에러 텍스트:', errorText);
+
+        setSuccessMessage(errorText);
       }
 
-      console.log('처리할 에러 텍스트:', errorText);
-
-      setSuccessMessage(errorText);
       setShowSuccessModal(true);
     } finally {
       setLoading(false);

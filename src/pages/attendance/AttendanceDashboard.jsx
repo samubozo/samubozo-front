@@ -160,8 +160,22 @@ export default function AttendanceDashboard() {
   // 상태별 텍스트 함수 (색상으로만 구분)
   const getStatusText = (item) => {
     // 부재 데이터의 경우 absenceType 필드 사용
-    const type = item.absenceType || item.type;
-    return type ? typeToKorean[type] || type : '부재';
+    if (item.absenceType || (item.type && typeToKorean[item.type])) {
+      const type = item.absenceType || item.type;
+      return typeToKorean[type] || type;
+    }
+    // 휴가 데이터의 경우 vacationType 필드 사용
+    if (item.vacationType) {
+      const vacationTypeMap = {
+        ANNUAL_LEAVE: '연차',
+        HALF_DAY_LEAVE: '반차',
+        SICK_LEAVE: '병가',
+        OFFICIAL_LEAVE: '공가',
+        PERSONAL_LEAVE: '개인휴가',
+      };
+      return vacationTypeMap[item.vacationType] || item.vacationType;
+    }
+    return '부재';
   };
 
   // 4. 시간 포맷팅 함수 (ISO, HH:mm:ss 모두 지원)
@@ -323,40 +337,9 @@ export default function AttendanceDashboard() {
       );
 
       console.log('부재 API 호출 시작');
-      // 전자결재에서 부재 데이터를 직접 가져오기 (attendanceService 대신)
-      let absencesData = [];
-
-      try {
-        const absenceResponse = await approvalService.getMyAbsenceApprovals();
-        console.log('전자결재 부재 API 응답:', absenceResponse);
-
-        const allData =
-          absenceResponse.content ||
-          absenceResponse.result ||
-          absenceResponse.data ||
-          [];
-
-        // 부재 관련 데이터만 필터링
-        absencesData = allData.filter((item) => {
-          console.log('데이터 항목 확인:', {
-            requestType: item.requestType,
-            absenceType: item.absenceType,
-            type: item.type,
-            title: item.title,
-          });
-
-          return item.requestType === 'ABSENCE' || item.absenceType;
-        });
-
-        console.log('전체 데이터:', allData);
-        console.log('필터링된 부재 데이터:', absencesData);
-      } catch (error) {
-        console.error('전자결재 부재 API 호출 실패:', error);
-        // API 실패 시 기존 attendanceService 사용
-        const response = await attendanceService.getAbsences({});
-        absencesData = response.result || response.data || [];
-        console.log('attendanceService 부재 데이터:', absencesData);
-      }
+      const response = await attendanceService.getAbsences({});
+      const absencesData = response.result || response.data || response || [];
+      console.log('attendanceService 부재 데이터:', absencesData);
 
       // 성공적으로 등록된 부재만 포함 (id가 있는 경우만)
       let allAbsences = absencesData.filter((absence) => absence.id != null);
@@ -499,9 +482,21 @@ export default function AttendanceDashboard() {
   // 부재 신청 수정 (백엔드 설계 의도에 맞게 attendance-service만 호출)
   const handleUpdateAbsence = async (updated) => {
     try {
+      // 부재 상태 확인 (PENDING 상태만 수정 가능)
+      if (
+        editAbsence.status &&
+        editAbsence.status !== 'PENDING' &&
+        editAbsence.status !== '대기'
+      ) {
+        setSuccessMessage('승인되거나 반려된 부재는 수정할 수 없습니다.');
+        setShowSuccessModal(true);
+        setTimeout(() => setShowSuccessModal(false), 3000);
+        return;
+      }
+
       // updated: { type(Enum), urgency, ... }
       const apiData = {
-        type: updated.type, // 이미 Enum 값으로 전달됨
+        type: updated.type, // 이미 Enum 값으로 전달됨 (필수 필드)
         startDate: updated.startDate,
         endDate: updated.endDate,
         startTime: updated.startTime,
@@ -517,33 +512,61 @@ export default function AttendanceDashboard() {
 
       // 변경사항 발생 시 즉시 데이터 새로고침
       await refreshData();
+
+      // 전자결재 페이지에 부재 수정 알림
+      localStorage.setItem('absenceUpdated', Date.now().toString());
+
       closeEditAbsence();
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
       console.error('부재 신청 수정 실패:', error);
-      setSuccessMessage('부재 신청 수정 중 오류가 발생했습니다.');
+
+      // 409 Conflict 오류 처리 (중복 신청)
+      if (error.response?.status === 409) {
+        const errorMessage =
+          error.response?.data?.message ||
+          '해당 기간에 이미 신청된 부재가 있습니다.';
+        setSuccessMessage(errorMessage);
+      } else {
+        setSuccessMessage('부재 신청 수정 중 오류가 발생했습니다.');
+      }
+
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     }
   };
 
   const handleDeleteAbsence = async (absenceId) => {
-    if (!window.confirm('정말로 이 부재를 삭제하시겠습니까?')) {
-      return;
-    }
-
     try {
       await attendanceService.deleteAbsence(absenceId);
+
       setSuccessMessage('부재가 삭제되었습니다.');
 
       // 변경사항 발생 시 즉시 데이터 새로고침
       await refreshData();
+
+      // 전자결재 페이지에 부재 삭제 알림
+      localStorage.setItem('absenceUpdated', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('absenceUpdated'));
+
+      // 모달 닫기
+      closeEditAbsence();
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
       console.error('부재 삭제 실패:', error);
-      setSuccessMessage('부재 삭제 중 오류가 발생했습니다.');
+
+      // 409 Conflict 오류 처리 (이미 처리된 부재)
+      if (error.response?.status === 409) {
+        const errorMessage =
+          error.response?.data?.message ||
+          '이미 처리된 부재는 삭제할 수 없습니다.';
+        setSuccessMessage(errorMessage);
+      } else {
+        setSuccessMessage('부재 삭제 중 오류가 발생했습니다.');
+      }
+
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     }
@@ -1072,20 +1095,22 @@ export default function AttendanceDashboard() {
             <tbody>
               {Array.from({ length: Math.ceil(days.length / 2) }).map(
                 (_, i) => {
+                  // dataVersion으로 강제 리렌더링
+                  const version = dataVersion;
                   // 왼쪽(1~15일)
                   const d1 = new Date(year, month - 1, i + 1);
                   const d1str = getDateStrLocal(d1);
                   const att1 = getAttendanceByDate(d1str);
 
-                  // 부재와 휴가를 정확히 구분
-                  const absence1 = absences.find(
-                    (a) =>
-                      a.startDate <= d1str &&
-                      a.endDate >= d1str &&
-                      (a.requestType === 'ABSENCE' ||
-                        a.absenceType ||
-                        (!a.vacationType && !a.requestType)),
-                  );
+                  // 부재와 휴가를 정확히 구분 (dataVersion으로 강제 리렌더링)
+                  const absence1 = absences.find((a) => {
+                    const isInRange =
+                      a.startDate <= d1str && a.endDate >= d1str;
+                    const isAbsence =
+                      a.requestType === 'ABSENCE' || a.absenceType || a.type;
+
+                    return isInRange && isAbsence;
+                  });
                   const vacation1 = getVacationByDate(d1str);
 
                   // 오른쪽(16~말일)
@@ -1098,14 +1123,14 @@ export default function AttendanceDashboard() {
                   const att2 = getAttendanceByDate(d2str);
 
                   // 부재와 휴가를 정확히 구분
-                  const absence2 = absences.find(
-                    (a) =>
-                      a.startDate <= d2str &&
-                      a.endDate >= d2str &&
-                      (a.requestType === 'ABSENCE' ||
-                        a.absenceType ||
-                        (!a.vacationType && !a.requestType)),
-                  );
+                  const absence2 = absences.find((a) => {
+                    const isInRange =
+                      a.startDate <= d2str && a.endDate >= d2str;
+                    const isAbsence =
+                      a.requestType === 'ABSENCE' || a.absenceType || a.type;
+
+                    return isInRange && isAbsence;
+                  });
                   const vacation2 = getVacationByDate(d2str);
                   return (
                     <tr key={i}>
@@ -1318,13 +1343,27 @@ export default function AttendanceDashboard() {
               }}
             >
               <div style={{ fontWeight: 700, marginBottom: 4 }}>
-                {hoveredAbsence.absenceType || hoveredAbsence.type
-                  ? typeToKorean[
-                      hoveredAbsence.absenceType || hoveredAbsence.type
-                    ] ||
-                    hoveredAbsence.absenceType ||
-                    hoveredAbsence.type
-                  : '부재'}
+                {hoveredAbsence.vacationType
+                  ? (() => {
+                      const vacationTypeMap = {
+                        ANNUAL_LEAVE: '연차',
+                        HALF_DAY_LEAVE: '반차',
+                        SICK_LEAVE: '병가',
+                        OFFICIAL_LEAVE: '공가',
+                        PERSONAL_LEAVE: '개인휴가',
+                      };
+                      return (
+                        vacationTypeMap[hoveredAbsence.vacationType] ||
+                        hoveredAbsence.vacationType
+                      );
+                    })()
+                  : hoveredAbsence.absenceType || hoveredAbsence.type
+                    ? typeToKorean[
+                        hoveredAbsence.absenceType || hoveredAbsence.type
+                      ] ||
+                      hoveredAbsence.absenceType ||
+                      hoveredAbsence.type
+                    : '부재'}
               </div>
               <div>
                 상태:{' '}
@@ -1335,7 +1374,7 @@ export default function AttendanceDashboard() {
                   : (hoveredAbsence.status ||
                         hoveredAbsence.vacationStatus ||
                         hoveredAbsence.approvalStatus) === 'PENDING'
-                    ? '대기 중'
+                    ? '승인 대기 중'
                     : (hoveredAbsence.status ||
                           hoveredAbsence.vacationStatus ||
                           hoveredAbsence.approvalStatus) === 'PENDING_APPROVAL'
@@ -1343,7 +1382,10 @@ export default function AttendanceDashboard() {
                       : '반려됨'}
               </div>
               <div>
-                날짜: {hoveredAbsence.startDate} ~ {hoveredAbsence.endDate}
+                날짜:{' '}
+                {hoveredAbsence.startDate === hoveredAbsence.endDate
+                  ? hoveredAbsence.startDate
+                  : `${hoveredAbsence.startDate} ~ ${hoveredAbsence.endDate}`}
               </div>
               {(hoveredAbsence.startTime || hoveredAbsence.endTime) && (
                 <div>
@@ -1373,6 +1415,7 @@ export default function AttendanceDashboard() {
               <VacationRequest
                 onClose={closeModal}
                 vacationBalance={vacationBalance}
+                onSuccess={refreshData}
               />
             </div>
           </div>

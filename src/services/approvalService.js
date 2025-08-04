@@ -39,10 +39,16 @@ export const approvalService = {
     }
   },
 
-  // 3. 모든 결재 요청 목록 조회 (필터링 지원)
-  async getAllApprovalRequests(requestType = null) {
+  // 3. 모든 결재 요청 목록 조회 (강화된 필터링 지원)
+  async getAllApprovalRequests({ applicantId, status, requestType } = {}) {
     try {
       const params = {};
+      if (applicantId) {
+        params.applicantId = applicantId;
+      }
+      if (status) {
+        params.status = status;
+      }
       if (requestType) {
         params.requestType = requestType;
       }

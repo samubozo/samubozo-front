@@ -40,9 +40,6 @@ import {
 // Hooks
 import { useApprovalData } from './hooks/useApprovalData';
 
-// 메인 Approval 컴포넌트
-
-// 메인 Approval 컴포넌트
 function Approval() {
   const location = useLocation();
   const { user } = useContext(AuthContext);
@@ -93,6 +90,21 @@ function Approval() {
   // 실시간 업데이트를 위한 상태 추가
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
   const [dataVersion, setDataVersion] = useState(0); // 데이터 버전 관리
+
+  // 부재 수정/삭제 이벤트 감지
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'absenceUpdated') {
+        console.log('부재 수정/삭제 감지됨, 데이터 새로고침');
+        refreshData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   // 증명서 신청 핸들러
   const handleCertModalOpen = () => {
@@ -1303,6 +1315,12 @@ function Approval() {
                                 detailData.urgency
                               );
                             })()}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>기간</div>
+                          <div className={styles.infoValue}>
+                            {detailData.period || '-'}
                           </div>
                         </div>
                         <div className={styles.infoRow}>

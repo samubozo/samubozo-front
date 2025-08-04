@@ -25,15 +25,37 @@ export const useApprovalData = (
 
     // ISO 날짜 문자열인 경우 (예: 2025-07-27T22:02:51.518708)
     if (dateStr.includes('T')) {
-      return dateStr.split('T')[0];
+      const datePart = dateStr.split('T')[0];
+      return datePart;
     }
 
-    // 이미 YYYY-MM-DD 형태인 경우
+    // YYYY-MM-DD 형태인 경우
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       return dateStr;
     }
 
+    // YYYY.MM.DD 형태인 경우를 YYYY-MM-DD로 변환
+    if (/^\d{4}\.\d{2}\.\d{2}$/.test(dateStr)) {
+      return dateStr.replace(/\./g, '-');
+    }
+
     return dateStr;
+  };
+
+  // 기간 표시 함수 추가
+  const formatPeriod = (startDate, endDate) => {
+    if (!startDate || !endDate) return '';
+
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
+
+    // 시작일과 종료일이 같으면 하루만 표시
+    if (startDate === endDate) {
+      return formattedStartDate;
+    }
+
+    // 여러 날인 경우 범위로 표시
+    return `${formattedStartDate} ~ ${formattedEndDate}`;
   };
 
   // 데이터 매핑 함수
@@ -47,11 +69,7 @@ export const useApprovalData = (
       applicantDepartment:
         row.applicantDepartment || row.department || user.department,
       applyDate: formatDate(row.requestedAt),
-      period:
-        row.period ||
-        (row.startDate && row.endDate
-          ? `${row.startDate} ~ ${row.endDate}`
-          : ''),
+      period: formatPeriod(row.startDate, row.endDate),
       endDate: row.endDate,
       approver: row.approverName || row.approver || '',
       processedAt: row.processedAt || row.approvedAt || row.rejectedAt || '',
@@ -116,11 +134,7 @@ export const useApprovalData = (
           user.department ||
           '부서 정보 없음',
         applyDate: formatDate(row.requestedAt),
-        period:
-          row.period ||
-          (row.startDate && row.endDate
-            ? `${row.startDate} ~ ${row.endDate}`
-            : ''),
+        period: formatPeriod(row.startDate, row.endDate),
         startTime: row.startTime || '',
         endTime: row.endTime || '',
         approver: row.approverName || row.approver || '',
