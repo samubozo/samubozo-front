@@ -75,6 +75,9 @@ export const statusMap = {
 // 부재 유형 옵션
 export const absenceOptions = [
   { value: 'all', label: '전체' },
+  { value: '출장', label: '출장' },
+  { value: '연수', label: '연수' },
+  { value: '외출', label: '외출' },
   { value: '병가', label: '병가' },
   { value: '공가', label: '공가' },
   { value: '기타', label: '기타' },

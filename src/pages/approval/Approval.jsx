@@ -511,6 +511,9 @@ function Approval() {
   const filteredAbsence = absenceDataFromHook.filter((row) => {
     // 항목 필터링 (부재 탭에서만)
     if (item !== 'all') {
+      if (item === '출장' && row.type !== '출장') return false;
+      if (item === '연수' && row.type !== '연수') return false;
+      if (item === '외출' && row.type !== '외출') return false;
       if (item === '병가' && row.type !== '병가') return false;
       if (item === '공가' && row.type !== '공가') return false;
       if (item === '기타' && row.type !== '기타') return false;
