@@ -14,7 +14,10 @@ let backendHostName;
 if (clientHostName === 'localhost') {
   // 개발 중
   backendHostName = 'http://localhost:8000';
-} else if (clientHostName === 'playdatashop8917.store') {
+} else if (
+  clientHostName === 'samubozo.co.kr' ||
+  clientHostName === 'www.samubozo.co.kr'
+) {
   // 배포해서 현재 서비스 중
   backendHostName = 'https://api.playdatashop8917.store';
 }

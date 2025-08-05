@@ -432,7 +432,6 @@ function Approval() {
 
     // 항목 필터링 (휴가 탭에서만)
     if (item !== 'all') {
-      console.log('휴가 필터링:', { item, rowType: row.type, row });
       if (item === '연차' && row.type !== '연차') return false;
       if (item === '반차' && row.type !== '반차') return false;
     }
@@ -515,7 +514,6 @@ function Approval() {
   const filteredAbsence = absenceDataFromHook.filter((row) => {
     // 항목 필터링 (부재 탭에서만)
     if (item !== 'all') {
-      console.log('부재 필터링:', { item, rowType: row.type, row });
       if (item === '병가' && row.type !== '병가') return false;
       if (item === '공가' && row.type !== '공가') return false;
       if (item === '기타' && row.type !== '기타') return false;
@@ -701,23 +699,17 @@ function Approval() {
   // PDF 인쇄 함수
   const printPdfFromServer = async (certificateId) => {
     try {
-      console.log('=== PDF 인쇄 시작 ===');
-      console.log('증명서 ID:', certificateId);
 
       const res = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/my-print/${certificateId}`,
         { responseType: 'arraybuffer' },
       );
 
-      console.log('PDF 응답 상태:', res.status);
-      console.log('PDF 데이터 크기:', res.data.byteLength);
 
       const contentType = res.headers['content-type'] || 'application/pdf';
       const blob = new Blob([res.data], { type: contentType });
       const fileURL = URL.createObjectURL(blob);
 
-      console.log('Blob 크기:', blob.size);
-      console.log('파일 URL:', fileURL);
 
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
@@ -736,8 +728,6 @@ function Approval() {
 
   // 인쇄 버튼 클릭 핸들러
   const handlePrintSelected = () => {
-    console.log('선택된 ID들:', selected);
-    console.log('증명서 데이터:', certData);
 
     const approvedIds = selected
       .map((selectedId) => {
@@ -751,7 +741,6 @@ function Approval() {
         return cert?.status === '승인' || cert?.status === 'APPROVED';
       });
 
-    console.log('승인된 증명서 ID들:', approvedIds);
 
     if (approvedIds.length === 0) {
       setToast({
@@ -761,7 +750,6 @@ function Approval() {
       return;
     }
     approvedIds.forEach((certificateId) => {
-      console.log(`증명서 인쇄 시도: certificateId = ${certificateId}`);
       printPdfFromServer(certificateId);
     });
   };

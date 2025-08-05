@@ -542,7 +542,9 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           const data = res.data.result;
           const newProfileImage = data.profileImage || profileImage;
           sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
-          window.location.reload();
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         } catch (err) {
           setSuccessMessage(
             '저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.',

@@ -29,18 +29,15 @@ const LayoutHeader = () => {
 
   // 토큰 존재 여부를 우선 체크 (더 빠른 체크)
   if (!token) {
-    console.log('LayoutHeader: 토큰 없음 - 즉시 리다이렉트');
     return <Navigate to='/' replace />;
   }
 
   // Context 로그인 상태 체크 (추가 보안)
   if (!isLoggedIn) {
-    console.log('LayoutHeader: Context에서 로그인 안됨 - 리다이렉트');
     return <Navigate to='/' replace />;
   }
 
   // 모든 인증 통과 - 헤더와 컨텐츠 렌더링
-  console.log('LayoutHeader: 인증 성공 - 헤더 렌더링');
   return (
     <WeatherProvider>
       <div>
