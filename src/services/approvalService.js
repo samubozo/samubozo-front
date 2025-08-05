@@ -614,13 +614,23 @@ export const approvalService = {
 
   // ===== 새로운 통합 API 메서드들 =====
 
-  // 36. 새로운 통합 API를 사용한 결재 내역 조회
-  async getApprovalsWithFilters({ applicantId, status, requestType } = {}) {
+  // 36. 새로운 통합 API를 사용한 결재 내역 조회 (페이징 지원)
+  async getApprovalsWithFilters({
+    applicantId,
+    status,
+    requestType,
+    page = 0,
+    size = 10,
+    sort = null,
+  } = {}) {
     try {
       const params = {};
       if (applicantId) params.applicantId = applicantId;
       if (status) params.status = status;
       if (requestType) params.requestType = requestType;
+      if (page !== undefined) params.page = page;
+      if (size !== undefined) params.size = size;
+      if (sort) params.sort = sort;
 
       const response = await axiosInstance.get(`${API_BASE_URL}${APPROVAL}`, {
         params,

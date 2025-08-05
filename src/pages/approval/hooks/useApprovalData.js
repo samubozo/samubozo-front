@@ -126,7 +126,7 @@ export const useApprovalData = (
       applyDate: row.requestDate || '',
       approver: row.approverName || '',
       processedAt: formatDate(row.approveDate || row.processedAt || ''),
-      reason: row.purpose || '',
+      reason: row.reason || row.purpose || '',
       rejectComment: row.rejectComment || '',
     }));
   };
@@ -223,12 +223,14 @@ export const useApprovalData = (
           }
         } else if (tab === 'certificate') {
           response = await approvalService.getMyCertificates(page, size);
-          const content = response?.content || [];
+          // 백엔드 응답 구조: { statusCode, statusMessage, result: { content, totalPages, ... } }
+          const result = response?.result || response;
+          const content = result?.content || [];
           setCertData(mapCertData(content));
-          if (response) {
-            setTotalPages(response.totalPages || 0);
-            setTotalElements(response.totalElements || 0);
-            setCurrentPage(response.number || 0);
+          if (result) {
+            setTotalPages(result.totalPages || 0);
+            setTotalElements(result.totalElements || 0);
+            setCurrentPage(result.number || 0);
           }
         } else if (tab === 'absence') {
           await fetchAbsenceData({ page, size });
