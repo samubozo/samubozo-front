@@ -86,7 +86,7 @@ function CertificateModal({
           if (onClose) onClose();
         }}
         autoClose={true}
-        autoCloseDelay={2000}
+        autoCloseDelay={3000}
       />
     );
   }
@@ -271,6 +271,19 @@ function CertificateModal({
             }}
           >
             <button
+              type='submit'
+              className={styles.approveBtn}
+              disabled={loading}
+              style={{
+                minWidth: 100,
+                height: 44,
+                fontSize: 17,
+                borderRadius: 8,
+              }}
+            >
+              신청
+            </button>
+            <button
               type='button'
               className={styles.deleteBtn}
               onClick={onClose}
@@ -283,19 +296,6 @@ function CertificateModal({
               }}
             >
               취소
-            </button>
-            <button
-              type='submit'
-              className={styles.approveBtn}
-              disabled={loading}
-              style={{
-                minWidth: 100,
-                height: 44,
-                fontSize: 17,
-                borderRadius: 8,
-              }}
-            >
-              신청
             </button>
           </div>
         </form>

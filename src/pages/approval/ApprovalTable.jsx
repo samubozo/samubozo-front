@@ -26,8 +26,35 @@ function ApprovalTable({
   return (
     <table className={styles.table}>
       <colgroup>
+        <col style={{ width: '50px' }} /> {/* 체크박스 */}
         {columns.map((col) => (
-          <col key={col.key} />
+          <col
+            key={col.key}
+            style={{
+              width:
+                col.key === 'reason'
+                  ? '200px'
+                  : col.key === 'type'
+                    ? '100px'
+                    : col.key === 'applicant'
+                      ? '80px'
+                      : col.key === 'applicantDepartment'
+                        ? '100px'
+                        : col.key === 'applyDate'
+                          ? '100px'
+                          : col.key === 'period'
+                            ? '120px'
+                            : col.key === 'approver'
+                              ? '80px'
+                              : col.key === 'processedAt'
+                                ? '100px'
+                                : col.key === 'status'
+                                  ? '80px'
+                                  : col.key === 'urgency'
+                                    ? '80px'
+                                    : 'auto',
+            }}
+          />
         ))}
       </colgroup>
       <thead>
@@ -63,13 +90,23 @@ function ApprovalTable({
             </td>
             {columns.map((col) => (
               <td key={`${row.id}-${col.key}`}>
-                {col.key === 'type' && typeToKor
-                  ? typeToKor(row[col.key])
-                  : col.key === 'urgency' && urgencyToKor
-                    ? urgencyToKor(row[col.key])
-                    : col.key === 'status' && statusToKor
-                      ? statusToKor(row[col.key])
-                      : row[col.key]}
+                {col.key === 'reason' ? (
+                  <div className={styles.reasonCell} title={row[col.key]}>
+                    {row[col.key]}
+                  </div>
+                ) : col.key === 'type' && typeToKor ? (
+                  typeToKor(row[col.key])
+                ) : col.key === 'urgency' && urgencyToKor ? (
+                  urgencyToKor(row[col.key])
+                ) : col.key === 'status' && statusToKor ? (
+                  <span
+                    className={`${styles.statusBadge} ${styles[`status${statusToKor(row[col.key])}`]}`}
+                  >
+                    {statusToKor(row[col.key])}
+                  </span>
+                ) : (
+                  row[col.key]
+                )}
               </td>
             ))}
             {/* 작업 버튼 칼럼 제거 */}

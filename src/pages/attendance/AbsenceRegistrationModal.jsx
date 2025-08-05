@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './AbsenceRegistrationModal.module.scss';
 import { getKoreaToday } from '../../utils/dateUtils';
 import { attendanceService } from '../../services/attendanceService';
+import { approvalService } from '../../services/approvalService';
 import SuccessModal from '../../components/SuccessModal';
 
 // 한국 시간 기준 오늘 날짜
@@ -10,8 +11,6 @@ const todayStr = getKoreaToday();
 const absenceTypes = [
   { value: 'BUSINESS_TRIP', label: '출장' },
   { value: 'TRAINING', label: '연수' },
-  { value: 'ANNUAL_LEAVE', label: '연차' },
-  { value: 'HALF_DAY_LEAVE', label: '반차' },
   { value: 'SHORT_LEAVE', label: '외출' },
   { value: 'SICK_LEAVE', label: '병가' },
   { value: 'OFFICIAL_LEAVE', label: '공가' },
@@ -38,6 +37,8 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   const [endTime, setEndTime] = useState('18:00');
   const [reason, setReason] = useState('');
   const [myAbsences, setMyAbsences] = useState([]);
+  const [myVacations, setMyVacations] = useState([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [duplicateError, setDuplicateError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -45,29 +46,65 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   // 내 부재 목록 불러오기
   useEffect(() => {
     if (open) {
-      fetchMyAbsences();
+      fetchMyData();
     }
   }, [open]);
 
-  const fetchMyAbsences = async () => {
+  const fetchMyData = async () => {
     try {
-      const response = await attendanceService.getAbsences({});
-      const absences = response.result || response.data || response || [];
-      setMyAbsences(absences);
+      // 부재 목록 불러오기
+      const absenceResponse = await attendanceService.getAbsences({});
+      const absences =
+        absenceResponse.result || absenceResponse.data || absenceResponse || [];
+      // 승인/처리중 상태만 필터링
+      const filteredAbsences = absences.filter((a) => {
+        const status = a.absenceStatus || a.status || a.approvalStatus;
+        return ['PENDING', 'APPROVED', 'PROCESSING'].includes(status);
+      });
+      setMyAbsences(filteredAbsences);
+
+      // 휴가 목록 불러오기 (페이징 처리된 응답)
+      const vacationResponse = await approvalService.getMyVacationRequests(
+        0,
+        100,
+        'startDate,desc',
+      );
+      // Page 객체에서 content 필드에 접근
+      const vacations =
+        vacationResponse.data?.content ||
+        vacationResponse.content ||
+        vacationResponse.result ||
+        vacationResponse.data ||
+        vacationResponse ||
+        [];
+      // 승인/처리중 상태만 필터링
+      const filteredVacations = vacations.filter((v) => {
+        const status = v.vacationStatus || v.status || v.approvalStatus;
+        return [
+          'PENDING',
+          'APPROVED',
+          'PROCESSING',
+          'PENDING_APPROVAL',
+        ].includes(status);
+      });
+      setMyVacations(filteredVacations);
+
+      setDataLoaded(true);
     } catch (error) {
-      console.error('부재 목록 불러오기 실패:', error);
+      console.error('데이터 불러오기 실패:', error);
       setMyAbsences([]);
+      setMyVacations([]);
+      setDataLoaded(true);
     }
   };
 
-  // 중복 검사 함수
+  // 중복 검사 함수 (부재 + 휴가)
   const checkDuplicate = () => {
-    if (!myAbsences.length) return false;
-
     const requestStart = new Date(startDate);
     const requestEnd = new Date(endDate);
 
-    return myAbsences.some((absence) => {
+    // 해당 기간에 이미 신청한 부재가 있는지 검사 (타입 무관)
+    const existingAbsence = myAbsences.find((absence) => {
       const absenceStart = new Date(absence.startDate);
       const absenceEnd = new Date(absence.endDate);
 
@@ -75,38 +112,48 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
       const isOverlapping =
         requestStart <= absenceEnd && requestEnd >= absenceStart;
 
-      // 같은 타입인지 확인
-      const isSameType = absence.type === type;
-
-      return isOverlapping && isSameType;
+      return isOverlapping;
     });
+
+    // 해당 기간에 휴가가 있는지 검사
+    const vacationDuplicate = myVacations.some((vacation) => {
+      const vacationStart = new Date(vacation.startDate);
+      const vacationEnd = new Date(vacation.endDate);
+
+      // 기간이 겹치는지 확인
+      const isOverlapping =
+        requestStart <= vacationEnd && requestEnd >= vacationStart;
+
+      return isOverlapping;
+    });
+
+    return { existingAbsence, vacationDuplicate };
   };
 
   // 날짜나 타입이 변경될 때마다 중복 검사
   useEffect(() => {
+    // 데이터가 로드되지 않았으면 검사하지 않음
+    if (!dataLoaded) {
+      return;
+    }
+
     if (startDate && endDate && type) {
-      const isDuplicate = checkDuplicate();
-      if (isDuplicate) {
-        setDuplicateError(
-          '이미 해당 기간에 같은 유형의 부재가 신청되어 있습니다.',
-        );
+      const { existingAbsence, vacationDuplicate } = checkDuplicate();
+
+      if (existingAbsence) {
+        setDuplicateError('해당 기간에 이미 신청한 부재가 있습니다.');
+      } else if (vacationDuplicate) {
+        setDuplicateError('이미 해당 기간에 신청된 휴가가 있습니다.');
       } else {
         setDuplicateError('');
       }
     }
-  }, [startDate, endDate, type, myAbsences]);
+  }, [startDate, endDate, type, myAbsences, myVacations, dataLoaded]);
 
-  // 부재 타입 변경 시 긴급도 자동 설정
+  // 부재 타입 변경
   const handleTypeChange = (e) => {
     const newType = e.target.value;
     setType(newType);
-
-    // 부재 타입에 따른 긴급도 자동 설정
-    if (newType === 'SICK_LEAVE' || newType === 'OFFICIAL_LEAVE') {
-      setUrgency('URGENT');
-    } else {
-      setUrgency('NORMAL');
-    }
   };
 
   if (!open) return null;
@@ -114,10 +161,14 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // 중복 검사
+    // type 필드 검증 (필수 필드)
+    if (!type) {
+      alert('부재 유형을 선택해주세요.');
+      return;
+    }
+
+    // 중복 에러가 있으면 제출 차단
     if (duplicateError) {
-      setSuccessMessage(duplicateError);
-      setShowSuccessModal(true);
       return;
     }
 

@@ -48,7 +48,7 @@ export const leaveColumns = [
 // 증명서 테이블 컬럼
 export const certColumns = [
   { key: 'type', label: '항목' },
-  { key: 'purpose', label: '용도' },
+  { key: 'reason', label: '용도' },
   { key: 'applicant', label: '신청자' },
   { key: 'applicantDepartment', label: '부서' },
   { key: 'applyDate', label: '신청일자' },
@@ -106,6 +106,9 @@ export const absenceColumns = [
 
 // 부재 유형 매핑
 export const absenceTypeMap = {
+  BUSINESS_TRIP: '출장',
+  TRAINING: '연수',
+  SHORT_LEAVE: '외출',
   SICK_LEAVE: '병가',
   OFFICIAL_LEAVE: '공가',
   ETC: '기타',

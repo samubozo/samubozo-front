@@ -85,6 +85,7 @@ export default function AttendanceDashboard() {
   const days = getMonthDays(year, month);
   const [showAbsence, setShowAbsence] = useState(false);
   const [absences, setAbsences] = useState([]); // [{date, type, reason, ...}]
+  const [vacations, setVacations] = useState([]); // 휴가 데이터 추가
   const [editAbsence, setEditAbsence] = useState(null);
   const [todayRowIdx, setTodayRowIdx] = useState(today.getDate() - 1);
   const [memo, setMemo] = useState(localStorage.getItem('todayMemo') || '');
@@ -112,6 +113,67 @@ export default function AttendanceDashboard() {
       return a.attendanceDate?.slice(0, 10) === dateStr;
     });
     return found;
+  };
+
+  // 휴가 데이터 찾기 함수 추가
+  const getVacationByDate = (dateStr) => {
+    return vacations.find((v) => {
+      return v.startDate <= dateStr && v.endDate >= dateStr;
+    });
+  };
+
+  // 상태별 스타일 함수 수정 (반려 상태 추가)
+  const getStatusStyle = (item) => {
+    const status = item.status || item.vacationStatus || item.approvalStatus;
+
+    // 상태가 없으면 기본적으로 대기 상태로 표시
+    if (!status) {
+      return {
+        className: styles.pendingBtn,
+        style: { opacity: 0.7 },
+      };
+    }
+
+    switch (status) {
+      case 'APPROVED':
+        return {
+          className: item.type ? styles.absenceBtn : styles.vacationBtn,
+        };
+      case 'PENDING':
+      case 'PENDING_APPROVAL':
+        return {
+          className: styles.pendingBtn,
+          style: { opacity: 0.7 },
+        };
+      case 'REJECTED':
+        return {
+          className: styles.rejectedBtn,
+          style: { opacity: 0.8 },
+        };
+      default:
+        return {
+          className: item.type ? styles.absenceBtn : styles.vacationBtn,
+        };
+    }
+  };
+
+  // 상태별 텍스트 함수 (색상으로만 구분)
+  const getStatusText = (item) => {
+    // 부재 데이터의 경우 absenceType 필드 사용
+    if (item.absenceType || (item.type && typeToKorean[item.type])) {
+      const type = item.absenceType || item.type;
+      return typeToKorean[type] || type;
+    }
+    // 휴가 데이터의 경우 vacationType 필드 사용
+    if (item.vacationType) {
+      const vacationTypeMap = {
+        ANNUAL_LEAVE: '연차',
+        AM_HALF_DAY: '반차(오전)',
+        PM_HALF_DAY: '반차(오후)',
+      };
+      return vacationTypeMap[item.vacationType] || item.vacationType;
+    }
+    return '부재';
   };
 
   // 4. 시간 포맷팅 함수 (ISO, HH:mm:ss 모두 지원)
@@ -259,25 +321,49 @@ export default function AttendanceDashboard() {
     // eslint-disable-next-line
   }, []);
 
-  // 부재 목록 불러오기
+  // 부재 목록 불러오기 (실시간 업데이트 지원)
   const fetchAbsences = async () => {
     try {
       const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
-      const response = await attendanceService.getAbsences({
-        userId: userId,
-        year: year,
-        month: month,
+      console.log(
+        '부재 조회 - userId:',
+        userId,
+        'year:',
+        year,
+        'month:',
+        month,
+      );
+
+      console.log('부재 API 호출 시작');
+      const response = await attendanceService.getAbsences({});
+      const absencesData = response.result || response.data || response || [];
+      console.log('attendanceService 부재 데이터:', absencesData);
+
+      // 성공적으로 등록된 부재만 포함 (id가 있는 경우만) + 반려된 항목 제외
+      let allAbsences = absencesData.filter((absence) => {
+        const status =
+          absence.status || absence.approvalStatus || absence.absenceStatus;
+        return absence.id != null && status !== 'REJECTED' && status !== '반려';
       });
-      // 응답 구조에 따라 absences 할당
-      if (Array.isArray(response)) {
-        setAbsences(response);
-      } else if (response.result && Array.isArray(response.result)) {
-        setAbsences(response.result);
-      } else if (response.data && Array.isArray(response.data)) {
-        setAbsences(response.data);
-      } else {
-        setAbsences([]);
-      }
+
+      // 부재 데이터 상태 확인
+      console.log(
+        '부재 데이터 상태 확인:',
+        allAbsences.map((item) => ({
+          id: item.id,
+          type: item.type,
+          status: item.status,
+          approvalStatus: item.approvalStatus,
+          vacationStatus: item.vacationStatus,
+          requestType: item.requestType,
+          absenceType: item.absenceType,
+          title: item.title,
+          fullData: item, // 전체 데이터 확인
+        })),
+      );
+
+      setAbsences(allAbsences);
+      console.log('부재 데이터 로드 완료:', allAbsences.length, '건');
     } catch (error) {
       console.error('부재 목록 불러오기 실패:', error);
     }
@@ -288,11 +374,73 @@ export default function AttendanceDashboard() {
     fetchAbsences();
   }, [year, month]);
 
+  // 실시간 업데이트를 위한 주기적 새로고침 (10초마다)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshData();
+    }, 10000); // 10초마다 새로고침
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 휴가 목록 불러오기 (실시간 업데이트 지원)
+  const fetchVacations = async () => {
+    try {
+      const response = await approvalService.getMyVacationRequests(
+        0,
+        100,
+        'startDate,desc',
+      );
+
+      // Page 객체에서 content 필드에 접근하여 데이터 추출
+      let vacations = [];
+      if (response && typeof response === 'object') {
+        // API 응답 구조: { result: { content: [...] } } (페이징 처리된 응답)
+        if (
+          response.result &&
+          response.result.content &&
+          Array.isArray(response.result.content)
+        ) {
+          vacations = response.result.content;
+        } else if (
+          response.data &&
+          response.data.content &&
+          Array.isArray(response.data.content)
+        ) {
+          vacations = response.data.content;
+        } else if (response.content && Array.isArray(response.content)) {
+          vacations = response.content;
+        } else if (Array.isArray(response.result)) {
+          vacations = response.result;
+        } else if (Array.isArray(response.data)) {
+          vacations = response.data;
+        } else if (Array.isArray(response)) {
+          vacations = response;
+        }
+      }
+
+      // 승인된 휴가와 대기 중인 휴가만 포함 (반려된 항목 제외)
+      const allVacations = vacations.filter((v) => {
+        const status = v.vacationStatus || v.status || v.approvalStatus;
+        return ['APPROVED', 'PENDING', 'PENDING_APPROVAL'].includes(status);
+      });
+      setVacations(allVacations);
+    } catch (error) {
+      console.error('휴가 목록 불러오기 실패:', error);
+      setVacations([]);
+    }
+  };
+
+  // 컴포넌트 마운트 시 휴가 목록 불러오기
+  useEffect(() => {
+    fetchVacations();
+  }, [year, month]);
+
   const handleVacation = () => setShowVacation(true);
   const closeModal = () => setShowVacation(false);
   const handleAbsence = () => setShowAbsence(true);
   const closeAbsenceModal = () => setShowAbsence(false);
-  // 부재 신청 (WorkStatusRegisterRequestDto 구조에 맞게)
+  // 부재 신청 (백엔드 설계 의도에 맞게 attendance-service만 호출)
   const handleAbsenceSubmit = async (absence) => {
     try {
       // absence: { type(Enum), urgency, startDate, endDate, startTime, endTime, reason }
@@ -303,46 +451,16 @@ export default function AttendanceDashboard() {
         startTime: absence.startTime || null, // 명시적으로 null 처리
         endTime: absence.endTime || null, // 명시적으로 null 처리
         reason: absence.reason,
+        urgency: absence.urgency || 'NORMAL', // 긴급도 정보도 함께 전달
       };
 
-      // 1. 부재 등록
+      // attendance-service만 호출 (백엔드에서 approval-service 호출 처리)
       await attendanceService.registerAbsence(apiData);
 
-      // 2. 부재 결재 요청 생성
-      try {
-        // 부재 타입에 따른 긴급도 설정 (모달에서 선택한 값 우선, 없으면 자동 설정)
-        const getUrgencyByType = (type) => {
-          switch (type) {
-            case 'SICK_LEAVE':
-            case 'OFFICIAL_LEAVE':
-              return 'URGENT'; // 병가, 공가는 긴급
-            case 'ANNUAL_LEAVE':
-            case 'HALF_DAY_LEAVE':
-              return 'NORMAL'; // 연차, 반차는 일반
-            default:
-              return 'NORMAL'; // 기본값
-          }
-        };
+      setSuccessMessage('부재 신청이 완료되었습니다.');
 
-        const approvalData = {
-          absenceType: absence.type,
-          urgency: absence.urgency || getUrgencyByType(absence.type),
-          startDate: absence.startDate,
-          endDate: absence.endDate,
-          startTime: absence.startTime || null, // 명시적으로 null 처리
-          endTime: absence.endTime || null, // 명시적으로 null 처리
-          reason: absence.reason,
-        };
-
-        await approvalService.requestAbsenceApproval(approvalData);
-        setSuccessMessage('부재 신청이 완료되었습니다.');
-      } catch (approvalError) {
-        console.error('부재 결재 요청 생성 실패:', approvalError);
-        // 결재 요청 실패 시 실패 메시지 표시
-        setSuccessMessage('부재 신청을 실패했습니다.');
-      }
-
-      await fetchAbsences();
+      // 성공 시에만 실행
+      await refreshData();
       setShowAbsence(false);
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
@@ -391,65 +509,60 @@ export default function AttendanceDashboard() {
     setEditAbsence(absence);
   };
   const closeEditAbsence = () => setEditAbsence(null);
-  // 부재 신청 수정 (WorkStatusUpdateRequestDto 구조에 맞게)
+
+  // 부재 신청 수정 (백엔드 설계 의도에 맞게 attendance-service만 호출)
   const handleUpdateAbsence = async (updated) => {
     try {
+      // 부재 상태 확인 (PENDING 상태만 수정 가능)
+      if (
+        editAbsence.status &&
+        editAbsence.status !== 'PENDING' &&
+        editAbsence.status !== '대기'
+      ) {
+        setSuccessMessage('승인되거나 반려된 부재는 수정할 수 없습니다.');
+        setShowSuccessModal(true);
+        setTimeout(() => setShowSuccessModal(false), 3000);
+        return;
+      }
+
       // updated: { type(Enum), urgency, ... }
       const apiData = {
-        type: updated.type, // 이미 Enum 값으로 전달됨
+        type: updated.type, // 이미 Enum 값으로 전달됨 (필수 필드)
         startDate: updated.startDate,
         endDate: updated.endDate,
         startTime: updated.startTime,
         endTime: updated.endTime,
         reason: updated.reason,
+        urgency: updated.urgency || 'NORMAL', // 긴급도 정보도 함께 전달
       };
 
-      // 1. 부재 수정
+      // attendance-service만 호출 (백엔드에서 approval-service 호출 처리)
       await attendanceService.updateAbsence(editAbsence.id, apiData);
 
-      // 2. 부재 결재 요청 업데이트 (기존 결재 요청이 있는 경우)
-      try {
-        // 부재 타입에 따른 긴급도 설정
-        const getUrgencyByType = (type) => {
-          switch (type) {
-            case 'SICK_LEAVE':
-            case 'OFFICIAL_LEAVE':
-              return 'URGENT';
-            case 'ANNUAL_LEAVE':
-            case 'HALF_DAY_LEAVE':
-              return 'NORMAL';
-            default:
-              return 'NORMAL';
-          }
-        };
+      setSuccessMessage('부재 신청 수정이 완료되었습니다.');
 
-        const approvalData = {
-          absenceType: updated.type,
-          urgency: updated.urgency || getUrgencyByType(updated.type),
-          startDate: updated.startDate,
-          endDate: updated.endDate,
-          startTime: updated.startTime,
-          endTime: updated.endTime,
-          reason: updated.reason,
-        };
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
 
-        // 기존 결재 요청이 있는지 확인하고 업데이트
-        // (실제로는 absence-service에서 처리하거나 별도 API 필요)
-        setSuccessMessage('부재 신청 수정이 완료되었습니다.');
-      } catch (approvalError) {
-        console.error('부재 결재 요청 업데이트 실패:', approvalError);
-        setSuccessMessage(
-          '부재 신청 수정은 완료되었으나, 결재 요청 업데이트에 실패했습니다.',
-        );
-      }
+      // 전자결재 페이지에 부재 수정 알림
+      localStorage.setItem('absenceUpdated', Date.now().toString());
 
-      await fetchAbsences();
       closeEditAbsence();
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
       console.error('부재 신청 수정 실패:', error);
-      setSuccessMessage('부재 신청 수정 중 오류가 발생했습니다.');
+
+      // 409 Conflict 오류 처리 (중복 신청)
+      if (error.response?.status === 409) {
+        const errorMessage =
+          error.response?.data?.message ||
+          '해당 기간에 이미 신청된 부재가 있습니다.';
+        setSuccessMessage(errorMessage);
+      } else {
+        setSuccessMessage('부재 신청 수정 중 오류가 발생했습니다.');
+      }
+
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     }
@@ -457,29 +570,34 @@ export default function AttendanceDashboard() {
 
   const handleDeleteAbsence = async (absenceId) => {
     try {
-      setEditAbsence(null); // 삭제 확인 시 바로 모달 닫기
-
-      // 1. 부재 삭제
       await attendanceService.deleteAbsence(absenceId);
 
-      // 2. 부재 결재 요청 삭제 (기존 결재 요청이 있는 경우)
-      try {
-        // 기존 결재 요청이 있는지 확인하고 삭제
-        // (실제로는 absence-service에서 처리하거나 별도 API 필요)
-        setSuccessMessage('부재 신청이 삭제되었습니다.');
-      } catch (approvalError) {
-        console.error('부재 결재 요청 삭제 실패:', approvalError);
-        setSuccessMessage(
-          '부재 신청은 삭제되었으나, 결재 요청 삭제에 실패했습니다.',
-        );
-      }
+      setSuccessMessage('부재가 삭제되었습니다.');
 
-      await fetchAbsences();
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
+
+      // 전자결재 페이지에 부재 삭제 알림
+      localStorage.setItem('absenceUpdated', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('absenceUpdated'));
+
+      // 모달 닫기
+      closeEditAbsence();
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
-      console.error('부재 신청 삭제 실패:', error);
-      setSuccessMessage('부재 신청 삭제 중 오류가 발생했습니다.');
+      console.error('부재 삭제 실패:', error);
+
+      // 409 Conflict 오류 처리 (이미 처리된 부재)
+      if (error.response?.status === 409) {
+        const errorMessage =
+          error.response?.data?.message ||
+          '이미 처리된 부재는 삭제할 수 없습니다.';
+        setSuccessMessage(errorMessage);
+      } else {
+        setSuccessMessage('부재 삭제 중 오류가 발생했습니다.');
+      }
+
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     }
@@ -616,6 +734,20 @@ export default function AttendanceDashboard() {
     };
   }, []);
 
+  // 연차 승인 이벤트 감지
+  useEffect(() => {
+    const handleVacationApproved = () => {
+      console.log('연차 승인 감지됨, 휴가 데이터 새로고침');
+      fetchVacations();
+    };
+
+    window.addEventListener('vacationApproved', handleVacationApproved);
+
+    return () => {
+      window.removeEventListener('vacationApproved', handleVacationApproved);
+    };
+  }, []);
+
   // 한글 → ENUM 변환 맵
   const typeMap = {
     출장: 'BUSINESS_TRIP',
@@ -629,9 +761,9 @@ export default function AttendanceDashboard() {
   const typeToKorean = {
     BUSINESS_TRIP: '출장',
     TRAINING: '연수',
-    ANNUAL_LEAVE: '연차',
-    HALF_DAY_LEAVE: '반차',
     SHORT_LEAVE: '외출',
+    SICK_LEAVE: '병가',
+    OFFICIAL_LEAVE: '공가',
     ETC: '기타',
   };
 
@@ -645,6 +777,18 @@ export default function AttendanceDashboard() {
       <div className={styles.attendanceDashboard}>
         {/* 에러 메시지 표시 */}
         {error && <div className={styles.errorMessage}>{error}</div>}
+
+        {/* 성공 메시지 모달 */}
+        {showSuccessModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.successModal}>
+              <div className={styles.successContent}>
+                <div className={styles.successIcon}>✓</div>
+                <div className={styles.successMessage}>{successMessage}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 상단 대시보드 그리드 */}
         <div className={styles.dashboardGrid}>
@@ -996,13 +1140,24 @@ export default function AttendanceDashboard() {
             <tbody>
               {Array.from({ length: Math.ceil(days.length / 2) }).map(
                 (_, i) => {
+                  // dataVersion으로 강제 리렌더링
+                  const version = dataVersion;
                   // 왼쪽(1~15일)
                   const d1 = new Date(year, month - 1, i + 1);
                   const d1str = getDateStrLocal(d1);
                   const att1 = getAttendanceByDate(d1str);
-                  const absence1 = absences.find(
-                    (a) => a.startDate <= d1str && a.endDate >= d1str,
-                  );
+
+                  // 부재와 휴가를 정확히 구분 (dataVersion으로 강제 리렌더링)
+                  const absence1 = absences.find((a) => {
+                    const isInRange =
+                      a.startDate <= d1str && a.endDate >= d1str;
+                    const isAbsence =
+                      a.requestType === 'ABSENCE' || a.absenceType || a.type;
+
+                    return isInRange && isAbsence;
+                  });
+                  const vacation1 = getVacationByDate(d1str);
+
                   // 오른쪽(16~말일)
                   const d2 = new Date(
                     year,
@@ -1011,9 +1166,17 @@ export default function AttendanceDashboard() {
                   );
                   const d2str = getDateStrLocal(d2);
                   const att2 = getAttendanceByDate(d2str);
-                  const absence2 = absences.find(
-                    (a) => a.startDate <= d2str && a.endDate >= d2str,
-                  );
+
+                  // 부재와 휴가를 정확히 구분
+                  const absence2 = absences.find((a) => {
+                    const isInRange =
+                      a.startDate <= d2str && a.endDate >= d2str;
+                    const isAbsence =
+                      a.requestType === 'ABSENCE' || a.absenceType || a.type;
+
+                    return isInRange && isAbsence;
+                  });
+                  const vacation2 = getVacationByDate(d2str);
                   return (
                     <tr key={i}>
                       {/* 날짜/출근/퇴근/부재 */}
@@ -1040,13 +1203,14 @@ export default function AttendanceDashboard() {
                         )}
                       </td>
                       <td>
-                        {absence1 && (
+                        {absence1 && !vacation1 && (
                           <span
-                            className={styles.absenceBtn}
+                            className={getStatusStyle(absence1).className}
                             style={{
                               cursor: 'pointer',
                               display: 'inline-block',
                               position: 'relative',
+                              ...getStatusStyle(absence1).style,
                             }}
                             onClick={() => handleEditAbsence(absence1)}
                             title='수정'
@@ -1060,7 +1224,30 @@ export default function AttendanceDashboard() {
                             }}
                             onMouseLeave={() => setHoveredAbsence(null)}
                           >
-                            {typeToKorean[absence1.type] || absence1.type}
+                            {getStatusText(absence1)}
+                          </span>
+                        )}
+                        {vacation1 && (
+                          <span
+                            className={getStatusStyle(vacation1).className}
+                            style={{
+                              cursor: 'pointer',
+                              display: 'inline-block',
+                              position: 'relative',
+                              ...getStatusStyle(vacation1).style,
+                            }}
+                            title='휴가'
+                            onMouseEnter={(e) => {
+                              setHoveredAbsence(vacation1);
+                              const rect = e.target.getBoundingClientRect();
+                              setTooltipPos({
+                                x: rect.right + window.scrollX,
+                                y: rect.top + window.scrollY,
+                              });
+                            }}
+                            onMouseLeave={() => setHoveredAbsence(null)}
+                          >
+                            {getStatusText(vacation1)}
                           </span>
                         )}
                       </td>
@@ -1103,13 +1290,15 @@ export default function AttendanceDashboard() {
                       </td>
                       <td>
                         {i + Math.ceil(days.length / 2) + 1 <= days.length &&
-                          absence2 && (
+                          absence2 &&
+                          !vacation2 && (
                             <span
-                              className={styles.absenceBtn}
+                              className={getStatusStyle(absence2).className}
                               style={{
                                 cursor: 'pointer',
                                 display: 'inline-block',
                                 position: 'relative',
+                                ...getStatusStyle(absence2).style,
                               }}
                               onClick={() => handleEditAbsence(absence2)}
                               title='수정'
@@ -1123,7 +1312,31 @@ export default function AttendanceDashboard() {
                               }}
                               onMouseLeave={() => setHoveredAbsence(null)}
                             >
-                              {typeToKorean[absence2.type] || absence2.type}
+                              {getStatusText(absence2)}
+                            </span>
+                          )}
+                        {i + Math.ceil(days.length / 2) + 1 <= days.length &&
+                          vacation2 && (
+                            <span
+                              className={getStatusStyle(vacation2).className}
+                              style={{
+                                cursor: 'pointer',
+                                display: 'inline-block',
+                                position: 'relative',
+                                ...getStatusStyle(vacation2).style,
+                              }}
+                              title='휴가'
+                              onMouseEnter={(e) => {
+                                setHoveredAbsence(vacation2);
+                                const rect = e.target.getBoundingClientRect();
+                                setTooltipPos({
+                                  x: rect.right + window.scrollX,
+                                  y: rect.top + window.scrollY,
+                                });
+                              }}
+                              onMouseLeave={() => setHoveredAbsence(null)}
+                            >
+                              {getStatusText(vacation2)}
                             </span>
                           )}
                       </td>
@@ -1154,7 +1367,7 @@ export default function AttendanceDashboard() {
               )}
             </tbody>
           </table>
-          {/* === 부재 툴팁 === */}
+          {/* === 부재/휴가 툴팁 === */}
           {hoveredAbsence && (
             <div
               style={{
@@ -1175,10 +1388,47 @@ export default function AttendanceDashboard() {
               }}
             >
               <div style={{ fontWeight: 700, marginBottom: 4 }}>
-                {typeToKorean[hoveredAbsence.type] || hoveredAbsence.type}
+                {hoveredAbsence.vacationType
+                  ? (() => {
+                      const vacationTypeMap = {
+                        ANNUAL_LEAVE: '연차',
+                        AM_HALF_DAY: '반차(오전)',
+                        PM_HALF_DAY: '반차(오후)',
+                      };
+                      return (
+                        vacationTypeMap[hoveredAbsence.vacationType] ||
+                        hoveredAbsence.vacationType
+                      );
+                    })()
+                  : hoveredAbsence.absenceType || hoveredAbsence.type
+                    ? typeToKorean[
+                        hoveredAbsence.absenceType || hoveredAbsence.type
+                      ] ||
+                      hoveredAbsence.absenceType ||
+                      hoveredAbsence.type
+                    : '부재'}
               </div>
               <div>
-                날짜: {hoveredAbsence.startDate} ~ {hoveredAbsence.endDate}
+                상태:{' '}
+                {(hoveredAbsence.status ||
+                  hoveredAbsence.vacationStatus ||
+                  hoveredAbsence.approvalStatus) === 'APPROVED'
+                  ? '승인됨'
+                  : (hoveredAbsence.status ||
+                        hoveredAbsence.vacationStatus ||
+                        hoveredAbsence.approvalStatus) === 'PENDING'
+                    ? '승인 대기 중'
+                    : (hoveredAbsence.status ||
+                          hoveredAbsence.vacationStatus ||
+                          hoveredAbsence.approvalStatus) === 'PENDING_APPROVAL'
+                      ? '승인 대기 중'
+                      : '반려됨'}
+              </div>
+              <div>
+                날짜:{' '}
+                {hoveredAbsence.startDate === hoveredAbsence.endDate
+                  ? hoveredAbsence.startDate
+                  : `${hoveredAbsence.startDate} ~ ${hoveredAbsence.endDate}`}
               </div>
               {(hoveredAbsence.startTime || hoveredAbsence.endTime) && (
                 <div>
@@ -1188,6 +1438,11 @@ export default function AttendanceDashboard() {
               )}
               {hoveredAbsence.reason && (
                 <div>사유: {hoveredAbsence.reason}</div>
+              )}
+              {hoveredAbsence.rejectComment && (
+                <div className={styles.tooltipRejectReason}>
+                  반려 사유: {hoveredAbsence.rejectComment}
+                </div>
               )}
             </div>
           )}
@@ -1203,6 +1458,7 @@ export default function AttendanceDashboard() {
               <VacationRequest
                 onClose={closeModal}
                 vacationBalance={vacationBalance}
+                onSuccess={refreshData}
               />
             </div>
           </div>
@@ -1239,6 +1495,67 @@ export default function AttendanceDashboard() {
       </div>
     );
   }
+
+  // 실시간 업데이트를 위한 상태 추가
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+  const [dataVersion, setDataVersion] = useState(0); // 데이터 버전 관리
+
+  // 데이터 버전 업데이트 함수 (변경사항 발생 시 호출)
+  const updateDataVersion = () => {
+    setDataVersion((prev) => prev + 1);
+    setLastUpdateTime(Date.now());
+    console.log('데이터 버전 업데이트:', new Date().toLocaleTimeString());
+  };
+
+  // 데이터 새로고침 함수 (실시간 업데이트용)
+  const refreshData = async () => {
+    try {
+      await Promise.all([
+        fetchAbsences(),
+        fetchVacations(),
+        fetchTodayAttendance(),
+      ]);
+      updateDataVersion();
+      console.log(
+        '데이터 수동 새로고침 완료:',
+        new Date().toLocaleTimeString(),
+      );
+    } catch (error) {
+      console.error('데이터 새로고침 실패:', error);
+    }
+  };
+
+  // 실시간 업데이트 상태 표시를 위한 함수
+  const getLastUpdateTimeString = () => {
+    const now = Date.now();
+    const diff = now - lastUpdateTime;
+    const seconds = Math.floor(diff / 1000);
+
+    if (seconds < 60) {
+      return `${seconds}초 전`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes}분 전`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      return `${hours}시간 전`;
+    }
+  };
+
+  // 수동 새로고침 버튼 핸들러
+  const handleManualRefresh = async () => {
+    setLoading(true); // 버튼 클릭 시 로딩 상태로 변경
+    try {
+      await refreshData();
+      setSuccessMessage('데이터가 새로고침되었습니다.');
+      setShowSuccessModal(true);
+    } catch (error) {
+      setError('새로고침 중 오류가 발생했습니다.');
+      setShowSuccessModal(true);
+    } finally {
+      setLoading(false); // 버튼 클릭 완료 후 로딩 해제
+    }
+  };
 
   // 기존 return을 renderAttendanceDashboard 함수 호출로 변경
   return renderAttendanceDashboard();
