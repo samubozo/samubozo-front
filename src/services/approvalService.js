@@ -39,16 +39,10 @@ export const approvalService = {
     }
   },
 
-  // 3. 모든 결재 요청 목록 조회 (강화된 필터링 지원)
-  async getAllApprovalRequests({ applicantId, status, requestType } = {}) {
+  // 3. 모든 결재 요청 목록 조회 (필터링 지원)
+  async getAllApprovalRequests(requestType = null) {
     try {
       const params = {};
-      if (applicantId) {
-        params.applicantId = applicantId;
-      }
-      if (status) {
-        params.status = status;
-      }
       if (requestType) {
         params.requestType = requestType;
       }
@@ -168,14 +162,22 @@ export const approvalService = {
     }
   },
 
-  // 10. 내 휴가 신청 내역 조회
-  async getMyVacationRequests() {
+  // 10. 내 휴가 신청 내역 조회 (페이징 처리)
+  async getMyVacationRequests(page = 0, size = 10, sort = null) {
     try {
+      const params = { page, size };
+      if (sort) params.sort = sort;
+
       const response = await axiosInstance.get(
         `${API_BASE_URL}${VACATION}/my-requests`,
+        { params },
       );
-      return response.data;
+
+      // 수정 전: return response.data;
+      // 수정 후: response.data.result 객체를 반환하여 content 배열과 페이징 정보에 접근할 수 있도록 함
+      return response.data.result;
     } catch (error) {
+      // 에러 처리는 그대로 유지
       throw error;
     }
   },
@@ -344,11 +346,14 @@ export const approvalService = {
   },
 
   // 22. 내 증명서 조회
-  async getMyCertificates() {
+  async getMyCertificates(page = 0, size = 100) {
     try {
       const response = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/my-list`,
-        { withCredentials: true },
+        {
+          withCredentials: true,
+          params: { page, size },
+        },
       );
       return response.data;
     } catch (error) {
@@ -518,12 +523,21 @@ export const approvalService = {
   // ===== 기존 호환성 유지 메서드 =====
 
   // 35. 기존 getAllApprovals 메서드 (호환성 유지)
-  async getAllApprovals({ status, requestType, sortBy, sortOrder } = {}) {
+  async getAllApprovals({
+    status,
+    requestType,
+    sortBy,
+    sortOrder,
+    page = 0,
+    size = 10,
+  } = {}) {
     const params = {};
     if (status) params.status = status;
     if (requestType) params.requestType = requestType;
     if (sortBy) params.sortBy = sortBy;
     if (sortOrder) params.sortOrder = sortOrder;
+    if (page !== undefined) params.page = page;
+    if (size !== undefined) params.size = size;
 
     // 휴가 신청인 경우 HR용 휴가 조회 API 사용
     if (requestType === 'VACATION') {

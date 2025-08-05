@@ -168,10 +168,8 @@ export default function AttendanceDashboard() {
     if (item.vacationType) {
       const vacationTypeMap = {
         ANNUAL_LEAVE: '연차',
-        HALF_DAY_LEAVE: '반차',
-        SICK_LEAVE: '병가',
-        OFFICIAL_LEAVE: '공가',
-        PERSONAL_LEAVE: '개인휴가',
+        AM_HALF_DAY: '반차(오전)',
+        PM_HALF_DAY: '반차(오후)',
       };
       return vacationTypeMap[item.vacationType] || item.vacationType;
     }
@@ -341,8 +339,12 @@ export default function AttendanceDashboard() {
       const absencesData = response.result || response.data || response || [];
       console.log('attendanceService 부재 데이터:', absencesData);
 
-      // 성공적으로 등록된 부재만 포함 (id가 있는 경우만)
-      let allAbsences = absencesData.filter((absence) => absence.id != null);
+      // 성공적으로 등록된 부재만 포함 (id가 있는 경우만) + 반려된 항목 제외
+      let allAbsences = absencesData.filter((absence) => {
+        const status =
+          absence.status || absence.approvalStatus || absence.absenceStatus;
+        return absence.id != null && status !== 'REJECTED' && status !== '반려';
+      });
 
       // 부재 데이터 상태 확인
       console.log(
@@ -384,17 +386,45 @@ export default function AttendanceDashboard() {
   // 휴가 목록 불러오기 (실시간 업데이트 지원)
   const fetchVacations = async () => {
     try {
-      const response = await approvalService.getMyVacationRequests();
-      const vacations = response.result || response.data || response || [];
-      // 모든 휴가 포함 (승인, 대기, 반려 모두)
+      const response = await approvalService.getMyVacationRequests(
+        0,
+        100,
+        'startDate,desc',
+      );
+
+      // Page 객체에서 content 필드에 접근하여 데이터 추출
+      let vacations = [];
+      if (response && typeof response === 'object') {
+        // API 응답 구조: { result: { content: [...] } } (페이징 처리된 응답)
+        if (
+          response.result &&
+          response.result.content &&
+          Array.isArray(response.result.content)
+        ) {
+          vacations = response.result.content;
+        } else if (
+          response.data &&
+          response.data.content &&
+          Array.isArray(response.data.content)
+        ) {
+          vacations = response.data.content;
+        } else if (response.content && Array.isArray(response.content)) {
+          vacations = response.content;
+        } else if (Array.isArray(response.result)) {
+          vacations = response.result;
+        } else if (Array.isArray(response.data)) {
+          vacations = response.data;
+        } else if (Array.isArray(response)) {
+          vacations = response;
+        }
+      }
+
+      // 승인된 휴가와 대기 중인 휴가만 포함 (반려된 항목 제외)
       const allVacations = vacations.filter((v) => {
         const status = v.vacationStatus || v.status || v.approvalStatus;
-        return ['APPROVED', 'PENDING', 'PENDING_APPROVAL', 'REJECTED'].includes(
-          status,
-        );
+        return ['APPROVED', 'PENDING', 'PENDING_APPROVAL'].includes(status);
       });
       setVacations(allVacations);
-      console.log('휴가 데이터 업데이트:', allVacations.length, '건');
     } catch (error) {
       console.error('휴가 목록 불러오기 실패:', error);
       setVacations([]);
@@ -479,6 +509,7 @@ export default function AttendanceDashboard() {
     setEditAbsence(absence);
   };
   const closeEditAbsence = () => setEditAbsence(null);
+
   // 부재 신청 수정 (백엔드 설계 의도에 맞게 attendance-service만 호출)
   const handleUpdateAbsence = async (updated) => {
     try {
@@ -700,6 +731,20 @@ export default function AttendanceDashboard() {
     fetchVacationBalance();
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  // 연차 승인 이벤트 감지
+  useEffect(() => {
+    const handleVacationApproved = () => {
+      console.log('연차 승인 감지됨, 휴가 데이터 새로고침');
+      fetchVacations();
+    };
+
+    window.addEventListener('vacationApproved', handleVacationApproved);
+
+    return () => {
+      window.removeEventListener('vacationApproved', handleVacationApproved);
     };
   }, []);
 
@@ -1347,10 +1392,8 @@ export default function AttendanceDashboard() {
                   ? (() => {
                       const vacationTypeMap = {
                         ANNUAL_LEAVE: '연차',
-                        HALF_DAY_LEAVE: '반차',
-                        SICK_LEAVE: '병가',
-                        OFFICIAL_LEAVE: '공가',
-                        PERSONAL_LEAVE: '개인휴가',
+                        AM_HALF_DAY: '반차(오전)',
+                        PM_HALF_DAY: '반차(오후)',
                       };
                       return (
                         vacationTypeMap[hoveredAbsence.vacationType] ||

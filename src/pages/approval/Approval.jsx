@@ -98,6 +98,10 @@ function Approval() {
         console.log('부재 수정/삭제 감지됨, 데이터 새로고침');
         refreshData();
       }
+      if (e.key === 'absenceUpdatedStorage') {
+        console.log('부재 승인/반려 감지됨 (storage), 처리완료 탭으로 이동');
+        setApprovalStatus('processed');
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -121,6 +125,10 @@ function Approval() {
       await approvalService.applyCertificate(form);
 
       await fetchData();
+
+      // 신청 후 처리완료 탭으로 자동 이동
+      setApprovalStatus('processed');
+
       // 모달은 CertificateModal에서 성공 후에 닫도록 함
       return true; // 성공 시 true 반환 (CertificateModal에서 성공 모달 표시)
     } catch (error) {
@@ -140,6 +148,10 @@ function Approval() {
         form,
       );
       await fetchData();
+
+      // 수정 후 처리완료 탭으로 자동 이동
+      setApprovalStatus('processed');
+
       return true;
     } catch (error) {
       console.error('증명서 수정 에러:', error);
@@ -159,6 +171,11 @@ function Approval() {
     fetchData,
     fetchAbsenceData: fetchAbsenceDataFromHook,
     mapLeaveData,
+    // 페이징 정보 추가
+    totalPages: backendTotalPages,
+    totalElements: backendTotalElements,
+    currentPage: backendCurrentPage,
+    setCurrentPage: setBackendCurrentPage,
   } = useApprovalData(tab, isHR, user, approvalStatus);
 
   // 필터 조건 변경 시 페이지 리셋
@@ -175,6 +192,31 @@ function Approval() {
     setFilterValue('');
     setSelected([]);
   }, [tab]);
+
+  // 부재 탭에서 approvalStatus 변경 시 데이터 새로고침
+  useEffect(() => {
+    if (tab === 'absence') {
+      console.log('부재 탭에서 approvalStatus 변경 감지:', approvalStatus);
+      fetchAbsenceDataFromHook();
+    }
+  }, [tab, approvalStatus]);
+
+  // 연차/반차 탭에서 approvalStatus 변경 시 데이터 새로고침
+  useEffect(() => {
+    if (tab === 'leave') {
+      console.log('연차/반차 탭에서 approvalStatus 변경 감지:', approvalStatus);
+      fetchData();
+    }
+  }, [tab, approvalStatus]);
+
+  // leaveData 상태 변화 확인
+  useEffect(() => {
+    console.log('leaveData 상태 변화:', {
+      tab,
+      leaveDataLength: leaveData.length,
+      leaveData: leaveData,
+    });
+  }, [leaveData, tab]);
 
   // URL 쿼리(tab)가 바뀌면 탭 상태도 동기화
   useEffect(() => {
@@ -304,6 +346,9 @@ function Approval() {
       setRejectTargetId(null);
       setSelected([]);
 
+      // 반려 후 처리완료 탭으로 자동 이동
+      setApprovalStatus('processed');
+
       // 변경사항 발생 시 즉시 데이터 새로고침
       await refreshData();
     } catch (err) {
@@ -376,6 +421,15 @@ function Approval() {
 
   // 필터링 (개선된 버전)
   const filteredLeave = leaveData.filter((row) => {
+    console.log('연차/반차 필터링 체크:', {
+      rowId: row.id,
+      originalStatus: row.originalStatus,
+      status: row.status,
+      approvalStatus,
+      isPending: row.originalStatus === 'PENDING',
+      isProcessed: row.originalStatus !== 'PENDING',
+    });
+
     // 항목 필터링 (휴가 탭에서만)
     if (item !== 'all') {
       console.log('휴가 필터링:', { item, rowType: row.type, row });
@@ -384,8 +438,10 @@ function Approval() {
     }
 
     // 결재상태 필터링 (모든 사용자)
-    if (approvalStatus === 'pending' && row.status !== '대기') return false;
-    if (approvalStatus === 'processed' && row.status === '대기') return false;
+    if (approvalStatus === 'pending' && row.originalStatus !== 'PENDING')
+      return false;
+    if (approvalStatus === 'processed' && row.originalStatus === 'PENDING')
+      return false;
 
     // 날짜 범위 필터링
     if (dateFrom && compareDates(row.applyDate, dateFrom) < 0) return false;
@@ -411,6 +467,13 @@ function Approval() {
       if (!hasMatch) return false;
     }
     return true;
+  });
+
+  console.log('연차/반차 필터링 결과:', {
+    approvalStatus,
+    totalData: leaveData.length,
+    filteredData: filteredLeave.length,
+    filteredItems: filteredLeave,
   });
 
   // 증명서 데이터 필터링
@@ -468,9 +531,15 @@ function Approval() {
       if (row.urgency !== expectedUrgency) return false;
     }
 
-    // 결재상태 필터링 (모든 사용자)
-    if (approvalStatus === 'pending' && row.status !== '대기') return false;
-    if (approvalStatus === 'processed' && row.status === '대기') return false;
+    // 결재상태 필터링 (모든 사용자) - 원본 상태값으로 비교
+    if (approvalStatus === 'pending') {
+      // pending 상태일 때는 PENDING인 항목만 표시
+      if (row.originalStatus !== 'PENDING') return false;
+    }
+    if (approvalStatus === 'processed') {
+      // processed 상태일 때는 PENDING이 아닌 항목만 표시
+      if (row.originalStatus === 'PENDING') return false;
+    }
 
     // 날짜 범위 필터링
     if (dateFrom && compareDates(row.applyDate, dateFrom) < 0) return false;
@@ -495,6 +564,13 @@ function Approval() {
       if (!hasMatch) return false;
     }
     return true;
+  });
+
+  console.log('부재 필터링 결과:', {
+    approvalStatus,
+    totalData: absenceDataFromHook.length,
+    filteredData: filteredAbsence.length,
+    filteredItems: filteredAbsence,
   });
 
   // 버튼 핸들러 (삭제/반려/승인)
@@ -553,6 +629,9 @@ function Approval() {
     setSelected([]);
     if (tab === 'leave') {
       fetchData();
+      // 연차 승인 시 근태관리 테이블에 실시간 업데이트 알림
+      localStorage.setItem('vacationApproved', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('vacationApproved'));
     } else if (tab === 'absence') {
       fetchAbsenceDataFromHook();
     }
@@ -564,8 +643,18 @@ function Approval() {
       await approvalService.approveHRAbsence(absenceId);
       setToast({ message: '부재 승인 처리 완료', type: 'success' });
 
+      // 승인 후 처리완료 탭으로 자동 이동
+      console.log('부재 승인 후 처리완료 탭으로 이동');
+      setApprovalStatus('processed');
+
       // 변경사항 발생 시 즉시 데이터 새로고침
       await refreshData();
+
+      // 페이지 새로고침 (강제)
+      setTimeout(() => {
+        console.log('페이지 새로고침 실행');
+        window.location.reload();
+      }, 500);
     } catch (err) {
       setToast({
         message: err.message || '부재 승인 처리 중 오류가 발생했습니다.',
@@ -580,8 +669,17 @@ function Approval() {
       await approvalService.rejectHRAbsence(absenceId, comment);
       setToast({ message: '부재 반려 처리 완료', type: 'success' });
 
+      // 반려 후 처리완료 탭으로 자동 이동
+      setApprovalStatus('processed');
+
       // 변경사항 발생 시 즉시 데이터 새로고침
       await refreshData();
+
+      // 페이지 새로고침 (강제)
+      setTimeout(() => {
+        console.log('페이지 새로고침 실행');
+        window.location.reload();
+      }, 500);
     } catch (err) {
       setToast({
         message: err.message || '부재 반려 처리 중 오류가 발생했습니다.',
@@ -590,23 +688,15 @@ function Approval() {
     }
   };
 
-  // 페이징 처리
-  const totalRows =
-    tab === 'leave'
-      ? filteredLeave.length
-      : tab === 'certificate'
-        ? filteredCert.length
-        : filteredAbsence.length;
-  const totalPages = Math.ceil(totalRows / pageSize);
-  const pagedLeave = filteredLeave.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
-  const pagedCert = filteredCert.slice((page - 1) * pageSize, page * pageSize);
-  const pagedAbsence = filteredAbsence.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
+  // 백엔드 페이징 정보 사용
+  const totalPages = backendTotalPages || 0;
+  const totalElements = backendTotalElements || 0;
+  const currentPage = backendCurrentPage || 0;
+
+  // 백엔드에서 이미 페이징된 데이터를 받아오므로 필터링된 데이터를 직접 사용
+  const pagedLeave = filteredLeave;
+  const pagedCert = filteredCert;
+  const pagedAbsence = filteredAbsence;
 
   // PDF 인쇄 함수
   const printPdfFromServer = async (certificateId) => {
@@ -911,8 +1001,6 @@ function Approval() {
               const absenceTypeMap = {
                 BUSINESS_TRIP: '출장',
                 TRAINING: '연수',
-                ANNUAL_LEAVE: '연차',
-                HALF_DAY_LEAVE: '반차',
                 SHORT_LEAVE: '외출',
                 SICK_LEAVE: '병가',
                 OFFICIAL_LEAVE: '공가',
@@ -935,11 +1023,18 @@ function Approval() {
           <button
             key={idx + 1}
             className={
-              page === idx + 1
+              currentPage === idx
                 ? styles.paginationBtn + ' ' + styles.paginationBtnActive
                 : styles.paginationBtn
             }
-            onClick={() => setPage(idx + 1)}
+            onClick={() => {
+              setBackendCurrentPage(idx);
+              if (tab === 'absence') {
+                fetchAbsenceDataFromHook({ page: idx, size: 10 });
+              } else {
+                fetchData({ page: idx, size: 10 });
+              }
+            }}
           >
             {idx + 1}
           </button>

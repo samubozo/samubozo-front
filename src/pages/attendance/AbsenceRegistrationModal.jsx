@@ -63,9 +63,16 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
       });
       setMyAbsences(filteredAbsences);
 
-      // 휴가 목록 불러오기
-      const vacationResponse = await approvalService.getMyVacationRequests();
+      // 휴가 목록 불러오기 (페이징 처리된 응답)
+      const vacationResponse = await approvalService.getMyVacationRequests(
+        0,
+        100,
+        'startDate,desc',
+      );
+      // Page 객체에서 content 필드에 접근
       const vacations =
+        vacationResponse.data?.content ||
+        vacationResponse.content ||
         vacationResponse.result ||
         vacationResponse.data ||
         vacationResponse ||

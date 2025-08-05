@@ -65,10 +65,20 @@ const VacationRequest = ({
   useEffect(() => {
     async function fetchMyData() {
       try {
-        // 휴가 목록 불러오기
-        const vacationRes = await approvalService.getMyVacationRequests();
+        // 휴가 목록 불러오기 (페이징 처리된 응답)
+        const vacationRes = await approvalService.getMyVacationRequests(
+          0,
+          100,
+          'startDate,desc',
+        );
+        // Page 객체에서 content 필드에 접근
         const vacations =
-          vacationRes.result || vacationRes.data || vacationRes || [];
+          vacationRes.data?.content ||
+          vacationRes.content ||
+          vacationRes.result ||
+          vacationRes.data ||
+          vacationRes ||
+          [];
         // 승인/처리중 상태만 필터링 (다양한 필드명 시도)
         const filteredVacations = vacations.filter((v) => {
           const status = v.vacationStatus || v.status || v.approvalStatus;
