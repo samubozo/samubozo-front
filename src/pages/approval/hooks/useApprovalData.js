@@ -250,6 +250,8 @@ export const useApprovalData = (
 
   // 탭, 권한, 필터 상태가 변경될 때마다 데이터를 다시 조회
   useEffect(() => {
+    // 필터 조건이 변경될 때만 페이지를 0으로 리셋
+    setCurrentPage(0);
     fetchData({ page: 0 });
 
     // 자동 새로고침 설정
@@ -262,7 +264,7 @@ export const useApprovalData = (
       setAutoRefreshInterval(interval);
       return () => clearInterval(interval);
     }
-  }, [tab, isHR, user, approvalStatus, fetchData]);
+  }, [tab, isHR, user, approvalStatus]);
 
   return {
     leaveData,

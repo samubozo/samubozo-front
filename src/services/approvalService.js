@@ -223,11 +223,21 @@ export const approvalService = {
 
   // ===== HR용 API들 =====
 
-  // 14. HR용 결재 대기 목록 조회
-  async getHRPendingApprovals() {
+  // 14. HR용 결재 대기 목록 조회 (페이징 지원)
+  async getHRPendingApprovals(page = 0, size = 10, sort = null) {
     try {
+      const params = {
+        page,
+        size,
+      };
+
+      if (sort) {
+        params.sort = sort;
+      }
+
       const response = await axiosInstance.get(
         `${API_BASE_URL}${APPROVAL}/pending`,
+        { params },
       );
       return response.data;
     } catch (error) {
@@ -542,9 +552,10 @@ export const approvalService = {
     // 휴가 신청인 경우 HR용 휴가 조회 API 사용
     if (requestType === 'VACATION') {
       if (status === 'pending') {
-        // 대기 중인 휴가 신청 조회
+        // 대기 중인 휴가 신청 조회 (페이징 지원)
         const response = await axiosInstance.get(
           `${API_BASE_URL}${APPROVAL}/pending`,
+          { params: { page, size } },
         );
         return response.data;
       } else if (status === 'processed') {
