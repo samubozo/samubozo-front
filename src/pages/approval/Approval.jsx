@@ -126,8 +126,7 @@ function Approval() {
 
       await fetchData();
 
-      // 신청 후 처리완료 탭으로 자동 이동
-      setApprovalStatus('processed');
+      // 신청 후 대기중 상태 유지 (처리완료 탭으로 자동 이동하지 않음)
 
       // 모달은 CertificateModal에서 성공 후에 닫도록 함
       return true; // 성공 시 true 반환 (CertificateModal에서 성공 모달 표시)
@@ -149,8 +148,7 @@ function Approval() {
       );
       await fetchData();
 
-      // 수정 후 처리완료 탭으로 자동 이동
-      setApprovalStatus('processed');
+      // 수정 후 대기중 상태 유지 (처리완료 탭으로 자동 이동하지 않음)
 
       return true;
     } catch (error) {
@@ -430,21 +428,20 @@ function Approval() {
       isProcessed: row.originalStatus !== 'PENDING',
     });
 
-    // 항목 필터링 (휴가 탭에서만)
+    // '대기' 상태를 더 정확하게 판단 (PENDING 또는 PENDING_APPROVAL)
+    const isPending =
+      row.originalStatus === 'PENDING' ||
+      row.originalStatus === 'PENDING_APPROVAL';
+
+    // 항목 필터링 (기존 로직 유지)
     if (item !== 'all') {
       if (item === '연차' && row.type !== '연차') return false;
       if (item === '반차' && row.type !== '반차') return false;
     }
 
-    // 결재상태 필터링 (모든 사용자)
-    if (approvalStatus === 'pending' && row.originalStatus !== 'PENDING')
-      return false;
-    if (approvalStatus === 'processed' && row.originalStatus === 'PENDING')
-      return false;
-
-    // 날짜 범위 필터링
-    if (dateFrom && compareDates(row.applyDate, dateFrom) < 0) return false;
-    if (dateTo && compareDates(row.applyDate, dateTo) > 0) return false;
+    // 결재상태 필터링 (수정된 로직 적용)
+    if (approvalStatus === 'pending' && !isPending) return false;
+    if (approvalStatus === 'processed' && isPending) return false;
 
     // 검색어 필터링 (통합 검색)
     if (filterValue.trim()) {
@@ -699,17 +696,14 @@ function Approval() {
   // PDF 인쇄 함수
   const printPdfFromServer = async (certificateId) => {
     try {
-
       const res = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/my-print/${certificateId}`,
         { responseType: 'arraybuffer' },
       );
 
-
       const contentType = res.headers['content-type'] || 'application/pdf';
       const blob = new Blob([res.data], { type: contentType });
       const fileURL = URL.createObjectURL(blob);
-
 
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
@@ -728,7 +722,6 @@ function Approval() {
 
   // 인쇄 버튼 클릭 핸들러
   const handlePrintSelected = () => {
-
     const approvedIds = selected
       .map((selectedId) => {
         const cert = certData.find((row) => row.id === selectedId);
@@ -740,7 +733,6 @@ function Approval() {
         );
         return cert?.status === '승인' || cert?.status === 'APPROVED';
       });
-
 
     if (approvedIds.length === 0) {
       setToast({

@@ -82,7 +82,12 @@ export const useApprovalData = (
   const mapAbsenceData = (arr = []) => {
     return arr.map((row) => ({
       id: row.id,
-      type: absenceTypeMap[row.absenceType] || row.absenceType || '',
+      type:
+        absenceTypeMap[row.type] ||
+        absenceTypeMap[row.absenceType] ||
+        row.type ||
+        row.absenceType ||
+        '',
       urgency: urgencyMap[row.urgency] || row.urgency || '',
       reason: row.reason,
       applicant: row.applicantName || user.userName,
@@ -144,17 +149,27 @@ export const useApprovalData = (
             response = await approvalService.getPendingAbsenceApprovals(
               page,
               size,
+              'requestedAt,asc',
             );
           } else if (approvalStatus === 'processed') {
             response = await approvalService.getProcessedAbsenceApprovals(
               page,
               size,
+              'requestedAt,asc',
             );
           } else {
-            response = await approvalService.getAbsenceApprovals(page, size);
+            response = await approvalService.getAbsenceApprovals(
+              page,
+              size,
+              'requestedAt,asc',
+            );
           }
         } else {
-          response = await approvalService.getMyAbsenceApprovals(page, size);
+          response = await approvalService.getMyAbsenceApprovals(
+            page,
+            size,
+            'requestedAt,asc',
+          );
         }
 
         const content = response?.content || [];
@@ -191,7 +206,7 @@ export const useApprovalData = (
             response = await approvalService.getMyVacationRequests(
               page,
               size,
-              'startDate,desc',
+              'startDate,asc',
             );
           }
 
@@ -203,10 +218,11 @@ export const useApprovalData = (
             content = response.content;
           }
 
-          // HR의 경우, API 응답에 다른 타입이 섞여있을 수 있으므로 VACATION만 필터링
-          const vacationContent = isHR
-            ? content.filter((item) => item.requestType === 'VACATION')
-            : content;
+          // HR의 경우, 처리완료 탭에서는 이미 필터링된 데이터가 오므로 추가 필터링 불필요
+          const vacationContent =
+            isHR && approvalStatus !== 'processed'
+              ? content.filter((item) => item.requestType === 'VACATION')
+              : content;
 
           setLeaveData(mapLeaveData(vacationContent));
 
@@ -222,7 +238,11 @@ export const useApprovalData = (
             setCurrentPage(0);
           }
         } else if (tab === 'certificate') {
-          response = await approvalService.getMyCertificates(page, size);
+          response = await approvalService.getMyCertificates(
+            page,
+            size,
+            'requestDate,asc',
+          );
           // 백엔드 응답 구조: { statusCode, statusMessage, result: { content, totalPages, ... } }
           const result = response?.result || response;
           const content = result?.content || [];

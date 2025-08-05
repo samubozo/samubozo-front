@@ -356,13 +356,15 @@ export const approvalService = {
   },
 
   // 22. 내 증명서 조회
-  async getMyCertificates(page = 0, size = 100) {
+  async getMyCertificates(page = 0, size = 100, sort = null) {
     try {
+      const params = { page, size };
+      if (sort) params.sort = sort;
       const response = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/my-list`,
         {
           withCredentials: true,
-          params: { page, size },
+          params,
         },
       );
       return response.data;
@@ -437,13 +439,13 @@ export const approvalService = {
   },
 
   // 29. 부재 결재 요청 목록 조회 (페이징)
-  async getAbsenceApprovals(page = 0, size = 10) {
+  async getAbsenceApprovals(page = 0, size = 10, sort = null) {
     try {
+      const params = { page, size };
+      if (sort) params.sort = sort;
       const response = await axiosInstance.get(
         `${API_BASE_URL}${APPROVAL}/absence`,
-        {
-          params: { page, size },
-        },
+        { params },
       );
       return response.data;
     } catch (error) {
@@ -453,13 +455,13 @@ export const approvalService = {
   },
 
   // 30. 대기 중인 부재 결재 요청 조회 (HR용)
-  async getPendingAbsenceApprovals(page = 0, size = 10) {
+  async getPendingAbsenceApprovals(page = 0, size = 10, sort = null) {
     try {
+      const params = { page, size };
+      if (sort) params.sort = sort;
       const response = await axiosInstance.get(
         `${API_BASE_URL}${APPROVAL}/absence/pending`,
-        {
-          params: { page, size },
-        },
+        { params },
       );
       return response.data;
     } catch (error) {
@@ -470,13 +472,13 @@ export const approvalService = {
   },
 
   // 31. 처리된 부재 결재 요청 조회
-  async getProcessedAbsenceApprovals(page = 0, size = 10) {
+  async getProcessedAbsenceApprovals(page = 0, size = 10, sort = null) {
     try {
+      const params = { page, size };
+      if (sort) params.sort = sort;
       const response = await axiosInstance.get(
         `${API_BASE_URL}${APPROVAL}/absence/processed`,
-        {
-          params: { page, size },
-        },
+        { params },
       );
       return response.data;
     } catch (error) {
@@ -486,13 +488,13 @@ export const approvalService = {
   },
 
   // 32. 내 부재 결재 요청 조회
-  async getMyAbsenceApprovals(page = 0, size = 10) {
+  async getMyAbsenceApprovals(page = 0, size = 10, sort = null) {
     try {
+      const params = { page, size };
+      if (sort) params.sort = sort;
       const response = await axiosInstance.get(
         `${API_BASE_URL}${APPROVAL}/absence/my`,
-        {
-          params: { page, size },
-        },
+        { params },
       );
       return response.data;
     } catch (error) {
@@ -559,17 +561,17 @@ export const approvalService = {
         );
         return response.data;
       } else if (status === 'processed') {
-        // 처리된 휴가 신청 조회 - 기존 API 사용
-        const response = await axiosInstance.get(
-          `${API_BASE_URL}${APPROVAL}/processed-by-me`,
-        );
+        // 처리된 휴가 신청 조회 - getApprovalsWithFilters 사용
+        const response = await approvalService.getApprovalsWithFilters({
+          status: 'PROCESSED',
+          requestType: 'VACATION',
+          page,
+          size,
+        });
 
-        // 휴가 신청만 필터링 (requestType이 'VACATION'인 것만)
-        const vacationData = Array.isArray(response.data)
-          ? response.data.filter((item) => item.requestType === 'VACATION')
-          : [];
-
-        return vacationData;
+        // 응답 구조에 따라 데이터 추출
+        const content = response?.content || response || [];
+        return response;
       } else {
         // 전체 휴가 신청 조회 (대기 + 처리된)
         const [pendingRes, processedRes] = await Promise.all([

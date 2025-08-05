@@ -106,6 +106,9 @@ export const absenceColumns = [
 
 // 부재 유형 매핑
 export const absenceTypeMap = {
+  BUSINESS_TRIP: '출장',
+  TRAINING: '연수',
+  SHORT_LEAVE: '외출',
   SICK_LEAVE: '병가',
   OFFICIAL_LEAVE: '공가',
   ETC: '기타',

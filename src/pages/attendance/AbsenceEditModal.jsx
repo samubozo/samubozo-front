@@ -43,17 +43,10 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
     }
   }, [absence]);
 
-  // 부재 타입 변경 시 긴급도 자동 설정
+  // 부재 타입 변경
   const handleTypeChange = (e) => {
     const newType = e.target.value;
     setType(newType);
-
-    // 부재 타입에 따른 긴급도 자동 설정
-    if (newType === 'SICK_LEAVE' || newType === 'OFFICIAL_LEAVE') {
-      setUrgency('URGENT');
-    } else {
-      setUrgency('NORMAL');
-    }
   };
 
   if (!open) return null;
