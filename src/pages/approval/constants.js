@@ -54,6 +54,7 @@ export const certColumns = [
   { key: 'applyDate', label: '신청일자' },
   { key: 'approver', label: '결재자' },
   { key: 'processedAt', label: '처리일자' },
+  { key: 'expirationDate', label: '만료일' },
   { key: 'status', label: '상태' },
 ];
 

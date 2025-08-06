@@ -100,36 +100,27 @@ export default function AttendanceDashboard() {
       if (currentAction === '출근하기') {
         // 출근 처리
         const response = await attendanceService.checkIn();
-        if (response.data.result) {
-          setCheckIn(response.data.result.checkInTime);
-          sessionStorage.setItem(
-            'TODAY_CHECK_IN',
-            response.data.result.checkInTime,
-          );
+        if (response.result) {
+          setCheckIn(response.result.checkInTime);
+          sessionStorage.setItem('TODAY_CHECK_IN', response.result.checkInTime);
           sessionStorage.setItem('IS_CHECKED_IN', 'true');
           setCurrentAction('외출하기');
         }
       } else if (currentAction === '외출하기') {
         // 외출 처리
         const response = await attendanceService.goOut();
-        if (response.data.result) {
-          setGoOut(response.data.result.goOutTime);
-          sessionStorage.setItem(
-            'TODAY_GO_OUT',
-            response.data.result.goOutTime,
-          );
+        if (response.result) {
+          setGoOut(response.result.goOutTime);
+          sessionStorage.setItem('TODAY_GO_OUT', response.result.goOutTime);
           sessionStorage.setItem('IS_OUT', 'true');
           setCurrentAction('복귀하기');
         }
       } else if (currentAction === '복귀하기') {
         // 복귀 처리
         const response = await attendanceService.returnFromOut();
-        if (response.data.result) {
-          setReturnFromOut(response.data.result.returnTime);
-          sessionStorage.setItem(
-            'TODAY_RETURN',
-            response.data.result.returnTime,
-          );
+        if (response.result) {
+          setReturnFromOut(response.result.returnTime);
+          sessionStorage.setItem('TODAY_RETURN', response.result.returnTime);
           sessionStorage.setItem('IS_OUT', 'false');
           setCurrentAction('복귀완료');
         }
@@ -160,12 +151,9 @@ export default function AttendanceDashboard() {
 
     try {
       const response = await attendanceService.checkOut();
-      if (response.data.result) {
-        setCheckOut(response.data.result.checkOutTime);
-        sessionStorage.setItem(
-          'TODAY_CHECK_OUT',
-          response.data.result.checkOutTime,
-        );
+      if (response.result) {
+        setCheckOut(response.result.checkOutTime);
+        sessionStorage.setItem('TODAY_CHECK_OUT', response.result.checkOutTime);
         sessionStorage.setItem('IS_CHECKED_IN', 'false');
       }
     } catch (error) {

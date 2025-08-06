@@ -54,8 +54,7 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
     try {
       // 부재 목록 불러오기
       const absenceResponse = await attendanceService.getAbsences({});
-      const absences =
-        absenceResponse.result || absenceResponse.data || absenceResponse || [];
+      const absences = absenceResponse.result || [];
       // 승인/처리중 상태만 필터링
       const filteredAbsences = absences.filter((a) => {
         const status = a.absenceStatus || a.status || a.approvalStatus;
@@ -71,10 +70,8 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
       );
       // Page 객체에서 content 필드에 접근
       const vacations =
-        vacationResponse.data?.content ||
         vacationResponse.content ||
         vacationResponse.result ||
-        vacationResponse.data ||
         vacationResponse ||
         [];
       // 승인/처리중 상태만 필터링

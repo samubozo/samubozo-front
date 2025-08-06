@@ -18,7 +18,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '승인된 휴가 종류 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '승인된 휴가 종류 조회 실패';
       throw new Error(msg);
     }
   },
@@ -34,7 +37,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '승인된 휴가 확인 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '승인된 휴가 확인 실패';
       throw new Error(msg);
     }
   },
@@ -51,7 +57,10 @@ export const approvalService = {
       });
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '결재 요청 목록 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '결재 요청 목록 조회 실패';
       throw new Error(msg);
     }
   },
@@ -64,7 +73,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '결재 요청 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '결재 요청 조회 실패';
       throw new Error(msg);
     }
   },
@@ -77,7 +89,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '타입별 결재 요청 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '타입별 결재 요청 조회 실패';
       throw new Error(msg);
     }
   },
@@ -98,7 +113,10 @@ export const approvalService = {
       );
       return true;
     } catch (error) {
-      const msg = error.response?.data?.message || '승인 처리 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '승인 처리 실패';
       throw new Error(msg);
     }
   },
@@ -111,7 +129,10 @@ export const approvalService = {
       });
       return true;
     } catch (error) {
-      const msg = error.response?.data?.message || '반려 처리 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '반려 처리 실패';
       throw new Error(msg);
     }
   },
@@ -317,7 +338,28 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '증명서 신청 실패';
+      // 409 Conflict 에러 처리 (중복 신청)
+      if (error.response?.status === 409) {
+        // 에러 응답 구조를 더 정확히 파악
+        let msg = '이미 유효한 동일한 유형의 증명서가 존재합니다.';
+
+        if (error.response?.data) {
+          // 다양한 응답 구조 시도
+          msg =
+            error.response.data.statusMessage ||
+            error.response.data.message ||
+            error.response.data.error ||
+            error.response.data.toString() ||
+            msg;
+        }
+
+        throw new Error(msg);
+      }
+
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '증명서 신청 실패';
       throw new Error(msg);
     }
   },
@@ -336,7 +378,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '증명서 수정 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '증명서 수정 실패';
       throw new Error(msg);
     }
   },
@@ -350,7 +395,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '증명서 목록 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '증명서 목록 조회 실패';
       throw new Error(msg);
     }
   },
@@ -369,7 +417,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '내 증명서 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '내 증명서 조회 실패';
       throw new Error(msg);
     }
   },
@@ -393,7 +444,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '증명서 상세 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '증명서 상세 조회 실패';
       throw new Error(msg);
     }
   },
@@ -407,7 +461,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '증명서 결재 요청 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '증명서 결재 요청 실패';
       throw new Error(msg);
     }
   },
@@ -423,7 +480,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '부재 결재 요청 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '부재 결재 요청 실패';
       throw new Error(msg);
     }
   },
@@ -449,7 +509,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '부재 결재 목록 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '부재 결재 목록 조회 실패';
       throw new Error(msg);
     }
   },
@@ -466,7 +529,9 @@ export const approvalService = {
       return response.data;
     } catch (error) {
       const msg =
-        error.response?.data?.message || '대기 중인 부재 결재 조회 실패';
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '대기 중인 부재 결재 조회 실패';
       throw new Error(msg);
     }
   },
@@ -482,7 +547,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '처리된 부재 결재 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '처리된 부재 결재 조회 실패';
       throw new Error(msg);
     }
   },
@@ -498,7 +566,10 @@ export const approvalService = {
       );
       return response.data;
     } catch (error) {
-      const msg = error.response?.data?.message || '내 부재 결재 조회 실패';
+      const msg =
+        error.response?.data?.statusMessage ||
+        error.response?.data?.message ||
+        '내 부재 결재 조회 실패';
       throw new Error(msg);
     }
   },

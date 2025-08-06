@@ -48,11 +48,13 @@ function ApprovalTable({
                               ? '80px'
                               : col.key === 'processedAt'
                                 ? '100px'
-                                : col.key === 'status'
-                                  ? '80px'
-                                  : col.key === 'urgency'
+                                : col.key === 'expirationDate'
+                                  ? '90px'
+                                  : col.key === 'status'
                                     ? '80px'
-                                    : 'auto',
+                                    : col.key === 'urgency'
+                                      ? '80px'
+                                      : 'auto',
             }}
           />
         ))}

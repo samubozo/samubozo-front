@@ -241,7 +241,7 @@ export default function AttendanceDashboard() {
       await fetchTodayAttendance();
       // 월별 근태 데이터도 새로 불러오기
       attendanceService.getMonthlyAttendance(year, month).then((res) => {
-        setMonthlyAttendance(res.result || res.data?.result || []);
+        setMonthlyAttendance(res.result || []);
       });
     } catch (error) {
       // 출근 시 승인된 휴가/반차로 인한 400 에러 메시지 표시
@@ -250,9 +250,9 @@ export default function AttendanceDashboard() {
         error.response &&
         error.response.status === 400 &&
         error.response.data &&
-        error.response.data.message
+        error.response.data.statusMessage
       ) {
-        setSuccessMessage(error.response.data.message);
+        setSuccessMessage(error.response.data.statusMessage);
         setShowSuccessModal(true);
       } else {
         setError(`${step} 처리 중 오류가 발생했습니다.`);
@@ -277,7 +277,7 @@ export default function AttendanceDashboard() {
       await fetchTodayAttendance();
       // 퇴근 후 월별 데이터도 새로 불러오기
       attendanceService.getMonthlyAttendance(year, month).then((res) => {
-        setMonthlyAttendance(res.result || res.data?.result || []);
+        setMonthlyAttendance(res.result || []);
       });
       setSuccessMessage('퇴근이 완료되었습니다.');
       setShowSuccessModal(true);
@@ -336,7 +336,7 @@ export default function AttendanceDashboard() {
 
       console.log('부재 API 호출 시작');
       const response = await attendanceService.getAbsences({});
-      const absencesData = response.result || response.data || response || [];
+      const absencesData = response.result || [];
       console.log('attendanceService 부재 데이터:', absencesData);
 
       // 성공적으로 등록된 부재만 포함 (id가 있는 경우만) + 반려된 항목 제외
@@ -402,18 +402,10 @@ export default function AttendanceDashboard() {
           Array.isArray(response.result.content)
         ) {
           vacations = response.result.content;
-        } else if (
-          response.data &&
-          response.data.content &&
-          Array.isArray(response.data.content)
-        ) {
-          vacations = response.data.content;
         } else if (response.content && Array.isArray(response.content)) {
           vacations = response.content;
         } else if (Array.isArray(response.result)) {
           vacations = response.result;
-        } else if (Array.isArray(response.data)) {
-          vacations = response.data;
         } else if (Array.isArray(response)) {
           vacations = response;
         }
@@ -677,9 +669,9 @@ export default function AttendanceDashboard() {
     const fetchWorkTime = async () => {
       try {
         const response = await attendanceService.getRemainingWorkTime();
-        if (isMounted && response.data && response.data.result) {
-          setRemainingWorkTime(response.data.result.remainingHours || '00:00');
-          setWorkedHours(response.data.result.workedHours || '00:00');
+        if (isMounted && response.result) {
+          setRemainingWorkTime(response.result.remainingHours || '00:00');
+          setWorkedHours(response.result.workedHours || '00:00');
         }
       } catch (e) {
         if (isMounted) {
@@ -719,8 +711,8 @@ export default function AttendanceDashboard() {
       setVacationError(null);
       try {
         const response = await attendanceService.getVacationBalance();
-        if (isMounted && response.data && response.data.result) {
-          setVacationBalance(response.data.result);
+        if (isMounted && response.result) {
+          setVacationBalance(response.result);
         }
       } catch (e) {
         if (isMounted) setVacationError('연차 현황을 불러오지 못했습니다.');

@@ -194,15 +194,20 @@ function Approval() {
   // 부재 탭에서 approvalStatus 변경 시 데이터 새로고침
   useEffect(() => {
     if (tab === 'absence') {
-      console.log('부재 탭에서 approvalStatus 변경 감지:', approvalStatus);
       fetchAbsenceDataFromHook();
     }
-  }, [tab, approvalStatus]);
+  }, [tab, approvalStatus, fetchAbsenceDataFromHook]);
+
+  // 부재 탭 선택 시 데이터 로드 확인
+  useEffect(() => {
+    if (tab === 'absence') {
+      fetchAbsenceDataFromHook();
+    }
+  }, [tab, fetchAbsenceDataFromHook]);
 
   // 연차/반차 탭에서 approvalStatus 변경 시 데이터 새로고침
   useEffect(() => {
     if (tab === 'leave') {
-      console.log('연차/반차 탭에서 approvalStatus 변경 감지:', approvalStatus);
       fetchData();
     }
   }, [tab, approvalStatus]);
@@ -419,15 +424,6 @@ function Approval() {
 
   // 필터링 (개선된 버전)
   const filteredLeave = leaveData.filter((row) => {
-    console.log('연차/반차 필터링 체크:', {
-      rowId: row.id,
-      originalStatus: row.originalStatus,
-      status: row.status,
-      approvalStatus,
-      isPending: row.originalStatus === 'PENDING',
-      isProcessed: row.originalStatus !== 'PENDING',
-    });
-
     // '대기' 상태를 더 정확하게 판단 (PENDING 또는 PENDING_APPROVAL)
     const isPending =
       row.originalStatus === 'PENDING' ||
@@ -463,13 +459,6 @@ function Approval() {
       if (!hasMatch) return false;
     }
     return true;
-  });
-
-  console.log('연차/반차 필터링 결과:', {
-    approvalStatus,
-    totalData: leaveData.length,
-    filteredData: filteredLeave.length,
-    filteredItems: filteredLeave,
   });
 
   // 증명서 데이터 필터링
@@ -562,13 +551,6 @@ function Approval() {
       if (!hasMatch) return false;
     }
     return true;
-  });
-
-  console.log('부재 필터링 결과:', {
-    approvalStatus,
-    totalData: absenceDataFromHook.length,
-    filteredData: filteredAbsence.length,
-    filteredItems: filteredAbsence,
   });
 
   // 버튼 핸들러 (삭제/반려/승인)
@@ -781,7 +763,11 @@ function Approval() {
   // 데이터 새로고침 함수 (실시간 업데이트용)
   const refreshData = async () => {
     try {
-      await fetchData();
+      if (tab === 'absence') {
+        await fetchAbsenceDataFromHook();
+      } else {
+        await fetchData();
+      }
       updateDataVersion();
       console.log(
         'Approval 페이지 데이터 수동 새로고침 완료:',
@@ -1314,6 +1300,14 @@ function Approval() {
                                 {detailData.processedAt || '-'}
                               </div>
                             </div>
+                            {detailData.expirationDate && (
+                              <div className={styles.infoRow}>
+                                <div className={styles.infoLabel}>만료일</div>
+                                <div className={styles.infoValue}>
+                                  {detailData.expirationDate}
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
                         {detailData.status === '반려' && (

@@ -8,7 +8,7 @@ export const attendanceService = {
       const response = await axiosInstance.post(
         `${API_BASE_URL}${ATTENDANCE}/check-in`,
       );
-      return response;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -20,7 +20,7 @@ export const attendanceService = {
       const response = await axiosInstance.post(
         `${API_BASE_URL}${ATTENDANCE}/check-out`,
       );
-      return response;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -32,7 +32,7 @@ export const attendanceService = {
       const response = await axiosInstance.put(
         `${API_BASE_URL}${ATTENDANCE}/go-out`,
       );
-      return response;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -44,7 +44,7 @@ export const attendanceService = {
       const response = await axiosInstance.put(
         `${API_BASE_URL}${ATTENDANCE}/return`,
       );
-      return response;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -56,7 +56,7 @@ export const attendanceService = {
       const response = await axiosInstance.get(
         `${API_BASE_URL}${ATTENDANCE}/remaining-work-time`,
       );
-      return response;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -68,7 +68,7 @@ export const attendanceService = {
       const response = await axiosInstance.get(
         `${API_BASE_URL}${ATTENDANCE}/monthly/${year}/${month}`,
       );
-      return response;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -193,7 +193,7 @@ export const attendanceService = {
       const response = await axiosInstance.get(
         `${API_BASE_URL}${VACATION}/balance`,
       );
-      return response;
+      return response.data;
     } catch (error) {
       throw error;
     }

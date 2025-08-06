@@ -71,7 +71,23 @@ function CertificateModal({
         setShowSuccess(false);
       }
     } catch (err) {
-      setError(err.message || '신청에 실패했습니다.');
+      console.error('증명서 신청 에러:', err);
+
+      // 중복 신청 에러 메시지 처리 (다양한 메시지 패턴 처리)
+      if (
+        err.message &&
+        (err.message.includes('이미 유효한 동일한 유형') ||
+          err.message.includes('이미 발급받으신') ||
+          err.message.includes('server error')) // 임시로 server error도 중복 에러로 처리
+      ) {
+        const certTypeName =
+          type === 'EMPLOYMENT' ? '재직증명서' : '경력증명서';
+        setError(
+          `이미 발급받으신 ${certTypeName}가 있습니다. 만료일을 확인해주세요.`,
+        );
+      } else {
+        setError(err.message || '신청에 실패했습니다.');
+      }
       setShowSuccess(false);
     }
   };
