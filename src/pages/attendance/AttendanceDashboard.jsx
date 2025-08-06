@@ -37,11 +37,7 @@ function getDayName(date) {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[date.getDay()];
 }
-function getDayColor(dayIdx) {
-  if (dayIdx === 0) return styles.sunday;
-  if (dayIdx === 6) return styles.saturday;
-  return '';
-}
+import { isRestDay, isRestDayAsync } from '../../utils/holidayUtils';
 
 function Modal({ open, onClose, children }) {
   if (!open) return null;
@@ -99,12 +95,57 @@ export default function AttendanceDashboard() {
   // 1. 월별 근태 데이터 상태 추가
   const [monthlyAttendance, setMonthlyAttendance] = useState([]);
 
+  // 공휴일 상태 관리
+  const [holidayStates, setHolidayStates] = useState(new Map());
+
   // 2. 월별 근태 데이터 불러오기
   useEffect(() => {
     attendanceService.getMonthlyAttendance(year, month).then((res) => {
       setMonthlyAttendance(res.result || res.data?.result || []);
     });
   }, [year, month]);
+
+  // 3. 공휴일 데이터 불러오기
+  useEffect(() => {
+    const fetchHolidayData = async () => {
+      const newHolidayStates = new Map();
+
+      // 현재 월의 모든 날짜에 대해 공휴일 정보 가져오기
+      for (let day = 1; day <= days.length; day++) {
+        const date = new Date(year, month - 1, day);
+        const restDay = await isRestDayAsync(date);
+        newHolidayStates.set(day, restDay);
+      }
+
+      setHolidayStates(newHolidayStates);
+    };
+
+    fetchHolidayData();
+  }, [year, month, days.length]);
+
+  // getDayColor 함수 (컴포넌트 내부에서 holidayStates 접근)
+  const getDayColor = (dayIdx, date) => {
+    const day = date.getDate();
+    const restDay = holidayStates.get(day);
+
+    if (!restDay) {
+      // 아직 로딩 중이면 기본 스타일
+      if (dayIdx === 0) return styles.sunday;
+      if (dayIdx === 6) return styles.saturday;
+      return '';
+    }
+
+    if (restDay.type === 'holiday') {
+      return styles.holiday;
+    }
+
+    if (restDay.type === 'weekend') {
+      if (dayIdx === 0) return styles.sunday;
+      if (dayIdx === 6) return styles.saturday;
+    }
+
+    return '';
+  };
 
   // 3. 날짜별 데이터 찾기 함수
   // 날짜 매칭 보완
@@ -325,19 +366,8 @@ export default function AttendanceDashboard() {
   const fetchAbsences = async () => {
     try {
       const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
-      console.log(
-        '부재 조회 - userId:',
-        userId,
-        'year:',
-        year,
-        'month:',
-        month,
-      );
-
-      console.log('부재 API 호출 시작');
       const response = await attendanceService.getAbsences({});
       const absencesData = response.result || [];
-      console.log('attendanceService 부재 데이터:', absencesData);
 
       // 성공적으로 등록된 부재만 포함 (id가 있는 경우만) + 반려된 항목 제외
       let allAbsences = absencesData.filter((absence) => {
@@ -346,24 +376,7 @@ export default function AttendanceDashboard() {
         return absence.id != null && status !== 'REJECTED' && status !== '반려';
       });
 
-      // 부재 데이터 상태 확인
-      console.log(
-        '부재 데이터 상태 확인:',
-        allAbsences.map((item) => ({
-          id: item.id,
-          type: item.type,
-          status: item.status,
-          approvalStatus: item.approvalStatus,
-          vacationStatus: item.vacationStatus,
-          requestType: item.requestType,
-          absenceType: item.absenceType,
-          title: item.title,
-          fullData: item, // 전체 데이터 확인
-        })),
-      );
-
       setAbsences(allAbsences);
-      console.log('부재 데이터 로드 완료:', allAbsences.length, '건');
     } catch (error) {
       console.error('부재 목록 불러오기 실패:', error);
     }
@@ -1179,7 +1192,7 @@ export default function AttendanceDashboard() {
                           today.getDate() === i + 1 &&
                           todayHighlight
                             ? styles.todayRow
-                            : getDayColor(d1.getDay())
+                            : getDayColor(d1.getDay(), d1)
                         }
                       >
                         {i + 1}({getDayName(d1)})
@@ -1257,7 +1270,7 @@ export default function AttendanceDashboard() {
                             i + Math.ceil(days.length / 2) + 1 &&
                           todayHighlight
                             ? styles.todayRow
-                            : getDayColor(d2.getDay())
+                            : getDayColor(d2.getDay(), d2)
                         }
                       >
                         {i + Math.ceil(days.length / 2) + 1 <= days.length
@@ -1496,7 +1509,6 @@ export default function AttendanceDashboard() {
   const updateDataVersion = () => {
     setDataVersion((prev) => prev + 1);
     setLastUpdateTime(Date.now());
-    console.log('데이터 버전 업데이트:', new Date().toLocaleTimeString());
   };
 
   // 데이터 새로고침 함수 (실시간 업데이트용)
@@ -1508,10 +1520,6 @@ export default function AttendanceDashboard() {
         fetchTodayAttendance(),
       ]);
       updateDataVersion();
-      console.log(
-        '데이터 수동 새로고침 완료:',
-        new Date().toLocaleTimeString(),
-      );
     } catch (error) {
       console.error('데이터 새로고침 실패:', error);
     }

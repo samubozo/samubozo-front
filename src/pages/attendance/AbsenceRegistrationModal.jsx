@@ -40,6 +40,7 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   const [myVacations, setMyVacations] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [duplicateError, setDuplicateError] = useState('');
+  const [reasonError, setReasonError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -164,6 +165,15 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
       return;
     }
 
+    // 사유 필드 검증 (필수 필드)
+    if (!reason.trim()) {
+      setReasonError('부재 사유를 입력해주세요.');
+      return;
+    }
+
+    // 에러 메시지 초기화
+    setReasonError('');
+
     // 중복 에러가 있으면 제출 차단
     if (duplicateError) {
       return;
@@ -258,10 +268,32 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
             <label>사유</label>
             <textarea
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder='부재 사유를 입력하세요'
+              onChange={(e) => {
+                setReason(e.target.value);
+                // 입력 시 에러 메시지 초기화
+                if (e.target.value.trim()) {
+                  setReasonError('');
+                }
+              }}
+              required
+              className={reasonError ? styles.errorInput : ''}
+              style={{
+                width: '100%',
+                height: '120px',
+                resize: 'vertical',
+                border: reasonError ? '1px solid #e74c3c' : '1px solid #b7d7c2',
+                borderRadius: '4px',
+                padding: '0.5rem 0.7rem',
+                fontSize: '1rem',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                flex: '1',
+              }}
             />
           </div>
+          {reasonError && (
+            <span className={styles.errorMessage}>{reasonError}</span>
+          )}
           {duplicateError && (
             <div
               style={{

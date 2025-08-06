@@ -34,9 +34,20 @@ function getDayName(date) {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[date.getDay()];
 }
-function getDayColor(dayIdx) {
-  if (dayIdx === 0) return styles.sunday;
-  if (dayIdx === 6) return styles.saturday;
+import { isRestDay } from '../../utils/holidayUtils';
+
+function getDayColor(dayIdx, date) {
+  const restDay = isRestDay(date);
+
+  if (restDay.type === 'holiday') {
+    return styles.holiday;
+  }
+
+  if (restDay.type === 'weekend') {
+    if (dayIdx === 0) return styles.sunday;
+    if (dayIdx === 6) return styles.saturday;
+  }
+
   return '';
 }
 
@@ -525,7 +536,7 @@ export default function AttendanceDashboard() {
                       todayRowIdx === i &&
                       today.getDate() <= 15
                         ? styles.todayRow
-                        : getDayColor(d1.getDay())
+                        : getDayColor(d1.getDay(), d1)
                     }
                   >
                     {i + 1}({getDayName(d1)})
@@ -555,7 +566,7 @@ export default function AttendanceDashboard() {
                       todayRowIdx === i &&
                       today.getDate() > Math.ceil(days.length / 2)
                         ? styles.todayRow
-                        : getDayColor(d2.getDay())
+                        : getDayColor(d2.getDay(), d2)
                     }
                   >
                     {i + Math.ceil(days.length / 2) + 1}({getDayName(d2)})
