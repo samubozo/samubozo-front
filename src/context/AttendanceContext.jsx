@@ -80,7 +80,8 @@ export const AttendanceProvider = ({ children }) => {
       }
     } catch (error) {
       setError(
-        error.response?.data?.message || '출근 처리 중 오류가 발생했습니다.',
+        error.response?.data?.statusMessage ||
+          '출근 처리 중 오류가 발생했습니다.',
       );
     } finally {
       setLoading(false);
@@ -105,7 +106,8 @@ export const AttendanceProvider = ({ children }) => {
       }
     } catch (error) {
       setError(
-        error.response?.data?.message || '퇴근 처리 중 오류가 발생했습니다.',
+        error.response?.data?.statusMessage ||
+          '퇴근 처리 중 오류가 발생했습니다.',
       );
     } finally {
       setLoading(false);
