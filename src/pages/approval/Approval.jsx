@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import styles from './Approval.module.scss';
 import { useLocation } from 'react-router-dom';
 import { approvalService } from '../../services/approvalService';
-import ToastNotification from '../../components/ToastNotification';
+import SimpleToast from '../../components/SimpleToast';
 import VacationRequest from '../attendance/VacationRequest';
 import AuthContext from '../../context/UserContext';
 import axiosInstance from '../../configs/axios-config';
@@ -90,6 +90,20 @@ function Approval() {
   // 실시간 업데이트를 위한 상태 추가
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
   const [dataVersion, setDataVersion] = useState(0); // 데이터 버전 관리
+
+  // 증명서 인쇄 가능 여부 체크 함수
+  const canPrintCertificate = (certificate) => {
+    // 실제 로직
+    return (
+      (certificate.status === 'APPROVED' || certificate.status === '승인') &&
+      new Date(certificate.expirationDate) > new Date()
+    );
+  };
+
+  // 인쇄 가능한 증명서가 있는지 체크하는 함수
+  const hasPrintableCertificates = () => {
+    return certData.some((cert) => canPrintCertificate(cert));
+  };
 
   // 부재 수정/삭제 이벤트 감지
   useEffect(() => {
@@ -716,16 +730,34 @@ function Approval() {
         const cert = certData.find(
           (row) => (row.certificateId || row.id) === certificateId,
         );
-        return cert?.status === '승인' || cert?.status === 'APPROVED';
+        // 승인된 증명서이면서 만료되지 않은 것만 인쇄 가능
+        return (
+          (cert?.status === '승인' || cert?.status === 'APPROVED') &&
+          canPrintCertificate(cert)
+        );
       });
 
-    if (approvedIds.length === 0) {
-      setToast({
-        message: '승인된 증명서만 인쇄할 수 있습니다.',
-        type: 'error',
-      });
-      return;
+    // 선택된 모든 증명서 중 인쇄 가능한 것만 필터링
+    const allSelectedCerts = selected
+      .map((selectedId) => {
+        const cert = certData.find((row) => row.id === selectedId);
+        return cert;
+      })
+      .filter((cert) => cert);
+
+    const printableCerts = allSelectedCerts.filter(
+      (cert) =>
+        (cert?.status === '승인' || cert?.status === 'APPROVED') &&
+        canPrintCertificate(cert),
+    );
+
+    if (printableCerts.length !== allSelectedCerts.length) {
+      setSuccessMessage(
+        '만료된 증명서가 포함되어 있습니다. 만료된 증명서는 제외하고 인쇄됩니다.',
+      );
+      setShowSuccessModal(true);
     }
+
     approvedIds.forEach((certificateId) => {
       printPdfFromServer(certificateId);
     });
@@ -746,6 +778,7 @@ function Approval() {
     const s = (status || '').trim().toUpperCase();
     if (s === 'PENDING') return '대기';
     if (s === 'APPROVED') return '승인';
+    if (s === 'EXPIRED') return '만료';
     if (s === 'REJECTED') return '반려';
     return status;
   };
@@ -1019,13 +1052,7 @@ function Approval() {
             <button
               className={styles.deleteBtn}
               onClick={handlePrintSelected}
-              disabled={
-                selected.length === 0 ||
-                !selected.some(
-                  (id) =>
-                    certData.find((row) => row.id === id)?.status === '승인',
-                )
-              }
+              disabled={selected.length === 0 || !hasPrintableCertificates()}
             >
               인쇄
             </button>
@@ -1482,7 +1509,7 @@ function Approval() {
       )}
 
       {toast && (
-        <ToastNotification
+        <SimpleToast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}

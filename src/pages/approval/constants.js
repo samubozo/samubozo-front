@@ -17,6 +17,7 @@ export const statusOptions = [
   { value: 'all', label: '전체' },
   { value: '대기', label: '대기' },
   { value: '승인', label: '승인' },
+  { value: '만료', label: '만료' },
   { value: '반려', label: '반려' },
 ];
 
@@ -69,6 +70,7 @@ export const vacationTypeMap = {
 export const statusMap = {
   PENDING: '대기',
   APPROVED: '승인',
+  EXPIRED: '만료',
   REJECTED: '반려',
   PENDING_APPROVAL: '대기',
 };
