@@ -26,36 +26,11 @@ function ApprovalTable({
   return (
     <table className={styles.table}>
       <colgroup>
-        <col style={{ width: '50px' }} /> {/* 체크박스 */}
+        <col className={styles.checkboxCol} /> {/* 체크박스 */}
         {columns.map((col) => (
           <col
             key={col.key}
-            style={{
-              width:
-                col.key === 'reason'
-                  ? '200px'
-                  : col.key === 'type'
-                    ? '100px'
-                    : col.key === 'applicant'
-                      ? '80px'
-                      : col.key === 'applicantDepartment'
-                        ? '100px'
-                        : col.key === 'applyDate'
-                          ? '100px'
-                          : col.key === 'period'
-                            ? '120px'
-                            : col.key === 'approver'
-                              ? '80px'
-                              : col.key === 'processedAt'
-                                ? '100px'
-                                : col.key === 'expirationDate'
-                                  ? '90px'
-                                  : col.key === 'status'
-                                    ? '80px'
-                                    : col.key === 'urgency'
-                                      ? '80px'
-                                      : 'auto',
-            }}
+            className={`${styles.tableCol} ${styles[`col${col.key.charAt(0).toUpperCase() + col.key.slice(1)}`]}`}
           />
         ))}
       </colgroup>
@@ -81,8 +56,7 @@ function ApprovalTable({
           <tr
             key={row.id}
             onClick={() => onRowClick && onRowClick(row)}
-            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
-            className={row.status === 'EXPIRED' ? styles.expiredRow : ''}
+            className={`${onRowClick ? styles.clickableRow : ''} ${row.status === 'EXPIRED' ? styles.expiredRow : ''}`}
           >
             <td onClick={(e) => e.stopPropagation()}>
               <input
