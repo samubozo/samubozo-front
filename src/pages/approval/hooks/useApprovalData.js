@@ -36,12 +36,16 @@ export const useApprovalData = (
   // --- 데이터 포맷팅 및 매핑 함수 ---
 
   // 날짜를 'YYYY-MM-DD' 형식으로 변환
+  // approval-service 변경사항: requestedAt, processedAt이 LocalDateTime에서 LocalDate로 변경됨
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
+    // LocalDate 형식 (YYYY-MM-DD)이므로 T가 포함되지 않음
+    // 기존 LocalDateTime 형식 (YYYY-MM-DDTHH:mm:ss)과 호환성을 위해 T 체크 유지
     if (dateStr.includes('T')) {
       return dateStr.split('T')[0];
     }
-    return dateStr.replace(/\./g, '-');
+    // LocalDate 형식이므로 그대로 반환 (이미 YYYY-MM-DD 형식)
+    return dateStr;
   };
 
   // 기간을 'YYYY-MM-DD' 또는 'YYYY-MM-DD ~ YYYY-MM-DD' 형식으로 변환
@@ -60,7 +64,7 @@ export const useApprovalData = (
       id: row.id || row.vacationId,
       type: vacationTypeMap[row.vacationType] || row.vacationType,
       reason: row.reason,
-      applicant: isHR ? row.applicantName : user.userName,
+      applicant: isHR ? row.applicantName || user.userName : user.userName,
       department: isHR ? row.department : user.department,
       applicantDepartment:
         row.applicantDepartment || row.department || user.department,
@@ -83,10 +87,10 @@ export const useApprovalData = (
     return arr.map((row) => ({
       id: row.id,
       type:
-        absenceTypeMap[row.type] ||
         absenceTypeMap[row.absenceType] ||
-        row.type ||
+        absenceTypeMap[row.type] ||
         row.absenceType ||
+        row.type ||
         '',
       urgency: urgencyMap[row.urgency] || row.urgency || '',
       reason: row.reason,
@@ -131,6 +135,7 @@ export const useApprovalData = (
       applyDate: row.requestDate || '',
       approver: row.approverName || '',
       processedAt: formatDate(row.approveDate || row.processedAt || ''),
+      expirationDate: formatDate(row.expirationDate || ''), // 만료일 필드 추가
       reason: row.reason || row.purpose || '',
       rejectComment: row.rejectComment || '',
     }));
@@ -172,11 +177,27 @@ export const useApprovalData = (
           );
         }
 
-        const content = response?.content || [];
-        setAbsenceData(mapAbsenceData(content));
-        setTotalPages(response?.totalPages || 0);
-        setTotalElements(response?.totalElements || 0);
-        setCurrentPage(response?.number || 0);
+        // API 응답 구조: { statusCode, statusMessage, result: { content, totalPages, ... } }
+        const result = response?.result || response;
+        const allContent = result?.content || [];
+
+        // 부재 데이터만 필터링 (requestType이 'ABSENCE'인 항목만)
+        const absenceContent = allContent.filter(
+          (item) => item.requestType === 'ABSENCE',
+        );
+
+        const mappedData = mapAbsenceData(absenceContent);
+        setAbsenceData(mappedData);
+
+        // 부재 데이터만의 페이징 정보 계산
+        const absenceTotalElements = absenceContent.length;
+        const absenceTotalPages = Math.ceil(
+          absenceTotalElements / (result?.size || 10),
+        );
+
+        setTotalPages(absenceTotalPages);
+        setTotalElements(absenceTotalElements);
+        setCurrentPage(result?.number || 0);
       } catch (error) {
         console.error('부재 데이터 조회 에러:', error);
         setAbsenceData([]);
@@ -184,7 +205,7 @@ export const useApprovalData = (
         setLoading(false);
       }
     },
-    [isHR, approvalStatus],
+    [isHR, approvalStatus, tab],
   );
 
   // 메인 데이터 조회 함수 (탭에 따라 분기)
@@ -216,6 +237,9 @@ export const useApprovalData = (
             content = response;
           } else if (response?.content) {
             content = response.content;
+          } else if (response?.result?.content) {
+            // 새로운 API 응답 구조: { statusCode, statusMessage, result: { content, ... } }
+            content = response.result.content;
           }
 
           // HR의 경우, 처리완료 탭에서는 이미 필터링된 데이터가 오므로 추가 필터링 불필요
@@ -224,13 +248,16 @@ export const useApprovalData = (
               ? content.filter((item) => item.requestType === 'VACATION')
               : content;
 
-          setLeaveData(mapLeaveData(vacationContent));
+          const mappedLeaveData = mapLeaveData(vacationContent);
+          setLeaveData(mappedLeaveData);
 
           // 페이징 정보 설정
           if (response && !Array.isArray(response)) {
-            setTotalPages(response.totalPages || 0);
-            setTotalElements(response.totalElements || 0);
-            setCurrentPage(response.number || 0);
+            // 새로운 API 응답 구조: { statusCode, statusMessage, result: { totalPages, totalElements, number, ... } }
+            const result = response?.result || response;
+            setTotalPages(result?.totalPages || 0);
+            setTotalElements(result?.totalElements || 0);
+            setCurrentPage(result?.number || 0);
           } else {
             // 배열 응답(페이징 미지원)의 경우, 클라이언트에서 페이징 정보 설정
             setTotalPages(1);

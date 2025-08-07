@@ -40,6 +40,7 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
   const [myVacations, setMyVacations] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [duplicateError, setDuplicateError] = useState('');
+  const [reasonError, setReasonError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -54,8 +55,7 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
     try {
       // 부재 목록 불러오기
       const absenceResponse = await attendanceService.getAbsences({});
-      const absences =
-        absenceResponse.result || absenceResponse.data || absenceResponse || [];
+      const absences = absenceResponse.result || [];
       // 승인/처리중 상태만 필터링
       const filteredAbsences = absences.filter((a) => {
         const status = a.absenceStatus || a.status || a.approvalStatus;
@@ -71,10 +71,8 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
       );
       // Page 객체에서 content 필드에 접근
       const vacations =
-        vacationResponse.data?.content ||
         vacationResponse.content ||
         vacationResponse.result ||
-        vacationResponse.data ||
         vacationResponse ||
         [];
       // 승인/처리중 상태만 필터링
@@ -166,6 +164,15 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
       alert('부재 유형을 선택해주세요.');
       return;
     }
+
+    // 사유 필드 검증 (필수 필드)
+    if (!reason.trim()) {
+      setReasonError('부재 사유를 입력해주세요.');
+      return;
+    }
+
+    // 에러 메시지 초기화
+    setReasonError('');
 
     // 중복 에러가 있으면 제출 차단
     if (duplicateError) {
@@ -261,10 +268,32 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
             <label>사유</label>
             <textarea
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder='부재 사유를 입력하세요'
+              onChange={(e) => {
+                setReason(e.target.value);
+                // 입력 시 에러 메시지 초기화
+                if (e.target.value.trim()) {
+                  setReasonError('');
+                }
+              }}
+              required
+              className={reasonError ? styles.errorInput : ''}
+              style={{
+                width: '100%',
+                height: '120px',
+                resize: 'vertical',
+                border: reasonError ? '1px solid #e74c3c' : '1px solid #b7d7c2',
+                borderRadius: '4px',
+                padding: '0.5rem 0.7rem',
+                fontSize: '1rem',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                flex: '1',
+              }}
             />
           </div>
+          {reasonError && (
+            <span className={styles.errorMessage}>{reasonError}</span>
+          )}
           {duplicateError && (
             <div
               style={{

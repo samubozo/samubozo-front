@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import styles from './Approval.module.scss';
 import { useLocation } from 'react-router-dom';
 import { approvalService } from '../../services/approvalService';
-import ToastNotification from '../../components/ToastNotification';
+import SimpleToast from '../../components/SimpleToast';
 import VacationRequest from '../attendance/VacationRequest';
 import AuthContext from '../../context/UserContext';
 import axiosInstance from '../../configs/axios-config';
@@ -90,6 +90,20 @@ function Approval() {
   // 실시간 업데이트를 위한 상태 추가
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
   const [dataVersion, setDataVersion] = useState(0); // 데이터 버전 관리
+
+  // 증명서 인쇄 가능 여부 체크 함수
+  const canPrintCertificate = (certificate) => {
+    // 실제 로직
+    return (
+      (certificate.status === 'APPROVED' || certificate.status === '승인') &&
+      new Date(certificate.expirationDate) > new Date()
+    );
+  };
+
+  // 인쇄 가능한 증명서가 있는지 체크하는 함수
+  const hasPrintableCertificates = () => {
+    return certData.some((cert) => canPrintCertificate(cert));
+  };
 
   // 부재 수정/삭제 이벤트 감지
   useEffect(() => {
@@ -194,15 +208,20 @@ function Approval() {
   // 부재 탭에서 approvalStatus 변경 시 데이터 새로고침
   useEffect(() => {
     if (tab === 'absence') {
-      console.log('부재 탭에서 approvalStatus 변경 감지:', approvalStatus);
       fetchAbsenceDataFromHook();
     }
-  }, [tab, approvalStatus]);
+  }, [tab, approvalStatus, fetchAbsenceDataFromHook]);
+
+  // 부재 탭 선택 시 데이터 로드 확인
+  useEffect(() => {
+    if (tab === 'absence') {
+      fetchAbsenceDataFromHook();
+    }
+  }, [tab, fetchAbsenceDataFromHook]);
 
   // 연차/반차 탭에서 approvalStatus 변경 시 데이터 새로고침
   useEffect(() => {
     if (tab === 'leave') {
-      console.log('연차/반차 탭에서 approvalStatus 변경 감지:', approvalStatus);
       fetchData();
     }
   }, [tab, approvalStatus]);
@@ -419,15 +438,6 @@ function Approval() {
 
   // 필터링 (개선된 버전)
   const filteredLeave = leaveData.filter((row) => {
-    console.log('연차/반차 필터링 체크:', {
-      rowId: row.id,
-      originalStatus: row.originalStatus,
-      status: row.status,
-      approvalStatus,
-      isPending: row.originalStatus === 'PENDING',
-      isProcessed: row.originalStatus !== 'PENDING',
-    });
-
     // '대기' 상태를 더 정확하게 판단 (PENDING 또는 PENDING_APPROVAL)
     const isPending =
       row.originalStatus === 'PENDING' ||
@@ -463,13 +473,6 @@ function Approval() {
       if (!hasMatch) return false;
     }
     return true;
-  });
-
-  console.log('연차/반차 필터링 결과:', {
-    approvalStatus,
-    totalData: leaveData.length,
-    filteredData: filteredLeave.length,
-    filteredItems: filteredLeave,
   });
 
   // 증명서 데이터 필터링
@@ -511,6 +514,9 @@ function Approval() {
   const filteredAbsence = absenceDataFromHook.filter((row) => {
     // 항목 필터링 (부재 탭에서만)
     if (item !== 'all') {
+      if (item === '출장' && row.type !== '출장') return false;
+      if (item === '연수' && row.type !== '연수') return false;
+      if (item === '외출' && row.type !== '외출') return false;
       if (item === '병가' && row.type !== '병가') return false;
       if (item === '공가' && row.type !== '공가') return false;
       if (item === '기타' && row.type !== '기타') return false;
@@ -559,13 +565,6 @@ function Approval() {
       if (!hasMatch) return false;
     }
     return true;
-  });
-
-  console.log('부재 필터링 결과:', {
-    approvalStatus,
-    totalData: absenceDataFromHook.length,
-    filteredData: filteredAbsence.length,
-    filteredItems: filteredAbsence,
   });
 
   // 버튼 핸들러 (삭제/반려/승인)
@@ -731,16 +730,34 @@ function Approval() {
         const cert = certData.find(
           (row) => (row.certificateId || row.id) === certificateId,
         );
-        return cert?.status === '승인' || cert?.status === 'APPROVED';
+        // 승인된 증명서이면서 만료되지 않은 것만 인쇄 가능
+        return (
+          (cert?.status === '승인' || cert?.status === 'APPROVED') &&
+          canPrintCertificate(cert)
+        );
       });
 
-    if (approvedIds.length === 0) {
-      setToast({
-        message: '승인된 증명서만 인쇄할 수 있습니다.',
-        type: 'error',
-      });
-      return;
+    // 선택된 모든 증명서 중 인쇄 가능한 것만 필터링
+    const allSelectedCerts = selected
+      .map((selectedId) => {
+        const cert = certData.find((row) => row.id === selectedId);
+        return cert;
+      })
+      .filter((cert) => cert);
+
+    const printableCerts = allSelectedCerts.filter(
+      (cert) =>
+        (cert?.status === '승인' || cert?.status === 'APPROVED') &&
+        canPrintCertificate(cert),
+    );
+
+    if (printableCerts.length !== allSelectedCerts.length) {
+      setSuccessMessage(
+        '만료된 증명서가 포함되어 있습니다. 만료된 증명서는 제외하고 인쇄됩니다.',
+      );
+      setShowSuccessModal(true);
     }
+
     approvedIds.forEach((certificateId) => {
       printPdfFromServer(certificateId);
     });
@@ -761,6 +778,7 @@ function Approval() {
     const s = (status || '').trim().toUpperCase();
     if (s === 'PENDING') return '대기';
     if (s === 'APPROVED') return '승인';
+    if (s === 'EXPIRED') return '만료';
     if (s === 'REJECTED') return '반려';
     return status;
   };
@@ -778,7 +796,11 @@ function Approval() {
   // 데이터 새로고침 함수 (실시간 업데이트용)
   const refreshData = async () => {
     try {
-      await fetchData();
+      if (tab === 'absence') {
+        await fetchAbsenceDataFromHook();
+      } else {
+        await fetchData();
+      }
       updateDataVersion();
       console.log(
         'Approval 페이지 데이터 수동 새로고침 완료:',
@@ -1030,13 +1052,7 @@ function Approval() {
             <button
               className={styles.deleteBtn}
               onClick={handlePrintSelected}
-              disabled={
-                selected.length === 0 ||
-                !selected.some(
-                  (id) =>
-                    certData.find((row) => row.id === id)?.status === '승인',
-                )
-              }
+              disabled={selected.length === 0 || !hasPrintableCertificates()}
             >
               인쇄
             </button>
@@ -1311,6 +1327,14 @@ function Approval() {
                                 {detailData.processedAt || '-'}
                               </div>
                             </div>
+                            {detailData.expirationDate && (
+                              <div className={styles.infoRow}>
+                                <div className={styles.infoLabel}>만료일</div>
+                                <div className={styles.infoValue}>
+                                  {detailData.expirationDate}
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
                         {detailData.status === '반려' && (
@@ -1485,7 +1509,7 @@ function Approval() {
       )}
 
       {toast && (
-        <ToastNotification
+        <SimpleToast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}

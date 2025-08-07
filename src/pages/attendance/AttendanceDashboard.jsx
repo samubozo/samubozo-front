@@ -37,11 +37,7 @@ function getDayName(date) {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[date.getDay()];
 }
-function getDayColor(dayIdx) {
-  if (dayIdx === 0) return styles.sunday;
-  if (dayIdx === 6) return styles.saturday;
-  return '';
-}
+import { isRestDay, isRestDayAsync } from '../../utils/holidayUtils';
 
 function Modal({ open, onClose, children }) {
   if (!open) return null;
@@ -99,12 +95,57 @@ export default function AttendanceDashboard() {
   // 1. 월별 근태 데이터 상태 추가
   const [monthlyAttendance, setMonthlyAttendance] = useState([]);
 
+  // 공휴일 상태 관리
+  const [holidayStates, setHolidayStates] = useState(new Map());
+
   // 2. 월별 근태 데이터 불러오기
   useEffect(() => {
     attendanceService.getMonthlyAttendance(year, month).then((res) => {
       setMonthlyAttendance(res.result || res.data?.result || []);
     });
   }, [year, month]);
+
+  // 3. 공휴일 데이터 불러오기
+  useEffect(() => {
+    const fetchHolidayData = async () => {
+      const newHolidayStates = new Map();
+
+      // 현재 월의 모든 날짜에 대해 공휴일 정보 가져오기
+      for (let day = 1; day <= days.length; day++) {
+        const date = new Date(year, month - 1, day);
+        const restDay = await isRestDayAsync(date);
+        newHolidayStates.set(day, restDay);
+      }
+
+      setHolidayStates(newHolidayStates);
+    };
+
+    fetchHolidayData();
+  }, [year, month, days.length]);
+
+  // getDayColor 함수 (컴포넌트 내부에서 holidayStates 접근)
+  const getDayColor = (dayIdx, date) => {
+    const day = date.getDate();
+    const restDay = holidayStates.get(day);
+
+    if (!restDay) {
+      // 아직 로딩 중이면 기본 스타일
+      if (dayIdx === 0) return styles.sunday;
+      if (dayIdx === 6) return styles.saturday;
+      return '';
+    }
+
+    if (restDay.type === 'holiday') {
+      return styles.holiday;
+    }
+
+    if (restDay.type === 'weekend') {
+      if (dayIdx === 0) return styles.sunday;
+      if (dayIdx === 6) return styles.saturday;
+    }
+
+    return '';
+  };
 
   // 3. 날짜별 데이터 찾기 함수
   // 날짜 매칭 보완
@@ -241,7 +282,7 @@ export default function AttendanceDashboard() {
       await fetchTodayAttendance();
       // 월별 근태 데이터도 새로 불러오기
       attendanceService.getMonthlyAttendance(year, month).then((res) => {
-        setMonthlyAttendance(res.result || res.data?.result || []);
+        setMonthlyAttendance(res.result || []);
       });
     } catch (error) {
       // 출근 시 승인된 휴가/반차로 인한 400 에러 메시지 표시
@@ -250,9 +291,9 @@ export default function AttendanceDashboard() {
         error.response &&
         error.response.status === 400 &&
         error.response.data &&
-        error.response.data.message
+        error.response.data.statusMessage
       ) {
-        setSuccessMessage(error.response.data.message);
+        setSuccessMessage(error.response.data.statusMessage);
         setShowSuccessModal(true);
       } else {
         setError(`${step} 처리 중 오류가 발생했습니다.`);
@@ -277,7 +318,7 @@ export default function AttendanceDashboard() {
       await fetchTodayAttendance();
       // 퇴근 후 월별 데이터도 새로 불러오기
       attendanceService.getMonthlyAttendance(year, month).then((res) => {
-        setMonthlyAttendance(res.result || res.data?.result || []);
+        setMonthlyAttendance(res.result || []);
       });
       setSuccessMessage('퇴근이 완료되었습니다.');
       setShowSuccessModal(true);
@@ -325,19 +366,8 @@ export default function AttendanceDashboard() {
   const fetchAbsences = async () => {
     try {
       const userId = sessionStorage.getItem('USER_EMPLOYEE_NO');
-      console.log(
-        '부재 조회 - userId:',
-        userId,
-        'year:',
-        year,
-        'month:',
-        month,
-      );
-
-      console.log('부재 API 호출 시작');
       const response = await attendanceService.getAbsences({});
-      const absencesData = response.result || response.data || response || [];
-      console.log('attendanceService 부재 데이터:', absencesData);
+      const absencesData = response.result || [];
 
       // 성공적으로 등록된 부재만 포함 (id가 있는 경우만) + 반려된 항목 제외
       let allAbsences = absencesData.filter((absence) => {
@@ -346,24 +376,7 @@ export default function AttendanceDashboard() {
         return absence.id != null && status !== 'REJECTED' && status !== '반려';
       });
 
-      // 부재 데이터 상태 확인
-      console.log(
-        '부재 데이터 상태 확인:',
-        allAbsences.map((item) => ({
-          id: item.id,
-          type: item.type,
-          status: item.status,
-          approvalStatus: item.approvalStatus,
-          vacationStatus: item.vacationStatus,
-          requestType: item.requestType,
-          absenceType: item.absenceType,
-          title: item.title,
-          fullData: item, // 전체 데이터 확인
-        })),
-      );
-
       setAbsences(allAbsences);
-      console.log('부재 데이터 로드 완료:', allAbsences.length, '건');
     } catch (error) {
       console.error('부재 목록 불러오기 실패:', error);
     }
@@ -402,18 +415,10 @@ export default function AttendanceDashboard() {
           Array.isArray(response.result.content)
         ) {
           vacations = response.result.content;
-        } else if (
-          response.data &&
-          response.data.content &&
-          Array.isArray(response.data.content)
-        ) {
-          vacations = response.data.content;
         } else if (response.content && Array.isArray(response.content)) {
           vacations = response.content;
         } else if (Array.isArray(response.result)) {
           vacations = response.result;
-        } else if (Array.isArray(response.data)) {
-          vacations = response.data;
         } else if (Array.isArray(response)) {
           vacations = response;
         }
@@ -677,9 +682,9 @@ export default function AttendanceDashboard() {
     const fetchWorkTime = async () => {
       try {
         const response = await attendanceService.getRemainingWorkTime();
-        if (isMounted && response.data && response.data.result) {
-          setRemainingWorkTime(response.data.result.remainingHours || '00:00');
-          setWorkedHours(response.data.result.workedHours || '00:00');
+        if (isMounted && response.result) {
+          setRemainingWorkTime(response.result.remainingHours || '00:00');
+          setWorkedHours(response.result.workedHours || '00:00');
         }
       } catch (e) {
         if (isMounted) {
@@ -719,8 +724,8 @@ export default function AttendanceDashboard() {
       setVacationError(null);
       try {
         const response = await attendanceService.getVacationBalance();
-        if (isMounted && response.data && response.data.result) {
-          setVacationBalance(response.data.result);
+        if (isMounted && response.result) {
+          setVacationBalance(response.result);
         }
       } catch (e) {
         if (isMounted) setVacationError('연차 현황을 불러오지 못했습니다.');
@@ -1187,7 +1192,7 @@ export default function AttendanceDashboard() {
                           today.getDate() === i + 1 &&
                           todayHighlight
                             ? styles.todayRow
-                            : getDayColor(d1.getDay())
+                            : getDayColor(d1.getDay(), d1)
                         }
                       >
                         {i + 1}({getDayName(d1)})
@@ -1265,7 +1270,7 @@ export default function AttendanceDashboard() {
                             i + Math.ceil(days.length / 2) + 1 &&
                           todayHighlight
                             ? styles.todayRow
-                            : getDayColor(d2.getDay())
+                            : getDayColor(d2.getDay(), d2)
                         }
                       >
                         {i + Math.ceil(days.length / 2) + 1 <= days.length
@@ -1504,7 +1509,6 @@ export default function AttendanceDashboard() {
   const updateDataVersion = () => {
     setDataVersion((prev) => prev + 1);
     setLastUpdateTime(Date.now());
-    console.log('데이터 버전 업데이트:', new Date().toLocaleTimeString());
   };
 
   // 데이터 새로고침 함수 (실시간 업데이트용)
@@ -1516,10 +1520,6 @@ export default function AttendanceDashboard() {
         fetchTodayAttendance(),
       ]);
       updateDataVersion();
-      console.log(
-        '데이터 수동 새로고침 완료:',
-        new Date().toLocaleTimeString(),
-      );
     } catch (error) {
       console.error('데이터 새로고침 실패:', error);
     }

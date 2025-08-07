@@ -384,7 +384,19 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setCertDate(getKoreaToday());
       setCertPurpose('');
     } catch (e) {
-      setSuccessMessage(e.message || '증명서 신청 실패');
+      // 에러 객체 전체를 출력하여 상세 원인을 확인합니다.
+      console.error('--- 에러 발생 ---', e);
+
+      // 중복 신청 에러 메시지 처리
+      if (e.message && e.message.includes('이미 유효한 동일한 유형')) {
+        const certTypeName =
+          certType === 'EMPLOYMENT' ? '재직증명서' : '경력증명서';
+        setSuccessMessage(
+          `이미 발급받으신 ${certTypeName}가 있습니다. 만료일을 확인해주세요.`,
+        );
+      } else {
+        setSuccessMessage(e.message || '증명서 신청 실패');
+      }
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 2000);
     }
@@ -748,7 +760,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           className={activeTab === 'cert' ? styles.active : ''}
           onClick={() => setActiveTab('cert')}
         >
-          증명서 발급
+          증명서 승인
         </button>
       </div>
       {activeTab === 'info' && (
@@ -1076,7 +1088,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                                 : row.requestType,
                             )}
                           </td>
-                          <td>{row.requestedAt}</td>
+                          <td>{row.requestedAt || '-'}</td>
                           <td>{row.processedAt || '-'}</td>
                           <td style={{ textAlign: 'center' }}>
                             <span style={getStatusStyle(row.status)}>

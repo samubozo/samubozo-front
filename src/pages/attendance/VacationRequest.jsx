@@ -268,7 +268,9 @@ const VacationRequest = ({
         let errorMessage = '해당 기간에 이미 신청된 휴가가 있습니다.';
 
         // 다양한 에러 응답 구조 시도
-        if (error.response.data?.message) {
+        if (error.response.data?.statusMessage) {
+          errorMessage = error.response.data.statusMessage;
+        } else if (error.response.data?.message) {
           errorMessage = error.response.data.message;
         } else if (error.response.data?.error) {
           errorMessage = error.response.data.error;
@@ -289,6 +291,7 @@ const VacationRequest = ({
             '해당 기간에 이미 신청된 휴가가 있거나, 중복 신청으로 인한 오류가 발생했습니다.';
         } else {
           errorMessage =
+            error.response?.data?.statusMessage ||
             error.response?.data?.message ||
             error.response?.data?.error ||
             error.message ||

@@ -48,11 +48,13 @@ function ApprovalTable({
                               ? '80px'
                               : col.key === 'processedAt'
                                 ? '100px'
-                                : col.key === 'status'
-                                  ? '80px'
-                                  : col.key === 'urgency'
+                                : col.key === 'expirationDate'
+                                  ? '90px'
+                                  : col.key === 'status'
                                     ? '80px'
-                                    : 'auto',
+                                    : col.key === 'urgency'
+                                      ? '80px'
+                                      : 'auto',
             }}
           />
         ))}
@@ -80,6 +82,7 @@ function ApprovalTable({
             key={row.id}
             onClick={() => onRowClick && onRowClick(row)}
             style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+            className={row.status === 'EXPIRED' ? styles.expiredRow : ''}
           >
             <td onClick={(e) => e.stopPropagation()}>
               <input
@@ -103,6 +106,11 @@ function ApprovalTable({
                     className={`${styles.statusBadge} ${styles[`status${statusToKor(row[col.key])}`]}`}
                   >
                     {statusToKor(row[col.key])}
+                  </span>
+                ) : col.key === 'expirationDate' ? (
+                  <span>
+                    {row[col.key]}
+                    {row.status === 'EXPIRED' && ' (만료)'}
                   </span>
                 ) : (
                   row[col.key]
