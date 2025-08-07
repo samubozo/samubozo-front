@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import styles from './Approval.module.scss';
+import modalStyles from './Modal.module.scss';
 import { useLocation } from 'react-router-dom';
 import { approvalService } from '../../services/approvalService';
 import SimpleToast from '../../components/SimpleToast';
@@ -845,13 +846,7 @@ function Approval() {
     <div className={styles.approvalWrap}>
       {/* 증명서 탭에서만 보이는 신청 버튼 - 삭제 */}
       {/* {tab === 'certificate' && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: 12,
-          }}
-        >
+        <div className={styles.certButtonContainer}>
           <button
             className={styles.approveBtn}
             onClick={() => {
@@ -1136,11 +1131,11 @@ function Approval() {
 
       {/* 상세 정보 모달 */}
       {showDetailModal && detailData && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalTitleSection}>
-                <h3 className={styles.modalTitle}>
+        <div className={modalStyles.modalOverlay}>
+          <div className={modalStyles.modalContent}>
+            <div className={styles.detailModalHeader}>
+              <div className={styles.detailModalTitleSection}>
+                <h3 className={styles.detailModalTitle}>
                   {tab === 'leave'
                     ? '휴가 신청 상세'
                     : tab === 'certificate'
@@ -1149,7 +1144,7 @@ function Approval() {
                 </h3>
               </div>
               <button
-                className={styles.modalClose}
+                className={modalStyles.modalClose}
                 onClick={() => {
                   setShowDetailModal(false);
                   setDetailData(null);
@@ -1201,7 +1196,9 @@ function Approval() {
                         {detailData.reason && (
                           <div className={styles.infoRow}>
                             <div className={styles.infoLabel}>사유</div>
-                            <div className={styles.infoValue}>
+                            <div
+                              className={`${styles.infoValue} ${styles.infoValueScrollable}`}
+                            >
                               {detailData.reason || '-'}
                             </div>
                           </div>
@@ -1439,7 +1436,9 @@ function Approval() {
                         {detailData.reason && (
                           <div className={styles.infoRow}>
                             <div className={styles.infoLabel}>사유</div>
-                            <div className={styles.infoValue}>
+                            <div
+                              className={`${styles.infoValue} ${styles.infoValueScrollable}`}
+                            >
                               {detailData.reason || '-'}
                             </div>
                           </div>

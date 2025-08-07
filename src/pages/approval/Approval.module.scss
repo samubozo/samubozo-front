@@ -318,49 +318,9 @@
   font-weight: 700;
 }
 // 모달 스타일 추가
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
 
-.modalContent {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  max-width: 480px;
-  width: 90%;
-  max-height: 90%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
-  min-width: 400px;
-  z-index: 1000;
-}
-
-.modalClose {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  &:hover {
-    color: #333;
-  }
-}
-
-// 상세 모달 스타일
-.modalHeader {
+// 상세 정보 모달 스타일
+.detailModalHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -373,13 +333,13 @@
   margin: -20px -20px 28px -20px;
 }
 
-.modalTitleSection {
+.detailModalTitleSection {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.modalTitle {
+.detailModalTitle {
   margin: 0;
   color: #2c3e50;
   font-size: 20px;
@@ -628,7 +588,7 @@
 .infoRow {
   display: flex;
   align-items: center;
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s ease;
 
@@ -647,13 +607,14 @@
 
 .infoLabel {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #666;
-  min-width: 100px;
-  margin-right: 20px;
+  min-width: 120px;
+  margin-right: 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  position: relative;
 
   &::before {
     content: '';
@@ -662,6 +623,17 @@
     background: #48b96c;
     border-radius: 50%;
     display: inline-block;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 16px;
+    background: #e0e0e0;
   }
 }
 
@@ -672,7 +644,16 @@
   flex: 1;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  line-height: 1.4;
+  line-height: 1.5;
+  padding-left: 8px;
+}
+
+// 사유칸만 스크롤 적용
+.infoValueScrollable {
+  max-height: 100px;
+  overflow-y: auto;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .detailRow {
@@ -884,20 +865,6 @@
 }
 
 // 상태별 색상 스타일
-.statusRejected {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-left: 4px solid #dc3545;
-  color: #721c24;
-}
-
-.statusApproved {
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  border-left: 4px solid #28a745;
-  color: #155724;
-}
-
 .statusPending {
   background-color: #fff3cd;
   color: #856404;
@@ -945,12 +912,6 @@
   padding: 4px 8px;
   border-radius: 4px;
   border: 1px solid #f5c6cb;
-}
-
-.approvalInfo {
-  font-size: 11px;
-  color: #666;
-  margin-top: 2px;
 }
 
 .approverInfo {
@@ -1108,4 +1069,67 @@
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
+}
+
+.certButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+// ApprovalTable 스타일
+.checkboxCol {
+  width: 50px;
+}
+
+.tableCol {
+  width: auto;
+}
+
+.colReason {
+  width: 200px;
+}
+
+.colType {
+  width: 100px;
+}
+
+.colApplicant {
+  width: 80px;
+}
+
+.colApplicantDepartment {
+  width: 100px;
+}
+
+.colApplyDate {
+  width: 100px;
+}
+
+.colPeriod {
+  width: 120px;
+}
+
+.colApprover {
+  width: 80px;
+}
+
+.colProcessedAt {
+  width: 100px;
+}
+
+.colExpirationDate {
+  width: 90px;
+}
+
+.colStatus {
+  width: 80px;
+}
+
+.colUrgency {
+  width: 80px;
+}
+
+.clickableRow {
+  cursor: pointer;
 }

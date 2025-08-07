@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import styles from './Approval.module.scss';
-import absenceModalStyles from '../attendance/AbsenceRegistrationModal.module.scss';
-import editModalStyles from '../attendance/AbsenceEditModal.module.scss';
+import styles from './CertificateModal.module.scss';
+import modalStyles from './Modal.module.scss';
 import { getKoreaToday } from '../../utils/dateUtils';
 import SuccessModal from '../../components/SuccessModal';
 
@@ -108,208 +107,74 @@ function CertificateModal({
   }
 
   return (
-    <div className={styles.modalOverlay}>
-      <div
-        className={styles.modalContent}
-        style={{
-          minWidth: 440,
-          maxWidth: 520,
-          borderRadius: 18,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.16)',
-          padding: 0,
-        }}
-      >
-        <div
-          style={{
-            padding: '36px 40px 0 40px',
-            borderTopLeftRadius: 18,
-            borderTopRightRadius: 18,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 10,
-            }}
-          >
-            <div
-              className={styles.certFormTitle}
-              style={{
-                fontWeight: 800,
-                fontSize: 24,
-                color: '#222',
-                letterSpacing: -1,
-                margin: 0,
-              }}
-            >
-              증명서 신청
-            </div>
-            <button
-              className={styles.modalClose}
-              onClick={onClose}
-              style={{
-                fontSize: 32,
-                color: '#bbb',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                marginRight: -10,
-                marginTop: -10,
-                transition: 'color 0.15s',
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.color = '#e74c3c')}
-              onMouseOut={(e) => (e.currentTarget.style.color = '#bbb')}
-            >
+    <div className={modalStyles.modalOverlay}>
+      <div className={modalStyles.modalContent}>
+        <div className={styles.certModalHeader}>
+          <div className={styles.certHeaderContent}>
+            <div className={styles.certModalTitle}>증명서 신청</div>
+            <button className={modalStyles.modalClose} onClick={onClose}>
               ×
             </button>
           </div>
-          <div
-            style={{ borderBottom: '1.5px solid #e0e0e0', marginBottom: 24 }}
-          />
+          <div className={styles.headerDivider} />
         </div>
-        <form
-          onSubmit={handleSubmit}
-          className={styles.certFormWrap}
-          style={{ padding: '0 40px 36px 40px' }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <div style={{ marginBottom: 0 }}>
-              <label
-                className={styles.filterLabel}
-                htmlFor='type'
-                style={{ fontWeight: 700, fontSize: 16, color: '#222' }}
-              >
+        <form onSubmit={handleSubmit} className={styles.certFormWrap}>
+          <div className={styles.formContainer}>
+            <div className={styles.formField}>
+              <label className={styles.formLabel} htmlFor='type'>
                 증명서 구분
               </label>
               <select
                 id='type'
-                className={styles.dropdownSelected}
+                className={styles.formSelect}
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                style={{
-                  width: '100%',
-                  marginTop: 8,
-                  height: 44,
-                  fontSize: 16,
-                  borderRadius: 8,
-                  border: '1.5px solid #cfd8dc',
-                  background: '#fafbfc',
-                  paddingLeft: 12,
-                  boxSizing: 'border-box',
-                }}
               >
                 <option value='EMPLOYMENT'>재직증명서</option>
                 <option value='CAREER'>경력증명서</option>
               </select>
             </div>
-            <div style={{ marginBottom: 0 }}>
-              <label
-                className={styles.filterLabel}
-                htmlFor='requestDate'
-                style={{ fontWeight: 700, fontSize: 16, color: '#222' }}
-              >
+            <div className={styles.formField}>
+              <label className={styles.formLabel} htmlFor='requestDate'>
                 발급일자
               </label>
               <input
                 id='requestDate'
-                className={styles.datePicker}
+                className={styles.formInput}
                 type='date'
                 value={todayStr}
                 readOnly
-                style={{
-                  width: '100%',
-                  marginTop: 8,
-                  height: 44,
-                  fontSize: 16,
-                  borderRadius: 8,
-                  border: '1.5px solid #cfd8dc',
-                  background: '#f5f5f5',
-                  paddingLeft: 12,
-                  boxSizing: 'border-box',
-                  color: '#666',
-                  cursor: 'not-allowed',
-                }}
                 placeholder='오늘 날짜로 자동 설정됩니다'
               />
             </div>
-            <div style={{ marginBottom: 0 }}>
-              <label
-                className={styles.filterLabel}
-                htmlFor='purpose'
-                style={{ fontWeight: 700, fontSize: 16, color: '#222' }}
-              >
+            <div className={styles.formField}>
+              <label className={styles.formLabel} htmlFor='purpose'>
                 용도
               </label>
               <textarea
                 id='purpose'
-                className={styles.filterInput}
+                className={styles.formTextarea}
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
-                style={{
-                  width: '100%',
-                  marginTop: 8,
-                  minHeight: 100,
-                  borderRadius: 8,
-                  fontSize: 16,
-                  border: '1.5px solid #cfd8dc',
-                  background: '#fafbfc',
-                  padding: 12,
-                  color: '#222',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                }}
                 placeholder='예: 대출, 제출용 등'
                 maxLength={100}
               />
             </div>
-            {error && (
-              <div
-                style={{
-                  color: '#e74c3c',
-                  fontSize: '14px',
-                  fontWeight: 400,
-                  marginTop: '4px',
-                  marginBottom: '8px',
-                }}
-              >
-                {error}
-              </div>
-            )}
+            {error && <div className={styles.errorMessage}>{error}</div>}
           </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 16,
-              marginTop: 36,
-            }}
-          >
+          <div className={styles.buttonContainer}>
             <button
               type='submit'
-              className={styles.approveBtn}
+              className={styles.submitButton}
               disabled={loading}
-              style={{
-                minWidth: 100,
-                height: 44,
-                fontSize: 17,
-                borderRadius: 8,
-              }}
             >
               신청
             </button>
             <button
               type='button'
-              className={styles.deleteBtn}
+              className={styles.cancelButton}
               onClick={onClose}
               disabled={loading}
-              style={{
-                minWidth: 100,
-                height: 44,
-                fontSize: 17,
-                borderRadius: 8,
-              }}
             >
               취소
             </button>
