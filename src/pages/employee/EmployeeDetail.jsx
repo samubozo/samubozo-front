@@ -222,16 +222,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [certStatusFilter, setCertStatusFilter] = useState('pending'); // 증명서 상태 필터 추가
 
   const loadCertList = () => {
-    console.log('=== loadCertList 함수 호출됨 ===');
-    console.log('isHR:', isHR);
-    console.log('selectedEmployee:', selectedEmployee);
-    console.log('certStatusFilter:', certStatusFilter);
-
     if (isHR && selectedEmployee?.id) {
-      console.log('조건 1: HR + 특정 직원 선택됨');
-      console.log('selectedEmployee.id:', selectedEmployee.id);
-
-      // 새로운 통합 API 사용
       const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
 
       approvalService
@@ -241,10 +232,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           requestType: 'CERTIFICATE',
         })
         .then((res) => {
-          console.log('=== 새로운 API 응답 ===');
-          console.log('전체 응답:', res);
-
-          // 응답 데이터 추출
           let certificateRequests = [];
           if (Array.isArray(res.result)) {
             certificateRequests = res.result;
@@ -255,8 +242,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           } else if (Array.isArray(res)) {
             certificateRequests = res;
           }
-
-          console.log('필터링된 증명서 요청:', certificateRequests);
           setCertList(certificateRequests);
         })
         .catch((error) => {
@@ -264,9 +249,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           setCertList([]);
         });
     } else if (isHR) {
-      console.log('조건 2: HR + 직원 선택 안됨');
-
-      // 새로운 통합 API 사용
       const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
 
       approvalService
@@ -275,10 +257,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           requestType: 'CERTIFICATE',
         })
         .then((res) => {
-          console.log('=== HR API 응답 ===');
-          console.log('전체 응답:', res);
-
-          // 응답 데이터 추출
           let certificateRequests = [];
           if (Array.isArray(res.result)) {
             certificateRequests = res.result;
@@ -289,8 +267,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           } else if (Array.isArray(res)) {
             certificateRequests = res;
           }
-
-          console.log('필터링된 증명서 요청:', certificateRequests);
           setCertList(certificateRequests);
         })
         .catch((error) => {
@@ -298,7 +274,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           setCertList([]);
         });
     } else if (selectedEmployee?.id) {
-      // 일반 사용자가 특정 직원의 증명서 내역 조회
       const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
 
       approvalService
@@ -318,7 +293,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         })
         .catch(() => setCertList([]));
     } else {
-      // 일반 사용자의 본인 증명서 내역 조회
       const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
 
       approvalService
@@ -344,12 +318,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   };
 
   useEffect(() => {
-    console.log('=== loadCertList useEffect 호출됨 ===');
-    console.log('isHR:', isHR);
-    console.log('selectedEmployee:', selectedEmployee);
-    console.log('activeTab:', activeTab);
-    console.log('certStatusFilter:', certStatusFilter);
-
     loadCertList();
 
     const interval = setInterval(loadCertList, 5000);
@@ -358,12 +326,9 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   }, [isHR, selectedEmployee, certStatusFilter]);
 
   const handleSubmitCertificate = async () => {
-    console.log('--- handleSubmitCertificate 함수 시작 ---'); // 1. 함수가 호출되는지 확인
     if (!selectedEmployee?.id) {
-      console.log('오류: selectedEmployee.id가 없어서 함수가 바로 종료됩니다.');
       return;
     }
-    console.log('중복 검사에 사용되는 값들:', { certList, certType });
 
     const isDuplicate = certList.some((row) => {
       const rowType = (row.type || '').trim().toUpperCase();
@@ -376,11 +341,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       );
     });
 
-    // isDuplicate의 계산 결과를 확인합니다.
-    console.log('isDuplicate 검사 결과:', isDuplicate);
     if (isDuplicate) {
-      console.log('중복이 감지되어 함수를 종료합니다.'); // 2. 여기서 종료되는지 확인
-
       setSuccessMessage(
         `${certType === 'EMPLOYMENT' ? '재직증명서' : '경력증명서'}가 이미 신청되어 있습니다.`,
       );
@@ -390,7 +351,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
 
     try {
-      console.log('--- 1단계: 증명서 생성 시작 ---');
       const certificateFormData = {
         employeeNo: selectedEmployee.id,
         requestDate: certDate,
@@ -400,16 +360,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       const createdCertificate =
         await approvalService.applyCertificate(certificateFormData);
 
-      // 1단계 응답 값을 확인하는 것이 매우 중요합니다.
-      console.log('--- 1단계 성공! 응답 데이터:', createdCertificate);
-
-      // 1단계 응답값이 비어있거나 certificateId가 없는 경우를 방어
       if (!createdCertificate || !createdCertificate.certificateId) {
-        console.error('오류: 1단계 응답에서 certificateId를 찾을 수 없습니다.');
         throw new Error('증명서 생성 후 ID를 받지 못했습니다.');
       }
 
-      console.log('--- 2단계: 결재 요청 시작 ---');
       const approvalData = {
         title: `${createdCertificate.type === 'EMPLOYMENT' ? '재직' : '경력'} 증명서 발급 요청`,
         reason: createdCertificate.reason,
@@ -417,14 +371,11 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         type: createdCertificate.type,
       };
       await approvalService.requestCertificateApproval(approvalData);
-      console.log('--- 2단계 성공! ---');
 
-      // 모든 단계가 성공했을 때 최종 성공 메시지를 보여줍니다.
       setSuccessMessage('증명서 신청이 완료되었습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 2000);
 
-      // 목록 새로고침 및 폼 초기화
       const res = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
       );
@@ -523,6 +474,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       if (joinDate) formData.append('hireDate', joinDate);
       if (leaveDate) formData.append('retireDate', leaveDate);
       formData.append('activate', status);
+      formData.append('hrRole', role);
       formData.append('bankName', bankName);
       formData.append('accountNumber', accountNumber);
       formData.append('accountHolder', accountHolder);
@@ -726,7 +678,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const isRetired = status === 'N';
 
   const refreshCertList = async () => {
-    // loadCertList 함수를 호출해서 목록을 새로고침
     loadCertList();
   };
 
@@ -768,11 +719,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       let processedCount = 0;
       for (const cert of pendingCerts) {
         try {
-          // approval ID를 사용해서 반려 처리
-          await approvalService.rejectApprovalRequest(
-            cert.id, // approval ID
-            comment,
-          );
+          await approvalService.rejectApprovalRequest(cert.id, comment);
           processedCount++;
         } catch (e) {
           console.error(`증명서 ${cert.id} 반려 실패:`, e);
@@ -1194,9 +1141,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                       let processedCount = 0;
                       for (const cert of pendingCerts) {
                         try {
-                          // approval ID를 사용해서 승인 처리
                           await approvalService.approveApprovalRequest(
-                            cert.id, // approval ID
+                            cert.id,
                             cert.employeeNo,
                           );
                           processedCount++;
@@ -1280,7 +1226,16 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 <td>
                   <select
                     value={position}
-                    onChange={(e) => setPosition(e.target.value)}
+                    onChange={(e) => {
+                      setPosition(e.target.value);
+                      const found = positions.find(
+                        (p) => String(p.positionId) === String(e.target.value),
+                      );
+                      if (found?.hrRole) {
+                        setRole(found.hrRole);
+                      }
+                      setPositionName(found?.positionName || '');
+                    }}
                   >
                     <option value=''>직책 선택</option>
                     {positions.map((p) => (
