@@ -259,6 +259,7 @@ const VacationRequest = ({
       // 성공 시 모달은 SuccessModal에서 처리하도록 onClose() 호출 제거
     } catch (error) {
       console.error('휴가 신청 에러:', error);
+
       console.error('에러 응답:', error.response);
       console.error('에러 상태:', error.response?.status);
       console.error('에러 데이터:', error.response?.data);
