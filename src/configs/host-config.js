@@ -22,7 +22,7 @@ if (
   clientHostName === 'www.samubozo.co.kr'
 ) {
   // 배포해서 현재 서비스 중
-  backendHostName = 'https://api.samubozo.co.kr';
+  backendHostName = 'https://apiv1.samubozo.co.kr';
 }
 
 export const API_BASE_URL = backendHostName;
