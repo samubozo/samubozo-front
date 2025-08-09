@@ -227,6 +227,16 @@ function Schedule() {
   // 카테고리 삭제
   const handleCategoryDelete = (id) => {
     const eventsInCategory = events.filter((e) => e.categoryId === id);
+    const alldayEventsInCategory = rightTodos.filter(
+      (e) => e.categoryId === id,
+    );
+
+    if (alldayEventsInCategory.length > 0) {
+      alert(
+        '해당 카테고리에 속한 일정이 남아있어 삭제할 수 없습니다. 먼저 일정을 모두 삭제해 주세요.',
+      );
+      return;
+    }
     if (eventsInCategory.length > 0) {
       const oldestEvent = eventsInCategory.reduce((min, e) =>
         new Date(e.startDate) < new Date(min.startDate) ? e : min,
