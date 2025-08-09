@@ -34,9 +34,20 @@ function getDayName(date) {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   return days[date.getDay()];
 }
-function getDayColor(dayIdx) {
-  if (dayIdx === 0) return styles.sunday;
-  if (dayIdx === 6) return styles.saturday;
+import { isRestDay } from '../../utils/holidayUtils';
+
+function getDayColor(dayIdx, date) {
+  const restDay = isRestDay(date);
+
+  if (restDay.type === 'holiday') {
+    return styles.holiday;
+  }
+
+  if (restDay.type === 'weekend') {
+    if (dayIdx === 0) return styles.sunday;
+    if (dayIdx === 6) return styles.saturday;
+  }
+
   return '';
 }
 
@@ -100,36 +111,27 @@ export default function AttendanceDashboard() {
       if (currentAction === '출근하기') {
         // 출근 처리
         const response = await attendanceService.checkIn();
-        if (response.data.result) {
-          setCheckIn(response.data.result.checkInTime);
-          sessionStorage.setItem(
-            'TODAY_CHECK_IN',
-            response.data.result.checkInTime,
-          );
+        if (response.result) {
+          setCheckIn(response.result.checkInTime);
+          sessionStorage.setItem('TODAY_CHECK_IN', response.result.checkInTime);
           sessionStorage.setItem('IS_CHECKED_IN', 'true');
           setCurrentAction('외출하기');
         }
       } else if (currentAction === '외출하기') {
         // 외출 처리
         const response = await attendanceService.goOut();
-        if (response.data.result) {
-          setGoOut(response.data.result.goOutTime);
-          sessionStorage.setItem(
-            'TODAY_GO_OUT',
-            response.data.result.goOutTime,
-          );
+        if (response.result) {
+          setGoOut(response.result.goOutTime);
+          sessionStorage.setItem('TODAY_GO_OUT', response.result.goOutTime);
           sessionStorage.setItem('IS_OUT', 'true');
           setCurrentAction('복귀하기');
         }
       } else if (currentAction === '복귀하기') {
         // 복귀 처리
         const response = await attendanceService.returnFromOut();
-        if (response.data.result) {
-          setReturnFromOut(response.data.result.returnTime);
-          sessionStorage.setItem(
-            'TODAY_RETURN',
-            response.data.result.returnTime,
-          );
+        if (response.result) {
+          setReturnFromOut(response.result.returnTime);
+          sessionStorage.setItem('TODAY_RETURN', response.result.returnTime);
           sessionStorage.setItem('IS_OUT', 'false');
           setCurrentAction('복귀완료');
         }
@@ -160,12 +162,9 @@ export default function AttendanceDashboard() {
 
     try {
       const response = await attendanceService.checkOut();
-      if (response.data.result) {
-        setCheckOut(response.data.result.checkOutTime);
-        sessionStorage.setItem(
-          'TODAY_CHECK_OUT',
-          response.data.result.checkOutTime,
-        );
+      if (response.result) {
+        setCheckOut(response.result.checkOutTime);
+        sessionStorage.setItem('TODAY_CHECK_OUT', response.result.checkOutTime);
         sessionStorage.setItem('IS_CHECKED_IN', 'false');
       }
     } catch (error) {
@@ -537,7 +536,7 @@ export default function AttendanceDashboard() {
                       todayRowIdx === i &&
                       today.getDate() <= 15
                         ? styles.todayRow
-                        : getDayColor(d1.getDay())
+                        : getDayColor(d1.getDay(), d1)
                     }
                   >
                     {i + 1}({getDayName(d1)})
@@ -567,7 +566,7 @@ export default function AttendanceDashboard() {
                       todayRowIdx === i &&
                       today.getDate() > Math.ceil(days.length / 2)
                         ? styles.todayRow
-                        : getDayColor(d2.getDay())
+                        : getDayColor(d2.getDay(), d2)
                     }
                   >
                     {i + Math.ceil(days.length / 2) + 1}({getDayName(d2)})

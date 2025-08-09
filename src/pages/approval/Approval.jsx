@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import styles from './Approval.module.scss';
+import modalStyles from './Modal.module.scss';
 import { useLocation } from 'react-router-dom';
 import { approvalService } from '../../services/approvalService';
-import ToastNotification from '../../components/ToastNotification';
+import SimpleToast from '../../components/SimpleToast';
 import VacationRequest from '../attendance/VacationRequest';
 import AuthContext from '../../context/UserContext';
 import axiosInstance from '../../configs/axios-config';
@@ -40,9 +41,6 @@ import {
 // Hooks
 import { useApprovalData } from './hooks/useApprovalData';
 
-// 메인 Approval 컴포넌트
-
-// 메인 Approval 컴포넌트
 function Approval() {
   const location = useLocation();
   const { user } = useContext(AuthContext);
@@ -90,6 +88,43 @@ function Approval() {
   const [showCertModal, setShowCertModal] = useState(false);
   const [certModalLoading, setCertModalLoading] = useState(false);
 
+  // 실시간 업데이트를 위한 상태 추가
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+  const [dataVersion, setDataVersion] = useState(0); // 데이터 버전 관리
+
+  // 증명서 인쇄 가능 여부 체크 함수
+  const canPrintCertificate = (certificate) => {
+    // 실제 로직
+    return (
+      (certificate.status === 'APPROVED' || certificate.status === '승인') &&
+      new Date(certificate.expirationDate) > new Date()
+    );
+  };
+
+  // 인쇄 가능한 증명서가 있는지 체크하는 함수
+  const hasPrintableCertificates = () => {
+    return certData.some((cert) => canPrintCertificate(cert));
+  };
+
+  // 부재 수정/삭제 이벤트 감지
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'absenceUpdated') {
+        console.log('부재 수정/삭제 감지됨, 데이터 새로고침');
+        refreshData();
+      }
+      if (e.key === 'absenceUpdatedStorage') {
+        console.log('부재 승인/반려 감지됨 (storage), 처리완료 탭으로 이동');
+        setApprovalStatus('processed');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   // 증명서 신청 핸들러
   const handleCertModalOpen = () => {
     setShowCertModal(true);
@@ -101,9 +136,13 @@ function Approval() {
   const handleCertModalSubmit = async (form) => {
     setCertModalLoading(true);
     try {
-      // 신청(POST)
-      const response = await approvalService.applyCertificate(form);
+      // 증명서 신청 (백엔드에서 자동으로 결재 요청까지 처리)
+      await approvalService.applyCertificate(form);
+
       await fetchData();
+
+      // 신청 후 대기중 상태 유지 (처리완료 탭으로 자동 이동하지 않음)
+
       // 모달은 CertificateModal에서 성공 후에 닫도록 함
       return true; // 성공 시 true 반환 (CertificateModal에서 성공 모달 표시)
     } catch (error) {
@@ -123,6 +162,9 @@ function Approval() {
         form,
       );
       await fetchData();
+
+      // 수정 후 대기중 상태 유지 (처리완료 탭으로 자동 이동하지 않음)
+
       return true;
     } catch (error) {
       console.error('증명서 수정 에러:', error);
@@ -142,6 +184,11 @@ function Approval() {
     fetchData,
     fetchAbsenceData: fetchAbsenceDataFromHook,
     mapLeaveData,
+    // 페이징 정보 추가
+    totalPages: backendTotalPages,
+    totalElements: backendTotalElements,
+    currentPage: backendCurrentPage,
+    setCurrentPage: setBackendCurrentPage,
   } = useApprovalData(tab, isHR, user, approvalStatus);
 
   // 필터 조건 변경 시 페이지 리셋
@@ -158,6 +205,36 @@ function Approval() {
     setFilterValue('');
     setSelected([]);
   }, [tab]);
+
+  // 부재 탭에서 approvalStatus 변경 시 데이터 새로고침
+  useEffect(() => {
+    if (tab === 'absence') {
+      fetchAbsenceDataFromHook();
+    }
+  }, [tab, approvalStatus, fetchAbsenceDataFromHook]);
+
+  // 부재 탭 선택 시 데이터 로드 확인
+  useEffect(() => {
+    if (tab === 'absence') {
+      fetchAbsenceDataFromHook();
+    }
+  }, [tab, fetchAbsenceDataFromHook]);
+
+  // 연차/반차 탭에서 approvalStatus 변경 시 데이터 새로고침
+  useEffect(() => {
+    if (tab === 'leave') {
+      fetchData();
+    }
+  }, [tab, approvalStatus]);
+
+  // leaveData 상태 변화 확인
+  useEffect(() => {
+    console.log('leaveData 상태 변화:', {
+      tab,
+      leaveDataLength: leaveData.length,
+      leaveData: leaveData,
+    });
+  }, [leaveData, tab]);
 
   // URL 쿼리(tab)가 바뀌면 탭 상태도 동기화
   useEffect(() => {
@@ -219,7 +296,9 @@ function Approval() {
       setToast({ message: '승인 처리 완료', type: 'success' });
       // 승인 후 처리완료 탭으로 자동 이동
       setApprovalStatus('processed');
-      fetchData();
+
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
     } catch (err) {
       setToast({
         message: err.message || '승인 처리 중 오류가 발생했습니다.',
@@ -285,14 +364,11 @@ function Approval() {
       setRejectTargetId(null);
       setSelected([]);
 
-      // 데이터 새로고침
-      if (tab === 'leave') {
-        fetchData();
-      } else if (tab === 'absence') {
-        fetchAbsenceDataFromHook();
-      } else if (tab === 'certificate') {
-        fetchData();
-      }
+      // 반려 후 처리완료 탭으로 자동 이동
+      setApprovalStatus('processed');
+
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
     } catch (err) {
       setToast({
         message: err.message || '반려 처리 중 오류가 발생했습니다.',
@@ -363,19 +439,20 @@ function Approval() {
 
   // 필터링 (개선된 버전)
   const filteredLeave = leaveData.filter((row) => {
-    // 항목 필터링 (휴가 탭에서만)
+    // '대기' 상태를 더 정확하게 판단 (PENDING 또는 PENDING_APPROVAL)
+    const isPending =
+      row.originalStatus === 'PENDING' ||
+      row.originalStatus === 'PENDING_APPROVAL';
+
+    // 항목 필터링 (기존 로직 유지)
     if (item !== 'all') {
       if (item === '연차' && row.type !== '연차') return false;
       if (item === '반차' && row.type !== '반차') return false;
     }
 
-    // 결재상태 필터링 (모든 사용자)
-    if (approvalStatus === 'pending' && row.status !== '대기') return false;
-    if (approvalStatus === 'processed' && row.status === '대기') return false;
-
-    // 날짜 범위 필터링
-    if (dateFrom && compareDates(row.applyDate, dateFrom) < 0) return false;
-    if (dateTo && compareDates(row.applyDate, dateTo) > 0) return false;
+    // 결재상태 필터링 (수정된 로직 적용)
+    if (approvalStatus === 'pending' && !isPending) return false;
+    if (approvalStatus === 'processed' && isPending) return false;
 
     // 검색어 필터링 (통합 검색)
     if (filterValue.trim()) {
@@ -385,7 +462,7 @@ function Approval() {
       const searchFields = [
         row.applicant,
         row.approver,
-        row.purpose,
+        row.reason,
         row.applicantDepartment,
       ].filter((field) => field); // null/undefined 제거
 
@@ -421,7 +498,7 @@ function Approval() {
       const searchFields = [
         row.applicant,
         row.approver,
-        row.purpose,
+        row.reason,
         row.applicantDepartment,
       ].filter((field) => field);
 
@@ -438,6 +515,9 @@ function Approval() {
   const filteredAbsence = absenceDataFromHook.filter((row) => {
     // 항목 필터링 (부재 탭에서만)
     if (item !== 'all') {
+      if (item === '출장' && row.type !== '출장') return false;
+      if (item === '연수' && row.type !== '연수') return false;
+      if (item === '외출' && row.type !== '외출') return false;
       if (item === '병가' && row.type !== '병가') return false;
       if (item === '공가' && row.type !== '공가') return false;
       if (item === '기타' && row.type !== '기타') return false;
@@ -453,9 +533,15 @@ function Approval() {
       if (row.urgency !== expectedUrgency) return false;
     }
 
-    // 결재상태 필터링 (모든 사용자)
-    if (approvalStatus === 'pending' && row.status !== '대기') return false;
-    if (approvalStatus === 'processed' && row.status === '대기') return false;
+    // 결재상태 필터링 (모든 사용자) - 원본 상태값으로 비교
+    if (approvalStatus === 'pending') {
+      // pending 상태일 때는 PENDING인 항목만 표시
+      if (row.originalStatus !== 'PENDING') return false;
+    }
+    if (approvalStatus === 'processed') {
+      // processed 상태일 때는 PENDING이 아닌 항목만 표시
+      if (row.originalStatus === 'PENDING') return false;
+    }
 
     // 날짜 범위 필터링
     if (dateFrom && compareDates(row.applyDate, dateFrom) < 0) return false;
@@ -538,6 +624,9 @@ function Approval() {
     setSelected([]);
     if (tab === 'leave') {
       fetchData();
+      // 연차 승인 시 근태관리 테이블에 실시간 업데이트 알림
+      localStorage.setItem('vacationApproved', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('vacationApproved'));
     } else if (tab === 'absence') {
       fetchAbsenceDataFromHook();
     }
@@ -545,104 +634,76 @@ function Approval() {
 
   // 부재 승인 핸들러 추가
   const handleAbsenceApprove = async (absenceId) => {
-    // HR 권한 체크
-    if (!isHR) {
-      setToast({
-        message: 'HR 권한이 필요합니다.',
-        type: 'error',
-      });
-      return;
-    }
-
     try {
-      setLoading(true); // 로딩 시작
       await approvalService.approveHRAbsence(absenceId);
-      setSuccessMessage('부재가 승인되었습니다.');
-      setShowSuccessModal(true);
+      setToast({ message: '부재 승인 처리 완료', type: 'success' });
 
-      // 승인 후 데이터 새로고침
+      // 승인 후 처리완료 탭으로 자동 이동
+      console.log('부재 승인 후 처리완료 탭으로 이동');
+      setApprovalStatus('processed');
+
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
+
+      // 페이지 새로고침 (강제)
       setTimeout(() => {
-        fetchAbsenceDataFromHook();
-      }, 1000);
-    } catch (error) {
-      console.error('부재 승인 실패:', error);
+        console.log('페이지 새로고침 실행');
+        window.location.reload();
+      }, 500);
+    } catch (err) {
       setToast({
-        message:
-          '부재 승인 중 오류가 발생했습니다: ' +
-          (error.message || '알 수 없는 오류'),
+        message: err.message || '부재 승인 처리 중 오류가 발생했습니다.',
         type: 'error',
       });
-    } finally {
-      setLoading(false); // 로딩 종료
     }
   };
 
   // 부재 반려 핸들러 추가
   const handleAbsenceReject = async (absenceId, comment) => {
-    // HR 권한 체크
-    if (!isHR) {
-      setToast({
-        message: 'HR 권한이 필요합니다.',
-        type: 'error',
-      });
-      return;
-    }
-
     try {
-      setLoading(true); // 로딩 시작
       await approvalService.rejectHRAbsence(absenceId, comment);
-      setSuccessMessage('부재가 반려되었습니다.');
-      setShowSuccessModal(true);
+      setToast({ message: '부재 반려 처리 완료', type: 'success' });
 
-      // 반려 후 데이터 새로고침
+      // 반려 후 처리완료 탭으로 자동 이동
+      setApprovalStatus('processed');
+
+      // 변경사항 발생 시 즉시 데이터 새로고침
+      await refreshData();
+
+      // 페이지 새로고침 (강제)
       setTimeout(() => {
-        fetchAbsenceDataFromHook();
-      }, 1000);
-    } catch (error) {
-      console.error('부재 반려 실패:', error);
+        console.log('페이지 새로고침 실행');
+        window.location.reload();
+      }, 500);
+    } catch (err) {
       setToast({
-        message:
-          '부재 반려 중 오류가 발생했습니다: ' +
-          (error.message || '알 수 없는 오류'),
+        message: err.message || '부재 반려 처리 중 오류가 발생했습니다.',
         type: 'error',
       });
-    } finally {
-      setLoading(false); // 로딩 종료
     }
   };
 
-  // 페이징 처리
-  const totalRows =
-    tab === 'leave'
-      ? filteredLeave.length
-      : tab === 'certificate'
-        ? filteredCert.length
-        : filteredAbsence.length;
-  const totalPages = Math.ceil(totalRows / pageSize);
-  const pagedLeave = filteredLeave.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
-  const pagedCert = filteredCert.slice((page - 1) * pageSize, page * pageSize);
-  const pagedAbsence = filteredAbsence.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
+  // 백엔드 페이징 정보 사용
+  const totalPages = backendTotalPages || 0;
+  const totalElements = backendTotalElements || 0;
+  const currentPage = backendCurrentPage || 0;
+
+  // 백엔드에서 이미 페이징된 데이터를 받아오므로 필터링된 데이터를 직접 사용
+  const pagedLeave = filteredLeave;
+  const pagedCert = filteredCert;
+  const pagedAbsence = filteredAbsence;
 
   // PDF 인쇄 함수
   const printPdfFromServer = async (certificateId) => {
     try {
-
       const res = await axiosInstance.get(
         `${API_BASE_URL}${CERTIFICATE}/my-print/${certificateId}`,
         { responseType: 'arraybuffer' },
       );
 
-
       const contentType = res.headers['content-type'] || 'application/pdf';
       const blob = new Blob([res.data], { type: contentType });
       const fileURL = URL.createObjectURL(blob);
-
 
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
@@ -661,7 +722,6 @@ function Approval() {
 
   // 인쇄 버튼 클릭 핸들러
   const handlePrintSelected = () => {
-
     const approvedIds = selected
       .map((selectedId) => {
         const cert = certData.find((row) => row.id === selectedId);
@@ -671,17 +731,34 @@ function Approval() {
         const cert = certData.find(
           (row) => (row.certificateId || row.id) === certificateId,
         );
-        return cert?.status === '승인' || cert?.status === 'APPROVED';
+        // 승인된 증명서이면서 만료되지 않은 것만 인쇄 가능
+        return (
+          (cert?.status === '승인' || cert?.status === 'APPROVED') &&
+          canPrintCertificate(cert)
+        );
       });
 
+    // 선택된 모든 증명서 중 인쇄 가능한 것만 필터링
+    const allSelectedCerts = selected
+      .map((selectedId) => {
+        const cert = certData.find((row) => row.id === selectedId);
+        return cert;
+      })
+      .filter((cert) => cert);
 
-    if (approvedIds.length === 0) {
-      setToast({
-        message: '승인된 증명서만 인쇄할 수 있습니다.',
-        type: 'error',
-      });
-      return;
+    const printableCerts = allSelectedCerts.filter(
+      (cert) =>
+        (cert?.status === '승인' || cert?.status === 'APPROVED') &&
+        canPrintCertificate(cert),
+    );
+
+    if (printableCerts.length !== allSelectedCerts.length) {
+      setSuccessMessage(
+        '만료된 증명서가 포함되어 있습니다. 만료된 증명서는 제외하고 인쇄됩니다.',
+      );
+      setShowSuccessModal(true);
     }
+
     approvedIds.forEach((certificateId) => {
       printPdfFromServer(certificateId);
     });
@@ -702,21 +779,74 @@ function Approval() {
     const s = (status || '').trim().toUpperCase();
     if (s === 'PENDING') return '대기';
     if (s === 'APPROVED') return '승인';
+    if (s === 'EXPIRED') return '만료';
     if (s === 'REJECTED') return '반려';
     return status;
+  };
+
+  // 데이터 버전 업데이트 함수 (변경사항 발생 시 호출)
+  const updateDataVersion = () => {
+    setDataVersion((prev) => prev + 1);
+    setLastUpdateTime(Date.now());
+    console.log(
+      'Approval 페이지 데이터 버전 업데이트:',
+      new Date().toLocaleTimeString(),
+    );
+  };
+
+  // 데이터 새로고침 함수 (실시간 업데이트용)
+  const refreshData = async () => {
+    try {
+      if (tab === 'absence') {
+        await fetchAbsenceDataFromHook();
+      } else {
+        await fetchData();
+      }
+      updateDataVersion();
+      console.log(
+        'Approval 페이지 데이터 수동 새로고침 완료:',
+        new Date().toLocaleTimeString(),
+      );
+    } catch (error) {
+      console.error('Approval 페이지 데이터 새로고침 실패:', error);
+    }
+  };
+
+  // 실시간 업데이트 상태 표시를 위한 함수
+  const getLastUpdateTimeString = () => {
+    const now = Date.now();
+    const diff = now - lastUpdateTime;
+    const seconds = Math.floor(diff / 1000);
+
+    if (seconds < 60) {
+      return `${seconds}초 전`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes}분 전`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      return `${hours}시간 전`;
+    }
+  };
+
+  // 수동 새로고침 버튼 핸들러
+  const handleManualRefresh = async () => {
+    setLoading(true);
+    try {
+      await refreshData();
+      setToast({ message: '데이터가 새로고침되었습니다.', type: 'success' });
+    } catch (error) {
+      setToast({ message: '새로고침 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className={styles.approvalWrap}>
       {/* 증명서 탭에서만 보이는 신청 버튼 - 삭제 */}
       {/* {tab === 'certificate' && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: 12,
-          }}
-        >
+        <div className={styles.certButtonContainer}>
           <button
             className={styles.approveBtn}
             onClick={() => {
@@ -823,6 +953,7 @@ function Approval() {
             onEditCert={null}
             onPrintCert={null}
             onRowClick={handleRowClick}
+            statusToKor={statusToKor}
           />
         ) : tab === 'certificate' ? (
           <ApprovalTable
@@ -843,6 +974,7 @@ function Approval() {
               /* 추후 구현 */
             }}
             onRowClick={handleRowClick}
+            statusToKor={statusToKor}
           />
         ) : (
           <ApprovalTable
@@ -861,12 +993,11 @@ function Approval() {
             onEditCert={null}
             onPrintCert={null}
             onRowClick={handleRowClick}
+            statusToKor={statusToKor}
             typeToKor={(type) => {
               const absenceTypeMap = {
                 BUSINESS_TRIP: '출장',
                 TRAINING: '연수',
-                ANNUAL_LEAVE: '연차',
-                HALF_DAY_LEAVE: '반차',
                 SHORT_LEAVE: '외출',
                 SICK_LEAVE: '병가',
                 OFFICIAL_LEAVE: '공가',
@@ -889,11 +1020,18 @@ function Approval() {
           <button
             key={idx + 1}
             className={
-              page === idx + 1
+              currentPage === idx
                 ? styles.paginationBtn + ' ' + styles.paginationBtnActive
                 : styles.paginationBtn
             }
-            onClick={() => setPage(idx + 1)}
+            onClick={() => {
+              setBackendCurrentPage(idx);
+              if (tab === 'absence') {
+                fetchAbsenceDataFromHook({ page: idx, size: 10 });
+              } else {
+                fetchData({ page: idx, size: 10 });
+              }
+            }}
           >
             {idx + 1}
           </button>
@@ -909,13 +1047,7 @@ function Approval() {
             <button
               className={styles.deleteBtn}
               onClick={handlePrintSelected}
-              disabled={
-                selected.length === 0 ||
-                !selected.some(
-                  (id) =>
-                    certData.find((row) => row.id === id)?.status === '승인',
-                )
-              }
+              disabled={selected.length === 0 || !hasPrintableCertificates()}
             >
               인쇄
             </button>
@@ -999,32 +1131,20 @@ function Approval() {
 
       {/* 상세 정보 모달 */}
       {showDetailModal && detailData && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalTitleSection}>
-                <h3 className={styles.modalTitle}>
+        <div className={modalStyles.modalOverlay}>
+          <div className={modalStyles.modalContent}>
+            <div className={styles.detailModalHeader}>
+              <div className={styles.detailModalTitleSection}>
+                <h3 className={styles.detailModalTitle}>
                   {tab === 'leave'
                     ? '휴가 신청 상세'
                     : tab === 'certificate'
                       ? '증명서 신청 상세'
                       : '부재 신청 상세'}
                 </h3>
-                <div
-                  className={`${styles.statusBadge} ${
-                    detailData.status === '승인'
-                      ? styles.statusApproved
-                      : detailData.status === '반려'
-                        ? styles.statusRejected
-                        : styles.statusPending
-                  }`}
-                >
-                  <div className={styles.statusDot}></div>
-                  {detailData.status}
-                </div>
               </div>
               <button
-                className={styles.modalClose}
+                className={modalStyles.modalClose}
                 onClick={() => {
                   setShowDetailModal(false);
                   setDetailData(null);
@@ -1037,192 +1157,358 @@ function Approval() {
             <div className={styles.modalBody}>
               {/* 기본 정보 */}
               <div className={styles.detailSection}>
-                <div className={styles.detailGrid}>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>신청자</div>
-                    <div className={styles.detailValue}>
-                      {detailData.applicant}
-                    </div>
-                  </div>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>부서</div>
-                    <div className={styles.detailValue}>
-                      {detailData.applicantDepartment || detailData.department}
-                    </div>
-                  </div>
+                <div className={styles.detailTable}>
                   {tab === 'leave' ? (
                     <>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>휴가 유형</div>
-                        <div className={styles.detailValue}>
-                          {detailData.type}
+                      <div className={styles.certificateInfo}>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicant || '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>기간</div>
-                        <div className={styles.detailValue}>
-                          {detailData.period}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부서</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicantDepartment ||
+                              detailData.department ||
+                              '-'}
+                          </div>
                         </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>휴가 유형</div>
+                          <div className={styles.infoValue}>
+                            {detailData.type || '-'}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>기간</div>
+                          <div className={styles.infoValue}>
+                            {detailData.period || '-'}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청일자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applyDate || '-'}
+                          </div>
+                        </div>
+                        {detailData.reason && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>사유</div>
+                            <div
+                              className={`${styles.infoValue} ${styles.infoValueScrollable}`}
+                            >
+                              {detailData.reason || '-'}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '대기' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>처리상태</div>
+                            <div className={styles.infoValue}>
+                              <span
+                                className={`${styles.statusBadge} ${styles.status대기}`}
+                              >
+                                대기
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '승인' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {detailData.status === '반려' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>반려사유</div>
+                              <div className={styles.infoValue}>
+                                {detailData.rejectComment || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </>
                   ) : tab === 'certificate' ? (
                     <>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>증명서 유형</div>
-                        <div className={styles.detailValue}>
-                          {detailData.type}
+                      <div className={styles.certificateInfo}>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicant || '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>신청일자</div>
-                        <div className={styles.detailValue}>
-                          {detailData.applyDate}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부서</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicantDepartment ||
+                              detailData.department ||
+                              '-'}
+                          </div>
                         </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>증명서 유형</div>
+                          <div className={styles.infoValue}>
+                            {detailData.type || '-'}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청일자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applyDate || '-'}
+                          </div>
+                        </div>
+                        {detailData.status !== '반려' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>용도</div>
+                            <div className={styles.infoValue}>
+                              {detailData.reason || '-'}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '대기' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>처리상태</div>
+                            <div className={styles.infoValue}>
+                              <span
+                                className={`${styles.statusBadge} ${styles.status대기}`}
+                              >
+                                대기
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '승인' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                            {detailData.expirationDate && (
+                              <div className={styles.infoRow}>
+                                <div className={styles.infoLabel}>만료일</div>
+                                <div className={styles.infoValue}>
+                                  {detailData.expirationDate}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {detailData.status === '반려' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>반려사유</div>
+                              <div className={styles.infoValue}>
+                                {detailData.rejectComment || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>부재 유형</div>
-                        <div className={styles.detailValue}>
-                          {(() => {
-                            const absenceTypeMap = {
-                              BUSINESS_TRIP: '출장',
-                              TRAINING: '연수',
-                              ANNUAL_LEAVE: '연차',
-                              HALF_DAY_LEAVE: '반차',
-                              SHORT_LEAVE: '외출',
-                              SICK_LEAVE: '병가',
-                              OFFICIAL_LEAVE: '공가',
-                              ETC: '기타',
-                            };
-                            return (
-                              absenceTypeMap[detailData.type] || detailData.type
-                            );
-                          })()}
+                      <div className={styles.certificateInfo}>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청자</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicant || '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>긴급도</div>
-                        <div className={styles.detailValue}>
-                          {(() => {
-                            const urgencyMap = {
-                              NORMAL: '일반',
-                              URGENT: '긴급',
-                            };
-                            return (
-                              urgencyMap[detailData.urgency] ||
-                              detailData.urgency
-                            );
-                          })()}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부서</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applicantDepartment ||
+                              detailData.department ||
+                              '-'}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>신청일</div>
-                        <div className={styles.detailValue}>
-                          {detailData.applyDate}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>부재 유형</div>
+                          <div className={styles.infoValue}>
+                            {(() => {
+                              const absenceTypeMap = {
+                                BUSINESS_TRIP: '출장',
+                                TRAINING: '연수',
+                                ANNUAL_LEAVE: '연차',
+                                HALF_DAY_LEAVE: '반차',
+                                SHORT_LEAVE: '외출',
+                                SICK_LEAVE: '병가',
+                                OFFICIAL_LEAVE: '공가',
+                                ETC: '기타',
+                              };
+                              return (
+                                absenceTypeMap[detailData.type] ||
+                                detailData.type
+                              );
+                            })()}
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailLabel}>시간</div>
-                        <div className={styles.detailValue}>
-                          {detailData.startTime && detailData.endTime
-                            ? `${detailData.startTime.substring(0, 5)} ~ ${detailData.endTime.substring(0, 5)}`
-                            : '-'}
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>긴급도</div>
+                          <div className={styles.infoValue}>
+                            {(() => {
+                              const urgencyMap = {
+                                NORMAL: '일반',
+                                URGENT: '긴급',
+                              };
+                              return (
+                                urgencyMap[detailData.urgency] ||
+                                detailData.urgency
+                              );
+                            })()}
+                          </div>
                         </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>기간</div>
+                          <div className={styles.infoValue}>
+                            {detailData.period || '-'}
+                          </div>
+                        </div>
+                        <div className={styles.infoRow}>
+                          <div className={styles.infoLabel}>신청일</div>
+                          <div className={styles.infoValue}>
+                            {detailData.applyDate || '-'}
+                          </div>
+                        </div>
+                        {detailData.startTime && detailData.endTime && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>시간</div>
+                            <div className={styles.infoValue}>
+                              {`${detailData.startTime.substring(0, 5)} ~ ${detailData.endTime.substring(0, 5)}`}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.reason && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>사유</div>
+                            <div
+                              className={`${styles.infoValue} ${styles.infoValueScrollable}`}
+                            >
+                              {detailData.reason || '-'}
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '대기' && (
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>처리상태</div>
+                            <div className={styles.infoValue}>
+                              <span
+                                className={`${styles.statusBadge} ${styles.status대기}`}
+                              >
+                                대기
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {detailData.status === '승인' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {detailData.status === '반려' && (
+                          <>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>결재자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.approver ||
+                                  detailData.approverName ||
+                                  '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>처리일자</div>
+                              <div className={styles.infoValue}>
+                                {detailData.processedAt || '-'}
+                              </div>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>반려사유</div>
+                              <div className={styles.infoValue}>
+                                {detailData.rejectComment || '-'}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </>
                   )}
                 </div>
               </div>
-
-              {/* 기간/용도 (휴가가 아닌 경우만) */}
-              {tab !== 'leave' && tab !== 'certificate' && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>기간</div>
-                    <div className={styles.detailValue}>
-                      {detailData.period}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 사유 (대기 상태일 때만) */}
-              {detailData.status === '대기' && (
-                <div className={styles.detailSection}>
-                  <div className={styles.detailCard}>
-                    <div className={styles.detailLabel}>사유</div>
-                    <div className={styles.detailValue}>
-                      {detailData.reason || '-'}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 승인/반려 정보 */}
-              {(detailData.status === '승인' ||
-                detailData.status === '반려') && (
-                <div className={styles.detailSection}>
-                  {detailData.status === '승인' ? (
-                    <>
-                      <div
-                        className={`${styles.detailLabel} ${styles.approvalLabel}`}
-                      >
-                        승인 정보
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailValue}>
-                          <div className={styles.approvalInfo}>
-                            <span>
-                              결재자:{' '}
-                              {detailData.approver ||
-                                detailData.approverName ||
-                                '-'}
-                            </span>
-                            <span>
-                              처리일자: {detailData.processedAt || '-'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        className={`${styles.detailLabel} ${styles.rejectLabel}`}
-                      >
-                        반려사유
-                      </div>
-                      <div className={styles.detailCard}>
-                        <div className={styles.detailValue}>
-                          <div className={styles.rejectInfo}>
-                            <span>
-                              결재자:{' '}
-                              {detailData.approver ||
-                                detailData.approverName ||
-                                '-'}
-                            </span>
-                            <span>
-                              처리일자: {detailData.processedAt || '-'}
-                            </span>
-                          </div>
-                          <div className={styles.rejectReason}>
-                            {detailData.rejectComment || '-'}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>
       )}
 
       {toast && (
-        <ToastNotification
+        <SimpleToast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import styles from './EmployeeTable.module.scss';
 import EmployeeDetail from './EmployeeDetail';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
-import { API_BASE_URL, HR } from '../../configs/host-config';
+import { API_BASE_URL, HR, APPROVAL } from '../../configs/host-config';
+import AuthContext from '../../context/UserContext';
 
 const columnMap = {
   id: '사번',
@@ -42,8 +43,13 @@ const EmployeeTable = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState('employees'); // 'employees' 또는 'certificates'
+  const [certificateRequests, setCertificateRequests] = useState([]);
+  const [certificateLoading, setCertificateLoading] = useState(false);
+  const [certificateError, setCertificateError] = useState(null);
   const navigate = useNavigate();
   const tableWrapRef = useRef(null);
+  const { user } = useContext(AuthContext);
 
   const fetchEmployees = async (
     pageNum = 0,

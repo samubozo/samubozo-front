@@ -32,7 +32,7 @@ const fetchEmployees = async ({
     if (!isHR) {
       const payload = parseJwt(sessionStorage.getItem('ACCESS_TOKEN'));
 
-      // 🔽 사용자 상세 정보 API 호출
+      //  사용자 상세 정보 API 호출
       const res = await axiosInstance.get(`${API_BASE_URL}${HR}/users/detail`, {
         params: { employeeNo: payload.employeeNo },
       });

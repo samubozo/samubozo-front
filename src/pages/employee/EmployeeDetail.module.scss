@@ -310,12 +310,126 @@
   margin-top: 24px;
 }
 
+.certHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  margin-top: 18px;
+}
+
 .certListTitle {
   font-size: 18px;
   font-weight: 700;
   color: #388e3c;
-  margin-bottom: 8px;
-  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.certFilterSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.certTableContainer {
+  max-height: 300px;
+  overflow-y: auto;
+  position: relative;
+  border: 1.5px solid #e0e0e0;
+  margin-bottom: 24px;
+  background: #fff;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.filterLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+
+.certDropdown {
+  position: relative;
+}
+
+.selectWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.certTabBody .certStatusSelect {
+  background: #fff;
+  border: 1.5px solid #cfd8dc;
+  border-radius: 7px;
+  padding: 6px 12px;
+  padding-right: 32px;
+  font-size: 14px;
+  color: #222;
+  width: 120px;
+  height: auto;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition:
+    border 0.15s,
+    box-shadow 0.15s;
+
+  &:focus {
+    border-color: #388e3c;
+    background: #eafaf1;
+    box-shadow: 0 2px 8px rgba(72, 185, 108, 0.07);
+  }
+
+  &:hover {
+    border-color: #388e3c;
+  }
+}
+
+.selectArrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  pointer-events: none;
+  transition: color 0.15s;
+}
+
+.selectWrapper:hover .selectArrow {
+  color: #388e3c;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  min-width: 50px;
+}
+
+.status대기 {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status승인 {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status반려 {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
 .certListTableWrap {
@@ -323,10 +437,11 @@
   border: 1.5px solid #e0e0e0;
   margin-bottom: 24px;
   overflow-x: auto;
-  box-shadow: 0 2px 12px rgba(30, 80, 80, 0.07);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
   max-height: 350px;
   overflow-y: auto;
   position: relative;
+  border-radius: 8px;
 }
 
 .certListTable {
@@ -341,22 +456,25 @@
 .certListTable th,
 .certListTable td {
   border: 1px solid #e0e0e0;
-  padding: 10px 8px;
+  padding: 8px 6px;
   text-align: center;
-  font-size: 15px;
+  font-size: 14px;
   background: #fff;
-  height: 30px;
+  height: 36px;
 }
 
 .certListTable th {
   position: sticky;
   top: 0;
-  background: #f5f5f5;
+  background: #f8f9fa;
   z-index: 2;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e9ecef;
 }
 
 .certListTable td {
-  height: 32px;
+  height: 40px;
 }
 
 .certListTable tbody tr {
@@ -364,7 +482,8 @@
 }
 
 .certListTable tbody tr:hover {
-  background: #f5fef8;
+  background: #eafaf1;
+  transition: background 0.15s;
 }
 
 .certListTable td {
@@ -382,10 +501,20 @@
 
 .certListTableWrap::-webkit-scrollbar {
   height: 8px;
+  width: 8px;
 }
 
 .certListTableWrap::-webkit-scrollbar-thumb {
-  background: #e0e0e0;
+  background: #c1c1c1;
+  border-radius: 4px;
+
+  &:hover {
+    background: #a8a8a8;
+  }
+}
+
+.certListTableWrap::-webkit-scrollbar-track {
+  background: #f1f1f1;
   border-radius: 4px;
 }
 
@@ -396,27 +525,52 @@
   margin-top: 10px;
 }
 
-.approvalBtn,
-.deleteBtn {
-  border-radius: 7px;
-  font-size: 15px;
-  font-weight: 600;
-  padding: 8px 18px;
-  border: none;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
 .approvalBtn {
-  background: #eafaf1;
-  color: #388e3c;
-  border: 1.5px solid #b2dfdb;
+  background: #48b96c;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #388e3c;
+    box-shadow: 0 2px 8px rgba(72, 185, 108, 0.2);
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
 }
 
 .deleteBtn {
-  background: #fff0f0;
-  color: #d33c3c;
-  border: 1.5px solid #f8bcbc;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #c82333;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
 }
 
 .successModal {

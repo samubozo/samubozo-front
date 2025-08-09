@@ -208,15 +208,30 @@ function DashboardProfile({ onAttendanceChange }) {
 
   useEffect(() => {
     // 연차 현황
-    attendanceService.getVacationBalance().then((res) => {
-      if (res.data && res.data.result) setVacationBalance(res.data.result);
-    });
+    attendanceService
+      .getVacationBalance()
+      .then((res) => {
+        console.log('연차 현황 응답:', res);
+        if (res.result) {
+          setVacationBalance(res.result);
+        } else if (res.data && res.data.result) {
+          setVacationBalance(res.data.result);
+        }
+      })
+      .catch((error) => {
+        console.error('연차 현황 조회 실패:', error);
+      });
+
     // 연차 요청 현황(이번 달 기준)
     const now = new Date();
     attendanceService
       .getPersonalStats(now.getFullYear(), now.getMonth() + 1)
       .then((res) => {
+        console.log('개인 통계 응답:', res);
         if (res.result) setPersonalStats(res.result);
+      })
+      .catch((error) => {
+        console.error('개인 통계 조회 실패:', error);
       });
   }, []);
 

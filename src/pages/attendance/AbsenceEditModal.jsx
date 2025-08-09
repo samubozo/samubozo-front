@@ -4,8 +4,6 @@ import styles from './AbsenceEditModal.module.scss';
 const typeOptions = [
   { value: 'BUSINESS_TRIP', label: '출장' },
   { value: 'TRAINING', label: '연수' },
-  { value: 'ANNUAL_LEAVE', label: '연차' },
-  { value: 'HALF_DAY_LEAVE', label: '반차' },
   { value: 'SHORT_LEAVE', label: '외출' },
   { value: 'SICK_LEAVE', label: '병가' },
   { value: 'OFFICIAL_LEAVE', label: '공가' },
@@ -16,6 +14,12 @@ const urgencyOptions = [
   { value: 'NORMAL', label: '일반' },
   { value: 'URGENT', label: '긴급' },
 ];
+
+const timeOptions = Array.from({ length: 36 }, (_, i) => {
+  const hour = Math.floor(i / 2);
+  const minute = (i % 2) * 30;
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+});
 
 const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
   const [type, setType] = useState(absence?.type || '');
@@ -39,23 +43,23 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
     }
   }, [absence]);
 
-  // 부재 타입 변경 시 긴급도 자동 설정
+  // 부재 타입 변경
   const handleTypeChange = (e) => {
     const newType = e.target.value;
     setType(newType);
-
-    // 부재 타입에 따른 긴급도 자동 설정
-    if (newType === 'SICK_LEAVE' || newType === 'OFFICIAL_LEAVE') {
-      setUrgency('URGENT');
-    } else {
-      setUrgency('NORMAL');
-    }
   };
 
   if (!open) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // type 필드 검증 (필수 필드)
+    if (!type) {
+      alert('부재 유형을 선택해주세요.');
+      return;
+    }
+
     // startTime, endTime이 'HH:mm' 포맷인지 보장 (예: '09:00')
     const formattedStartTime =
       startTime && startTime.length === 5 ? startTime : '';
@@ -92,6 +96,40 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
           ×
         </button>
         <h2>부재 수정</h2>
+        {/* 부재 상태 표시 */}
+        {absence?.status && (
+          <div
+            style={{
+              marginBottom: '1rem',
+              padding: '0.5rem',
+              backgroundColor:
+                absence.status === 'PENDING' || absence.status === '대기'
+                  ? '#fff3cd'
+                  : '#f8d7da',
+              border: '1px solid',
+              borderColor:
+                absence.status === 'PENDING' || absence.status === '대기'
+                  ? '#ffeaa7'
+                  : '#f5c6cb',
+              borderRadius: '4px',
+              fontSize: '0.9rem',
+            }}
+          >
+            <strong>상태:</strong>{' '}
+            {absence.status === 'PENDING' || absence.status === '대기'
+              ? '대기'
+              : absence.status === 'APPROVED' || absence.status === '승인'
+                ? '승인'
+                : absence.status === 'REJECTED' || absence.status === '반려'
+                  ? '반려'
+                  : absence.status}
+            {absence.status !== 'PENDING' && absence.status !== '대기' && (
+              <span style={{ color: '#721c24', marginLeft: '0.5rem' }}>
+                (승인되거나 반려된 부재는 수정할 수 없습니다)
+              </span>
+            )}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className={styles.row}>
             <label>부재 유형</label>
@@ -132,21 +170,27 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
           </div>
           <div className={styles.row}>
             <label>시간</label>
-            <input
-              type='text'
+            <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              placeholder='HH:mm'
-              style={{ width: 120 }}
-            />
+            >
+              {timeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
             <span>~</span>
-            <input
-              type='text'
+            <select
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              placeholder='HH:mm'
-              style={{ width: 120 }}
-            />
+            >
+              {timeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
           </div>
           <div className={styles.row}>
             <label>사유</label>
@@ -168,13 +212,26 @@ const AbsenceEditModal = ({ open, onClose, absence, onSubmit, onDelete }) => {
             />
           </div>
           <div className={styles.buttonRow}>
-            <button type='submit' className={styles.submitBtn}>
+            <button
+              type='submit'
+              className={styles.submitBtn}
+              disabled={
+                absence?.status &&
+                absence.status !== 'PENDING' &&
+                absence.status !== '대기'
+              }
+            >
               수정
             </button>
             <button
               type='button'
               onClick={handleDelete}
               className={styles.deleteBtn}
+              disabled={
+                absence?.status &&
+                absence.status !== 'PENDING' &&
+                absence.status !== '대기'
+              }
             >
               삭제
             </button>
