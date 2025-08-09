@@ -150,63 +150,185 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     return status;
   };
 
+  const getStatusStyle = (status) => {
+    const s = (status || '').trim().toUpperCase();
+    if (s === 'REQUESTED' || s === 'PENDING') {
+      return {
+        background: '#fff3cd',
+        color: '#856404',
+        border: '1px solid #ffeaa7',
+        padding: '3px 8px',
+        borderRadius: '10px',
+        fontSize: '11px',
+        fontWeight: '500',
+        display: 'inline-block',
+        minWidth: '40px',
+        textAlign: 'center',
+      };
+    }
+    if (s === 'APPROVED') {
+      return {
+        background: '#d4edda',
+        color: '#155724',
+        border: '1px solid #c3e6cb',
+        padding: '3px 8px',
+        borderRadius: '10px',
+        fontSize: '11px',
+        fontWeight: '500',
+        display: 'inline-block',
+        minWidth: '40px',
+        textAlign: 'center',
+      };
+    }
+    if (s === 'REJECTED') {
+      return {
+        background: '#f8d7da',
+        color: '#721c24',
+        border: '1px solid #f5c6cb',
+        padding: '3px 8px',
+        borderRadius: '10px',
+        fontSize: '11px',
+        fontWeight: '500',
+        display: 'inline-block',
+        minWidth: '40px',
+        textAlign: 'center',
+      };
+    }
+    return {
+      background: '#f8f9fa',
+      color: '#6c757d',
+      border: '1px solid #dee2e6',
+      padding: '3px 8px',
+      borderRadius: '10px',
+      fontSize: '11px',
+      fontWeight: '500',
+      display: 'inline-block',
+      minWidth: '40px',
+      textAlign: 'center',
+    };
+  };
+
   const [certList, setCertList] = useState([]);
   const [certType, setCertType] = useState('EMPLOYMENT');
   const [certDate, setCertDate] = useState(getKoreaToday());
   const [certPurpose, setCertPurpose] = useState('');
 
   const [selectedCertIds, setSelectedCertIds] = useState([]);
+  const [showCertModal, setShowCertModal] = useState(false);
 
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [certStatusFilter, setCertStatusFilter] = useState('pending'); // 증명서 상태 필터 추가
+
+  const loadCertList = () => {
+    if (isHR && selectedEmployee?.id) {
+      const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
+
+      approvalService
+        .getApprovalsWithFilters({
+          applicantId: selectedEmployee.id,
+          status: status,
+          requestType: 'CERTIFICATE',
+        })
+        .then((res) => {
+          let certificateRequests = [];
+          if (Array.isArray(res.result)) {
+            certificateRequests = res.result;
+          } else if (Array.isArray(res.content)) {
+            certificateRequests = res.content;
+          } else if (Array.isArray(res.data)) {
+            certificateRequests = res.data;
+          } else if (Array.isArray(res)) {
+            certificateRequests = res;
+          }
+          setCertList(certificateRequests);
+        })
+        .catch((error) => {
+          console.error('새로운 API 에러:', error);
+          setCertList([]);
+        });
+    } else if (isHR) {
+      const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
+
+      approvalService
+        .getApprovalsWithFilters({
+          status: status,
+          requestType: 'CERTIFICATE',
+        })
+        .then((res) => {
+          let certificateRequests = [];
+          if (Array.isArray(res.result)) {
+            certificateRequests = res.result;
+          } else if (Array.isArray(res.content)) {
+            certificateRequests = res.content;
+          } else if (Array.isArray(res.data)) {
+            certificateRequests = res.data;
+          } else if (Array.isArray(res)) {
+            certificateRequests = res;
+          }
+          setCertList(certificateRequests);
+        })
+        .catch((error) => {
+          console.error('HR API 에러:', error);
+          setCertList([]);
+        });
+    } else if (selectedEmployee?.id) {
+      const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
+
+      approvalService
+        .getEmployeeCertificates(selectedEmployee.id, status)
+        .then((res) => {
+          let certificateRequests = [];
+          if (Array.isArray(res.result)) {
+            certificateRequests = res.result;
+          } else if (Array.isArray(res.content)) {
+            certificateRequests = res.content;
+          } else if (Array.isArray(res.data)) {
+            certificateRequests = res.data;
+          } else if (Array.isArray(res)) {
+            certificateRequests = res;
+          }
+          setCertList(certificateRequests);
+        })
+        .catch(() => setCertList([]));
+    } else {
+      const status = certStatusFilter === 'pending' ? 'PENDING' : 'PROCESSED';
+
+      approvalService
+        .getApprovalsWithFilters({
+          status: status,
+          requestType: 'CERTIFICATE',
+        })
+        .then((res) => {
+          let certificateRequests = [];
+          if (Array.isArray(res.result)) {
+            certificateRequests = res.result;
+          } else if (Array.isArray(res.content)) {
+            certificateRequests = res.content;
+          } else if (Array.isArray(res.data)) {
+            certificateRequests = res.data;
+          } else if (Array.isArray(res)) {
+            certificateRequests = res;
+          }
+          setCertList(certificateRequests);
+        })
+        .catch(() => setCertList([]));
+    }
+  };
 
   useEffect(() => {
-    const loadCertList = () => {
-      if (isHR && selectedEmployee?.id) {
-        axiosInstance
-          .get(`${API_BASE_URL}${CERTIFICATE}/list/all`, {
-            params: { employeeNo: selectedEmployee.id },
-          })
-          .then((res) => {
-            setCertList(res.data.result?.content || res.data.result || []);
-          })
-          .catch(() => setCertList([]));
-      } else if (isHR) {
-        approvalService
-          .getAllCertificates()
-          .then((res) => {
-            setCertList(res.result?.content || res.result || []);
-          })
-          .catch(() => setCertList([]));
-      } else if (selectedEmployee?.id) {
-        axiosInstance
-          .get(`${API_BASE_URL}${CERTIFICATE}/my-list`, {
-            params: { employeeNo: selectedEmployee.id },
-          })
-          .then((res) => {
-            setCertList(res.data.result?.content || res.data.result || []);
-          })
-          .catch(() => setCertList([]));
-      } else {
-        approvalService
-          .getMyCertificates()
-          .then((res) => {
-            setCertList(res.result?.content || res.result || []);
-          })
-          .catch(() => setCertList([]));
-      }
-    };
-
     loadCertList();
 
     const interval = setInterval(loadCertList, 5000);
 
     return () => clearInterval(interval);
-  }, [isHR, selectedEmployee]);
+  }, [isHR, selectedEmployee, certStatusFilter]);
 
   const handleSubmitCertificate = async () => {
-    if (!selectedEmployee?.id) return;
+    if (!selectedEmployee?.id) {
+      return;
+    }
 
     const isDuplicate = certList.some((row) => {
       const rowType = (row.type || '').trim().toUpperCase();
@@ -229,13 +351,26 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
 
     try {
-      await axiosInstance.post(`${API_BASE_URL}${CERTIFICATE}/application`, {
+      const certificateFormData = {
         employeeNo: selectedEmployee.id,
         requestDate: certDate,
         type: certType,
-        purpose: certPurpose,
-        approverId: 1,
-      });
+        reason: certPurpose,
+      };
+      const createdCertificate =
+        await approvalService.applyCertificate(certificateFormData);
+
+      if (!createdCertificate || !createdCertificate.certificateId) {
+        throw new Error('증명서 생성 후 ID를 받지 못했습니다.');
+      }
+
+      const approvalData = {
+        title: `${createdCertificate.type === 'EMPLOYMENT' ? '재직' : '경력'} 증명서 발급 요청`,
+        reason: createdCertificate.reason,
+        certificateId: createdCertificate.certificateId,
+        type: createdCertificate.type,
+      };
+      await approvalService.requestCertificateApproval(approvalData);
 
       setSuccessMessage('증명서 신청이 완료되었습니다.');
       setShowSuccessModal(true);
@@ -249,7 +384,19 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setCertDate(getKoreaToday());
       setCertPurpose('');
     } catch (e) {
-      setSuccessMessage('증명서 신청 실패');
+      // 에러 객체 전체를 출력하여 상세 원인을 확인합니다.
+      console.error('--- 에러 발생 ---', e);
+
+      // 중복 신청 에러 메시지 처리
+      if (e.message && e.message.includes('이미 유효한 동일한 유형')) {
+        const certTypeName =
+          certType === 'EMPLOYMENT' ? '재직증명서' : '경력증명서';
+        setSuccessMessage(
+          `이미 발급받으신 ${certTypeName}가 있습니다. 만료일을 확인해주세요.`,
+        );
+      } else {
+        setSuccessMessage(e.message || '증명서 신청 실패');
+      }
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 2000);
     }
@@ -327,6 +474,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       if (joinDate) formData.append('hireDate', joinDate);
       if (leaveDate) formData.append('retireDate', leaveDate);
       formData.append('activate', status);
+      formData.append('hrRole', role);
       formData.append('bankName', bankName);
       formData.append('accountNumber', accountNumber);
       formData.append('accountHolder', accountHolder);
@@ -356,7 +504,9 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           const data = res.data.result;
           const newProfileImage = data.profileImage || profileImage;
           sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
-          window.location.reload();
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         } catch (err) {
           setSuccessMessage(
             '저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.',
@@ -528,13 +678,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const isRetired = status === 'N';
 
   const refreshCertList = async () => {
-    if (selectedEmployee?.id) {
-      const res = await axiosInstance.get(
-        `${API_BASE_URL}${CERTIFICATE}/list/all`,
-        { params: { employeeNo: selectedEmployee.id } },
-      );
-      setCertList(res.data.result?.content || res.data.result || []);
-    }
+    loadCertList();
   };
 
   const getCertificateById = async (certificateId) => {
@@ -555,7 +699,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         : [rejectTargetId];
 
       const selectedCerts = certList.filter((row) =>
-        targetIds.includes(row.certificateId || row.id),
+        targetIds.includes(row.id),
       );
 
       const pendingCerts = selectedCerts.filter(
@@ -575,26 +719,10 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       let processedCount = 0;
       for (const cert of pendingCerts) {
         try {
-          await approvalService.rejectCertificate(
-            cert.certificateId || cert.id,
-            comment,
-          );
-          const updated = await getCertificateById(
-            cert.certificateId || cert.id,
-          );
-          setCertList((prev) =>
-            prev.map((row) =>
-              (row.certificateId || row.id) === (cert.certificateId || cert.id)
-                ? updated
-                : row,
-            ),
-          );
+          await approvalService.rejectApprovalRequest(cert.id, comment);
           processedCount++;
         } catch (e) {
-          console.error(
-            `증명서 ${cert.certificateId || cert.id} 반려 실패:`,
-            e,
-          );
+          console.error(`증명서 ${cert.id} 반려 실패:`, e);
         }
       }
 
@@ -632,7 +760,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           className={activeTab === 'cert' ? styles.active : ''}
           onClick={() => setActiveTab('cert')}
         >
-          증명서 발급
+          증명서 승인
         </button>
       </div>
       {activeTab === 'info' && (
@@ -867,198 +995,206 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         </div>
       )}
       {activeTab === 'cert' && (
-        <div className={styles.certTabBody}>
-          <div
-            className={styles.certListTitle}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <span>증명서발급내역</span>
-          </div>
-          <div
-            style={{
-              maxHeight: '300px',
-              overflowY: 'auto',
-              position: 'relative',
-              border: '1.5px solid #e0e0e0',
-              marginBottom: '24px',
-              background: '#fff',
-            }}
-          >
-            <div className={styles.certListTableWrap}>
-              <table className={styles.certListTable}>
-                <colgroup>
-                  <col style={{ width: '90px' }} />
-                  <col style={{ width: '160px' }} />
-                  <col style={{ width: '140px' }} />
-                  <col style={{ width: '140px' }} />
-                  <col style={{ width: '160px' }} />
-                  <col style={{ width: '210px' }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th>
-                      <input
-                        type='checkbox'
-                        checked={
-                          certList.length > 0 &&
-                          selectedCertIds.length === certList.length
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCertIds(
-                              certList.map(
-                                (row) => row.certificateId || row.id,
-                              ),
-                            );
-                          } else {
-                            setSelectedCertIds([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th>발급번호</th>
-                    <th>증명서구분</th>
-                    <th>발급일자</th>
-                    <th>승인일자</th>
-                    <th>전자결재상태</th>
-                    <th>용도</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {certList.length > 0 ? (
-                    certList.map((row) => (
-                      <tr key={row.certificateId || row.id}>
-                        <td>
-                          <input
-                            type='checkbox'
-                            checked={selectedCertIds.includes(
-                              row.certificateId || row.id,
-                            )}
-                            onChange={() =>
-                              handleCertCheckbox(row.certificateId || row.id)
-                            }
-                          />
-                        </td>
-                        <td>{row.certificateId || row.id}</td>
-                        <td>{typeToKor(row.type)}</td>
-                        <td>{row.requestDate}</td>
-                        <td>{row.approveDate}</td>
-                        <td>{statusToKor(row.status)}</td>
-                        <td>{row.purpose}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        style={{
-                          height: 60,
-                          textAlign: 'center',
-                          color: '#aaa',
-                        }}
-                      >
-                        내역이 없습니다.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+        <div>
+          <div className={styles.certTabBody}>
+            <div className={styles.certListTitle}>
+              <span>증명서발급내역</span>
+              {isHR && (
+                <div className={styles.certFilterSection}>
+                  <span className={styles.filterLabel}>결재상태:</span>
+                  <div className={styles.selectWrapper}>
+                    <select
+                      value={certStatusFilter}
+                      onChange={(e) => {
+                        setCertStatusFilter(e.target.value);
+                        setSelectedCertIds([]); // 필터 변경 시 선택 초기화
+                      }}
+                      className={styles.certStatusSelect}
+                    >
+                      <option value='pending'>대기 중</option>
+                      <option value='processed'>처리 완료</option>
+                    </select>
+                    <svg
+                      className={styles.selectArrow}
+                      width='12'
+                      height='12'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    >
+                      <polyline points='6,9 12,15 18,9'></polyline>
+                    </svg>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-          {isHR && (
-            <div className={styles.certFormBtnRow} style={{ marginTop: 12 }}>
-              <button
-                className={styles.approvalBtn}
-                disabled={selectedCertIds.length === 0}
-                onClick={async () => {
-                  try {
-                    const selectedCerts = certList.filter((row) =>
-                      selectedCertIds.includes(row.certificateId || row.id),
-                    );
+            <div className={styles.certTableContainer}>
+              <div className={styles.certListTableWrap}>
+                <table className={styles.certListTable}>
+                  <colgroup>
+                    <col style={{ width: '60px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '150px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>
+                        <input
+                          type='checkbox'
+                          checked={
+                            certList.length > 0 &&
+                            selectedCertIds.length === certList.length
+                          }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCertIds(certList.map((row) => row.id));
+                            } else {
+                              setSelectedCertIds([]);
+                            }
+                          }}
+                        />
+                      </th>
+                      <th>발급번호</th>
+                      <th>증명서구분</th>
+                      <th>발급일자</th>
+                      <th>승인일자</th>
+                      <th>전자결재상태</th>
+                      <th>용도</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {certList.length > 0 ? (
+                      certList.map((row) => (
+                        <tr key={row.certificateId || row.id}>
+                          <td>
+                            <input
+                              type='checkbox'
+                              checked={selectedCertIds.includes(row.id)}
+                              onChange={() => handleCertCheckbox(row.id)}
+                            />
+                          </td>
+                          <td>{row.id}</td>
+                          <td>
+                            {typeToKor(
+                              row.requestType === 'CERTIFICATE'
+                                ? 'EMPLOYMENT'
+                                : row.requestType,
+                            )}
+                          </td>
+                          <td>{row.requestedAt || '-'}</td>
+                          <td>{row.processedAt || '-'}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={getStatusStyle(row.status)}>
+                              {statusToKor(row.status)}
+                            </span>
+                          </td>
+                          <td>{row.reason || '-'}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          style={{
+                            height: 60,
+                            textAlign: 'center',
+                            color: '#aaa',
+                          }}
+                        >
+                          내역이 없습니다.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {isHR && (
+              <div className={styles.certFormBtnRow} style={{ marginTop: 12 }}>
+                <button
+                  className={styles.approvalBtn}
+                  disabled={selectedCertIds.length === 0}
+                  onClick={async () => {
+                    try {
+                      const selectedCerts = certList.filter((row) =>
+                        selectedCertIds.includes(row.id),
+                      );
 
-                    const pendingCerts = selectedCerts.filter(
-                      (cert) =>
-                        cert.status === 'REQUESTED' ||
-                        cert.status === 'PENDING' ||
-                        cert.status === '대기',
-                    );
+                      const pendingCerts = selectedCerts.filter(
+                        (cert) =>
+                          cert.status === 'REQUESTED' ||
+                          cert.status === 'PENDING' ||
+                          cert.status === '대기',
+                      );
 
-                    if (pendingCerts.length === 0) {
-                      return;
+                      if (pendingCerts.length === 0) {
+                        return;
+                      }
+
+                      let processedCount = 0;
+                      for (const cert of pendingCerts) {
+                        try {
+                          await approvalService.approveApprovalRequest(
+                            cert.id,
+                            cert.employeeNo,
+                          );
+                          processedCount++;
+                        } catch (e) {
+                          console.error(`증명서 ${cert.id} 승인 실패:`, e);
+                        }
+                      }
+
+                      setSelectedCertIds([]);
+                      if (processedCount > 0) {
+                        setSuccessMessage(
+                          `${processedCount}개 증명서가 승인되었습니다.`,
+                        );
+                        setShowSuccessModal(true);
+                        refreshCertList();
+                      }
+                    } catch (e) {
+                      setSuccessMessage('승인 처리 중 오류가 발생했습니다.');
+                      setShowSuccessModal(true);
+                      setTimeout(() => setShowSuccessModal(false), 2000);
                     }
+                  }}
+                >
+                  승인
+                </button>
+                <button
+                  className={styles.deleteBtn}
+                  style={{ marginLeft: 8 }}
+                  disabled={selectedCertIds.length === 0}
+                  onClick={() => {
+                    if (selectedCertIds.length === 1) {
+                      const selectedCert = certList.find((row) =>
+                        selectedCertIds.includes(row.id),
+                      );
 
-                    let processedCount = 0;
-                    for (const cert of pendingCerts) {
-                      try {
-                        await approvalService.approveCertificate(
-                          cert.certificateId || cert.id,
-                        );
-                        const updated = await getCertificateById(
-                          cert.certificateId || cert.id,
-                        );
-                        setCertList((prev) =>
-                          prev.map((row) =>
-                            (row.certificateId || row.id) ===
-                            (cert.certificateId || cert.id)
-                              ? updated
-                              : row,
-                          ),
-                        );
-                        processedCount++;
-                      } catch (e) {
-                        console.error(
-                          `증명서 ${cert.certificateId || cert.id} 승인 실패:`,
-                          e,
-                        );
+                      if (
+                        selectedCert &&
+                        (selectedCert.status === 'REQUESTED' ||
+                          selectedCert.status === 'PENDING' ||
+                          selectedCert.status === '대기')
+                      ) {
+                        handleCertReject(selectedCertIds);
                       }
                     }
-
-                    setSelectedCertIds([]);
-                    if (processedCount > 0) {
-                      setSuccessMessage(
-                        `${processedCount}개 증명서가 승인되었습니다.`,
-                      );
-                      setShowSuccessModal(true);
-                      refreshCertList();
-                    }
-                  } catch (e) {
-                    setSuccessMessage('승인 처리 중 오류가 발생했습니다.');
-                    setShowSuccessModal(true);
-                    setTimeout(() => setShowSuccessModal(false), 2000);
-                  }
-                }}
-              >
-                승인
-              </button>
-              <button
-                className={styles.deleteBtn}
-                style={{ marginLeft: 8 }}
-                disabled={selectedCertIds.length === 0}
-                onClick={() => {
-                  if (selectedCertIds.length === 1) {
-                    const selectedCert = certList.find((row) =>
-                      selectedCertIds.includes(row.certificateId || row.id),
-                    );
-
-                    if (
-                      selectedCert &&
-                      (selectedCert.status === 'REQUESTED' ||
-                        selectedCert.status === 'PENDING' ||
-                        selectedCert.status === '대기')
-                    ) {
-                      handleCertReject(selectedCertIds);
-                    }
-                  }
-                }}
-              >
-                반려
-              </button>
-            </div>
-          )}
+                  }}
+                >
+                  반려
+                </button>
+              </div>
+            )}
+          </div>
+          {/* 증명서 신청 폼 완전히 삭제됨 */}
         </div>
       )}
       {activeTab !== 'cert' && (
@@ -1090,7 +1226,16 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                 <td>
                   <select
                     value={position}
-                    onChange={(e) => setPosition(e.target.value)}
+                    onChange={(e) => {
+                      setPosition(e.target.value);
+                      const found = positions.find(
+                        (p) => String(p.positionId) === String(e.target.value),
+                      );
+                      if (found?.hrRole) {
+                        setRole(found.hrRole);
+                      }
+                      setPositionName(found?.positionName || '');
+                    }}
                   >
                     <option value=''>직책 선택</option>
                     {positions.map((p) => (

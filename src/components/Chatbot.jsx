@@ -51,7 +51,6 @@ const Chatbot = ({ inHeader }) => {
     axiosInstance
       .get(`${API_BASE_URL}${CHATBOT}/history`)
       .then((res) => {
-        console.log('챗봇 히스토리 응답:', res.data);
         const history = res.data.result || res.data;
         if (Array.isArray(history) && history.length > 0) {
           setMessages(
@@ -82,7 +81,6 @@ const Chatbot = ({ inHeader }) => {
   // input 상태 디버깅용 (개발 중에만 사용)
   useEffect(() => {
     if (input === '') {
-      console.log('Input cleared successfully');
     }
   }, [input]);
 
@@ -105,7 +103,6 @@ const Chatbot = ({ inHeader }) => {
         `${API_BASE_URL}${CHATBOT}/chat`,
         req,
       );
-      console.log('챗봇 응답:', res.data);
       const reply = res.data.responseMessage || res.data.result?.reply;
       if (reply) {
         setMessages((msgs) => [...msgs, { from: 'bot', text: reply }]);

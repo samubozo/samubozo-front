@@ -39,7 +39,6 @@ export const AuthContextProvider = (props) => {
 
   // 로그인 시 실행할 핸들러
   const loginHandler = async (loginData) => {
-    console.log(loginData);
 
     // accessToken, refreshToken 저장
     sessionStorage.setItem('ACCESS_TOKEN', loginData.accessToken);
@@ -61,7 +60,6 @@ export const AuthContextProvider = (props) => {
         const data = await res.json();
         const userInfo = data.result;
 
-        console.log('🧾userInfo:', userInfo);
 
         sessionStorage.setItem('USER_EMAIL', userInfo.email || '');
         sessionStorage.setItem('USER_NAME', userInfo.userName || '');

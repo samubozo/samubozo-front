@@ -32,7 +32,7 @@ const fetchEmployees = async ({
     if (!isHR) {
       const payload = parseJwt(sessionStorage.getItem('ACCESS_TOKEN'));
 
-      // 🔽 사용자 상세 정보 API 호출
+      //  사용자 상세 정보 API 호출
       const res = await axiosInstance.get(`${API_BASE_URL}${HR}/users/detail`, {
         params: { employeeNo: payload.employeeNo },
       });
@@ -143,8 +143,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
 
         positionName: employee.position,
       };
-
-      console.log('🚀 급여 저장 요청 payload:', payload);
 
       await axiosInstance.post(`${API_BASE_URL}${PAYROLL}`, payload);
 
@@ -711,8 +709,8 @@ const PayrollManagement = () => {
             <td>지방소득세</td><td>${localTax.toLocaleString()}</td>
           </tr>
           <tr>
-            <td class="summary">지급합계</td><td class="summary">${total.toLocaleString()}</td>
-            <td class="summary">공제합계</td><td class="summary">${totalDeduction.toLocaleString()}</td>
+            <td class="summary">지급합계 (원)</td><td class="summary">${total.toLocaleString()}</td>
+            <td class="summary">공제합계 (원)</td><td class="summary">${totalDeduction.toLocaleString()}</td>
           </tr>
           <tr>
             <td colspan="2" class="summary">실수령액</td>
@@ -863,7 +861,7 @@ const PayrollManagement = () => {
               <thead>
                 <tr>
                   <th>급여항목</th>
-                  <th>금액</th>
+                  <th>금액 (원)</th>
                 </tr>
               </thead>
               <tbody>
@@ -913,7 +911,7 @@ const PayrollManagement = () => {
               <thead>
                 <tr>
                   <th>공제항목</th>
-                  <th>금액</th>
+                  <th>금액 (원)</th>
                 </tr>
               </thead>
               <tbody>
@@ -965,7 +963,7 @@ const PayrollManagement = () => {
               <thead>
                 <tr>
                   <th>총 항목</th>
-                  <th>금액</th>
+                  <th>금액 (원)</th>
                 </tr>
               </thead>
               <tbody>

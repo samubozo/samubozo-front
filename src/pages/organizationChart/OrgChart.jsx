@@ -132,20 +132,14 @@ const OrgChart = () => {
   const loadMembers = async () => {
     setLoading(true);
     try {
-      console.log('직원 목록 API 호출:', `${API_BASE_URL}${HR}/user/list`);
       const response = await axiosInstance.get(
         `${API_BASE_URL}${HR}/user/list`,
       );
-      console.log('직원 목록 응답:', response.data);
 
       // API 응답 구조: { statusCode: 200, statusMessage: "Success", result: {content: [...], page: {...}} }
       const result = response.data?.result;
       const membersData = result?.content || [];
 
-      console.log('result:', result);
-      console.log('membersData:', membersData);
-      console.log('membersData 타입:', typeof membersData);
-      console.log('Array.isArray(membersData):', Array.isArray(membersData));
 
       // 배열이 아닌 경우 빈 배열로 처리
       if (!Array.isArray(membersData)) {
@@ -156,7 +150,6 @@ const OrgChart = () => {
 
       // department 정보를 평면화하여 사용하기 쉽게 변환
       const processedMembers = membersData.map((member) => {
-        console.log('처리 중인 member:', member);
         return {
           ...member,
           departmentName: member.department?.name || '부서 없음',
@@ -165,7 +158,6 @@ const OrgChart = () => {
         };
       });
 
-      console.log('처리된 멤버 데이터:', processedMembers);
       setMembers(processedMembers);
     } catch (error) {
       console.error('직원 목록 로드 실패:', error);
@@ -177,11 +169,9 @@ const OrgChart = () => {
 
   const loadDepartments = async () => {
     try {
-      console.log('부서 목록 API 호출:', `${API_BASE_URL}${HR}/departments`);
       const response = await axiosInstance.get(
         `${API_BASE_URL}${HR}/departments`,
       );
-      console.log('부서 목록 응답:', response.data);
 
       // 실제 API 응답 구조에 맞게 데이터 처리
       const departmentsData = response.data.result || [];
@@ -767,7 +757,6 @@ const OrgChart = () => {
         existingDepartments={departments}
         onAdd={async (newDept) => {
           try {
-            console.log('부서 추가 데이터:', newDept);
 
             // 백엔드 API에 맞춰 데이터 전송 방식 결정
             let requestData;
@@ -802,7 +791,6 @@ const OrgChart = () => {
               { headers },
             );
 
-            console.log('부서 추가 성공:', response.data);
 
             // 성공 시 부서 목록 새로고침
             await loadDepartments();

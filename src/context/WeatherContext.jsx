@@ -29,7 +29,6 @@ export const WeatherProvider = ({ children }) => {
       if (cached) {
         const { latitude, longitude, timestamp } = JSON.parse(cached);
         if (Date.now() - timestamp < LOCATION_CACHE_DURATION) {
-          console.log('캐시된 위치 정보 사용');
           return { latitude, longitude };
         }
       }
@@ -47,7 +46,6 @@ export const WeatherProvider = ({ children }) => {
         timestamp: Date.now(),
       };
       localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(cacheData));
-      console.log('위치 정보 캐시 저장');
     } catch (error) {
       console.warn('캐시 저장 실패:', error);
     }
@@ -103,7 +101,6 @@ export const WeatherProvider = ({ children }) => {
 
     for (const service of services) {
       try {
-        console.log(`${service.name} 시도 중...`);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), service.timeout);
 
@@ -124,7 +121,6 @@ export const WeatherProvider = ({ children }) => {
         const result = service.transform(data);
 
         if (result.latitude && result.longitude) {
-          console.log(`${service.name} 성공!`);
           return result;
         } else {
           throw new Error(`${service.name} 유효하지 않은 데이터`);
@@ -207,12 +203,10 @@ export const WeatherProvider = ({ children }) => {
   // 날씨 데이터 가져오기 함수
   async function fetchWeatherData() {
     if (isLoading || todayWeatherState) {
-      console.log('날씨 데이터 가져오기 건너뜀 (로딩 중이거나 이미 있음)');
       return;
     }
 
     setIsLoading(true);
-    console.log('날씨 데이터 가져오기 시작');
 
     try {
       // 위치 정보 가져오기 (캐시 우선)
@@ -220,7 +214,6 @@ export const WeatherProvider = ({ children }) => {
       let latitude, longitude;
 
       if (cachedLocation) {
-        console.log('캐시된 위치 사용:', cachedLocation);
         latitude = cachedLocation.latitude;
         longitude = cachedLocation.longitude;
       } else {
@@ -249,26 +242,15 @@ export const WeatherProvider = ({ children }) => {
             const coords = position.coords;
             latitude = coords.latitude;
             longitude = coords.longitude;
-            console.log('브라우저 위치 정보 성공:', latitude, longitude);
             setCachedLocation(latitude, longitude);
           } catch (browserLocationError) {
-            console.log(
-              '브라우저 위치 정보 실패, IP 기반 위치 서비스 시도:',
-              browserLocationError.message,
-            );
-
             try {
               // 여러 무료 위치 서비스 백업 시스템 시도
               const locationData = await getLocationFromMultipleServices();
               latitude = locationData.latitude;
               longitude = locationData.longitude;
-              console.log('IP 기반 위치 서비스 성공:', latitude, longitude);
               setCachedLocation(latitude, longitude);
             } catch (ipLocationError) {
-              console.log(
-                '모든 위치 서비스 실패, 기본 위치 사용:',
-                ipLocationError.message,
-              );
               // 서울 서초구 좌표를 기본값으로 사용
               latitude = 37.4837;
               longitude = 127.0324;
@@ -276,20 +258,13 @@ export const WeatherProvider = ({ children }) => {
             }
           }
         } else {
-          console.log('브라우저 위치 정보 사용 불가, IP 기반 위치 서비스 시도');
-
           try {
             // 여러 무료 위치 서비스 백업 시스템 시도
             const locationData = await getLocationFromMultipleServices();
             latitude = locationData.latitude;
             longitude = locationData.longitude;
-            console.log('IP 기반 위치 서비스 성공:', latitude, longitude);
             setCachedLocation(latitude, longitude);
           } catch (ipLocationError) {
-            console.log(
-              '모든 위치 서비스 실패, 기본 위치 사용:',
-              ipLocationError.message,
-            );
             // 서울 서초구 좌표를 기본값으로 사용
             latitude = 37.4837;
             longitude = 127.0324;
@@ -312,10 +287,6 @@ export const WeatherProvider = ({ children }) => {
 
       const { base_date, base_time } = getKmaBaseDateTime();
       const url = `${KMA_API_ENDPOINT}/getVilageFcst?serviceKey=${KMA_API_KEY}&numOfRows=100&pageNo=1&dataType=JSON&base_date=${base_date}&base_time=${base_time}&nx=${grid.x}&ny=${grid.y}`;
-
-      console.log('단기예보 API 요청:', url);
-      console.log('격자 좌표:', { nx: grid.x, ny: grid.y });
-      console.log('기준 시간:', { base_date, base_time });
 
       const response = await fetch(url);
       const data = await response.json();
@@ -367,7 +338,6 @@ export const WeatherProvider = ({ children }) => {
       weather.SKY_KR = skyMap[weather.SKY] || weather.SKY;
       weather.PTY_KR = ptyMap[weather.PTY] || weather.PTY;
 
-      console.log('날씨 데이터 설정 완료:', weather);
       setTodayWeatherState(weather);
     } catch (error) {
       // 위치 정보 관련 에러는 조용히 처리 (사용자에게 불필요한 에러 표시 방지)
@@ -376,7 +346,6 @@ export const WeatherProvider = ({ children }) => {
         error.message.includes('GeolocationPositionError') ||
         error.message.includes('kCLErrorLocationUnknown')
       ) {
-        console.log('위치 정보를 가져올 수 없어 기본 날씨로 설정합니다.');
       } else {
         console.error('날씨 데이터 가져오기 실패:', error);
       }

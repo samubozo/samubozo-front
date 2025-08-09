@@ -12,7 +12,6 @@ window.fetch = function (...args) {
         console.warn('404 에러 (개발 환경):', response.url);
       } else {
         // 프로덕션 환경: 404 에러를 조용히 처리
-        console.log('404 에러 조용히 처리됨 (프로덕션):', response.url);
       }
     }
     return response;

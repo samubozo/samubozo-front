@@ -26,8 +26,12 @@ function ApprovalTable({
   return (
     <table className={styles.table}>
       <colgroup>
+        <col className={styles.checkboxCol} /> {/* 체크박스 */}
         {columns.map((col) => (
-          <col key={col.key} />
+          <col
+            key={col.key}
+            className={`${styles.tableCol} ${styles[`col${col.key.charAt(0).toUpperCase() + col.key.slice(1)}`]}`}
+          />
         ))}
       </colgroup>
       <thead>
@@ -52,7 +56,7 @@ function ApprovalTable({
           <tr
             key={row.id}
             onClick={() => onRowClick && onRowClick(row)}
-            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+            className={`${onRowClick ? styles.clickableRow : ''} ${row.status === 'EXPIRED' ? styles.expiredRow : ''}`}
           >
             <td onClick={(e) => e.stopPropagation()}>
               <input
@@ -63,13 +67,28 @@ function ApprovalTable({
             </td>
             {columns.map((col) => (
               <td key={`${row.id}-${col.key}`}>
-                {col.key === 'type' && typeToKor
-                  ? typeToKor(row[col.key])
-                  : col.key === 'urgency' && urgencyToKor
-                    ? urgencyToKor(row[col.key])
-                    : col.key === 'status' && statusToKor
-                      ? statusToKor(row[col.key])
-                      : row[col.key]}
+                {col.key === 'reason' ? (
+                  <div className={styles.reasonCell} title={row[col.key]}>
+                    {row[col.key]}
+                  </div>
+                ) : col.key === 'type' && typeToKor ? (
+                  typeToKor(row[col.key])
+                ) : col.key === 'urgency' && urgencyToKor ? (
+                  urgencyToKor(row[col.key])
+                ) : col.key === 'status' && statusToKor ? (
+                  <span
+                    className={`${styles.statusBadge} ${styles[`status${statusToKor(row[col.key])}`]}`}
+                  >
+                    {statusToKor(row[col.key])}
+                  </span>
+                ) : col.key === 'expirationDate' ? (
+                  <span>
+                    {row[col.key]}
+                    {row.status === 'EXPIRED' && ' (만료)'}
+                  </span>
+                ) : (
+                  row[col.key]
+                )}
               </td>
             ))}
             {/* 작업 버튼 칼럼 제거 */}
