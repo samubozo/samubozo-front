@@ -986,15 +986,8 @@ const Message = () => {
     // 보낸 사람 정보 구성 - 다양한 필드명 시도
     let deptName = '부서 정보 없음';
 
-    // 부서명 추출 시도
-    if (message.sender?.department?.name) {
-      deptName = message.sender.department.name;
-    } else if (message.sender?.departmentName) {
-      deptName = message.sender.departmentName;
-    } else if (message.senderDepartment) {
-      deptName = message.senderDepartment;
-    } else if (message.sender?.dept) {
-      deptName = message.sender.dept;
+    if (message.senderDepartmentName) {
+      deptName = message.senderDepartmentName;
     }
 
     const receiver = {
