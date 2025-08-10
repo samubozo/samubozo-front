@@ -54,7 +54,7 @@ export async function fetchHolidaysFromAPI(year) {
     const API_KEY = import.meta.env.VITE_HOLIDAY_API_KEY || 'your-api-key';
 
     const response = await fetch(
-      `http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?serviceKey=${API_KEY}&solYear=${year}&numOfRows=100&_type=json`,
+      `https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?serviceKey=${API_KEY}&solYear=${year}&numOfRows=100&_type=json`,
     );
 
     console.log('API 응답 상태:', response.status, response.statusText);
