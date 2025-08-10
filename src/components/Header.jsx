@@ -151,8 +151,8 @@ const Header = ({ showChatbot }) => {
     const accessToken = sessionStorage.getItem('ACCESS_TOKEN');
     const payload = parseJwt(accessToken);
     const employeeNo = payload.employeeNo;
-    const userEmail = payload.userEmail;
-    const userRole = payload.userRole;
+    const userEmail = payload.userEmail || payload.sub || '';
+    const userRole = payload.userRole || payload.role || '';
 
     // 디버깅: SSE 연결 파라미터 로그
 
