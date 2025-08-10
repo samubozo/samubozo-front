@@ -742,7 +742,6 @@ export default function AttendanceDashboard() {
   // 연차 승인 이벤트 감지
   useEffect(() => {
     const handleVacationApproved = () => {
-      console.log('연차 승인 감지됨, 휴가 데이터 새로고침');
       fetchVacations();
     };
 

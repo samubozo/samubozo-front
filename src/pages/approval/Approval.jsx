@@ -110,11 +110,9 @@ function Approval() {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'absenceUpdated') {
-        console.log('부재 수정/삭제 감지됨, 데이터 새로고침');
         refreshData();
       }
       if (e.key === 'absenceUpdatedStorage') {
-        console.log('부재 승인/반려 감지됨 (storage), 처리완료 탭으로 이동');
         setApprovalStatus('processed');
       }
     };
@@ -228,13 +226,7 @@ function Approval() {
   }, [tab, approvalStatus]);
 
   // leaveData 상태 변화 확인
-  useEffect(() => {
-    console.log('leaveData 상태 변화:', {
-      tab,
-      leaveDataLength: leaveData.length,
-      leaveData: leaveData,
-    });
-  }, [leaveData, tab]);
+  useEffect(() => {}, [leaveData, tab]);
 
   // URL 쿼리(tab)가 바뀌면 탭 상태도 동기화
   useEffect(() => {
@@ -639,7 +631,6 @@ function Approval() {
       setToast({ message: '부재 승인 처리 완료', type: 'success' });
 
       // 승인 후 처리완료 탭으로 자동 이동
-      console.log('부재 승인 후 처리완료 탭으로 이동');
       setApprovalStatus('processed');
 
       // 변경사항 발생 시 즉시 데이터 새로고침
@@ -647,7 +638,6 @@ function Approval() {
 
       // 페이지 새로고침 (강제)
       setTimeout(() => {
-        console.log('페이지 새로고침 실행');
         window.location.reload();
       }, 500);
     } catch (err) {
@@ -672,7 +662,6 @@ function Approval() {
 
       // 페이지 새로고침 (강제)
       setTimeout(() => {
-        console.log('페이지 새로고침 실행');
         window.location.reload();
       }, 500);
     } catch (err) {
@@ -788,10 +777,6 @@ function Approval() {
   const updateDataVersion = () => {
     setDataVersion((prev) => prev + 1);
     setLastUpdateTime(Date.now());
-    console.log(
-      'Approval 페이지 데이터 버전 업데이트:',
-      new Date().toLocaleTimeString(),
-    );
   };
 
   // 데이터 새로고침 함수 (실시간 업데이트용)
@@ -803,10 +788,6 @@ function Approval() {
         await fetchData();
       }
       updateDataVersion();
-      console.log(
-        'Approval 페이지 데이터 수동 새로고침 완료:',
-        new Date().toLocaleTimeString(),
-      );
     } catch (error) {
       console.error('Approval 페이지 데이터 새로고침 실패:', error);
     }

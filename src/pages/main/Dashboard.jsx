@@ -211,7 +211,6 @@ function DashboardProfile({ onAttendanceChange }) {
     attendanceService
       .getVacationBalance()
       .then((res) => {
-        console.log('연차 현황 응답:', res);
         if (res.result) {
           setVacationBalance(res.result);
         } else if (res.data && res.data.result) {
@@ -227,7 +226,6 @@ function DashboardProfile({ onAttendanceChange }) {
     attendanceService
       .getPersonalStats(now.getFullYear(), now.getMonth() + 1)
       .then((res) => {
-        console.log('개인 통계 응답:', res);
         if (res.result) setPersonalStats(res.result);
       })
       .catch((error) => {

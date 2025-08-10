@@ -281,7 +281,6 @@ const VacationRequest = ({
           errorMessage = JSON.stringify(error.response.data);
         }
 
-        console.log('최종 에러 메시지:', errorMessage);
         setSuccessMessage(errorMessage);
       } else {
         // 500 에러 시 중복 신청 가능성 고려
@@ -299,25 +298,12 @@ const VacationRequest = ({
             '휴가 신청 중 오류가 발생했습니다.';
         }
 
-        console.log('백엔드 에러 메시지:', errorMessage);
-        console.log('에러 메시지 타입:', typeof errorMessage);
-        console.log(
-          '백엔드 에러 메시지가 문자열인지 확인:',
-          typeof errorMessage === 'string',
-        );
-        console.log(
-          '백엔드 에러 메시지가 객체인지 확인:',
-          typeof errorMessage === 'object',
-        );
-
         let errorText = errorMessage;
 
         // 백엔드에서 객체로 오는 경우 처리
         if (typeof errorMessage === 'object' && errorMessage !== null) {
           errorText = JSON.stringify(errorMessage);
         }
-
-        console.log('처리할 에러 텍스트:', errorText);
 
         setSuccessMessage(errorText);
       }

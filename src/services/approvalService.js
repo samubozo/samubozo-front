@@ -157,9 +157,6 @@ export const approvalService = {
       });
       return true;
     } catch (error) {
-      console.log('approvalService requestVacation 에러:', error);
-      console.log('에러 응답 데이터:', error.response?.data);
-      console.log('에러 메시지:', error.message);
       throw error;
     }
   },
