@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Signup.module.scss';
 import SuccessModal from '../../components/SuccessModal';
-import { Link, useNavigate } from 'react-router-dom';
-import Logo from '../../assets/samubozo-logo.png';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, HR } from '../../configs/host-config';
 
@@ -263,8 +262,6 @@ const Signup = () => {
 
   return (
     <div className={styles.outerBg}>
-      <img src={Logo} alt='로고' className={styles.registerLogo} />
-
       <div className={styles.registerWrap}>
         <div className={styles.registerContainer}>
           <button
