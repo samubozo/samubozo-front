@@ -69,7 +69,6 @@ export async function fetchHolidaysFromAPI(year) {
 
     // XML 응답인지 확인
     if (responseText.trim().startsWith('<')) {
-      console.warn('XML 응답 받음, 백업 데이터 사용');
       return getHolidaysForYear(year);
     }
 
