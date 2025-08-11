@@ -79,9 +79,7 @@ function DashboardStats({ refresh, onAttendanceChange }) {
           color: '#8854d0',
         },
       ]);
-    } catch (e) {
-      console.error('통계 새로고침 실패:', e);
-    }
+    } catch (e) {}
   };
 
   useEffect(() => {
@@ -217,9 +215,7 @@ function DashboardProfile({ onAttendanceChange }) {
           setVacationBalance(res.data.result);
         }
       })
-      .catch((error) => {
-        console.error('연차 현황 조회 실패:', error);
-      });
+      .catch((error) => {});
 
     // 연차 요청 현황(이번 달 기준)
     const now = new Date();
@@ -228,9 +224,7 @@ function DashboardProfile({ onAttendanceChange }) {
       .then((res) => {
         if (res.result) setPersonalStats(res.result);
       })
-      .catch((error) => {
-        console.error('개인 통계 조회 실패:', error);
-      });
+      .catch((error) => {});
   }, []);
 
   const [isLoading, setIsLoading] = useState(false);

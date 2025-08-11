@@ -119,7 +119,6 @@ export const attendanceService = {
       );
       return response.data;
     } catch (error) {
-      console.error('부재 API 호출 실패:', error);
       throw error;
     }
   },

@@ -140,10 +140,8 @@ const OrgChart = () => {
       const result = response.data?.result;
       const membersData = result?.content || [];
 
-
       // 배열이 아닌 경우 빈 배열로 처리
       if (!Array.isArray(membersData)) {
-        console.error('membersData가 배열이 아닙니다:', membersData);
         setMembers([]);
         return;
       }
@@ -160,8 +158,6 @@ const OrgChart = () => {
 
       setMembers(processedMembers);
     } catch (error) {
-      console.error('직원 목록 로드 실패:', error);
-      console.error('에러 상세:', error.response?.data);
       setMembers([]);
     }
     setLoading(false);
@@ -177,7 +173,6 @@ const OrgChart = () => {
       const departmentsData = response.data.result || [];
       setDepartments(departmentsData);
     } catch (error) {
-      console.error('부서 목록 로드 실패:', error);
       setDepartments([]);
     }
   };
@@ -631,16 +626,18 @@ const OrgChart = () => {
           </div>
 
           {/* 부서 추가 버튼 - 부서 탭에서만 표시 */}
-          {tab === 'team' && !deptView && sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
-            <button
-              className={styles.addDeptHeaderBtn}
-              onClick={() => setShowAddDeptModal(true)}
-              title='부서 추가'
-            >
-              <span className={styles.addDeptHeaderIcon}>+</span>
-              부서 추가
-            </button>
-          )}
+          {tab === 'team' &&
+            !deptView &&
+            sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
+              <button
+                className={styles.addDeptHeaderBtn}
+                onClick={() => setShowAddDeptModal(true)}
+                title='부서 추가'
+              >
+                <span className={styles.addDeptHeaderIcon}>+</span>
+                부서 추가
+              </button>
+            )}
         </div>
       </div>
       <div className={styles.orgChartHeaderLine} />
@@ -757,7 +754,6 @@ const OrgChart = () => {
         existingDepartments={departments}
         onAdd={async (newDept) => {
           try {
-
             // 백엔드 API에 맞춰 데이터 전송 방식 결정
             let requestData;
             let headers = {};
@@ -791,14 +787,12 @@ const OrgChart = () => {
               { headers },
             );
 
-
             // 성공 시 부서 목록 새로고침
             await loadDepartments();
             setSuccessMessage('부서가 추가되었습니다.'); // 추가 성공 시 SuccessModal
             setShowSuccessModal(true);
             setShowAddDeptModal(false); // 성공 시에만 닫기
           } catch (error) {
-            console.error('부서 추가 실패:', error);
             // alert 호출 제거, 반드시 throw만
             throw error;
           }

@@ -296,7 +296,6 @@ function Schedule() {
         })
         .catch((err) => {
           showModal('일정 삭제 중 오류가 발생했습니다.');
-          console.error('일정 삭제 에러:', err);
         });
       setEventToDelete(null);
     }
@@ -336,10 +335,7 @@ function Schedule() {
         }
         showModal('일정이 정상적으로 추가되었습니다.');
       })
-      .catch((err) => {
-        console.error('일정 추가 에러:', err);
-        console.error('에러 응답:', err.response?.data);
-      });
+      .catch((err) => {});
     setShowEventModal(false);
   };
 
@@ -494,7 +490,6 @@ function Schedule() {
       })
       .catch((err) => {
         showModal('일정 수정 중 오류가 발생했습니다.');
-        console.error('일정 수정 에러:', err);
       });
   };
 

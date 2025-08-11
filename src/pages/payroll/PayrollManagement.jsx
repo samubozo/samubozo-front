@@ -14,7 +14,6 @@ function parseJwt(token) {
   try {
     return JSON.parse(decodeURIComponent(escape(window.atob(base64))));
   } catch (e) {
-    console.error('JWT 파싱 실패:', e);
     return {};
   }
 }
@@ -78,7 +77,6 @@ const fetchEmployees = async ({
       isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // 퇴직 여부 (EmployeeTable 호환)
     }));
   } catch (err) {
-    console.error('직원 불러오기 실패:', err);
     return [];
   }
 };
@@ -354,7 +352,6 @@ const PayrollManagement = () => {
           });
         })
         .catch((err) => {
-          console.error('급여 조회 실패:', err);
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',
@@ -462,7 +459,6 @@ const PayrollManagement = () => {
           fetchPayroll(year, month, data.employeeNo);
         }
       } catch (err) {
-        console.error('직원 상세 조회 실패:', err);
         alert('직원 정보를 불러올 수 없습니다.');
       }
     }
@@ -524,7 +520,6 @@ const PayrollManagement = () => {
       setShowSuccessModal(true);
       fetchPayroll(year, month, selectedEmployee.id); // 화면 반영
     } catch (err) {
-      console.error('야근수당 계산 실패:', err);
       setSuccessMessage('야근수당 계산에 실패했습니다.');
       setShowSuccessModal(true);
     }

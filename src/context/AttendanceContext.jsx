@@ -57,9 +57,7 @@ export const AttendanceProvider = ({ children }) => {
           }));
         }
       }
-    } catch (error) {
-      console.error('오늘 출근 상태 확인 실패:', error);
-    }
+    } catch (error) {}
   };
 
   // 출근 처리
@@ -128,9 +126,7 @@ export const AttendanceProvider = ({ children }) => {
           monthlyAttendance: response.result,
         }));
       }
-    } catch (error) {
-      console.error('월별 근태 조회 실패:', error);
-    }
+    } catch (error) {}
   };
 
   // 컴포넌트 마운트 시 오늘 출근 상태 확인

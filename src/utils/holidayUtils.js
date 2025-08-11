@@ -59,7 +59,6 @@ export async function fetchHolidaysFromAPI(year) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API 응답 에러:', errorText);
       throw new Error(
         `API 요청 실패: ${response.status} ${response.statusText}`,
       );
@@ -87,7 +86,6 @@ export async function fetchHolidaysFromAPI(year) {
       };
     });
   } catch (error) {
-    console.warn('공휴일 API 호출 실패, 백업 데이터 사용:', error);
     return getHolidaysForYear(year);
   }
 }

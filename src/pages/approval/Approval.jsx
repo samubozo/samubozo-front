@@ -144,7 +144,6 @@ function Approval() {
       // 모달은 CertificateModal에서 성공 후에 닫도록 함
       return true; // 성공 시 true 반환 (CertificateModal에서 성공 모달 표시)
     } catch (error) {
-      console.error('증명서 신청 에러:', error);
       throw error; // 에러를 다시 던져서 CertificateModal에서 처리하도록 함
     } finally {
       setCertModalLoading(false);
@@ -165,7 +164,6 @@ function Approval() {
 
       return true;
     } catch (error) {
-      console.error('증명서 수정 에러:', error);
       throw error;
     } finally {
       setCertModalLoading(false);
@@ -704,9 +702,7 @@ function Approval() {
           iframe.contentWindow.print();
         }, 100);
       };
-    } catch (err) {
-      console.error('PDF 인쇄 오류:', err);
-    }
+    } catch (err) {}
   };
 
   // 인쇄 버튼 클릭 핸들러
@@ -759,7 +755,6 @@ function Approval() {
       const stats = await approvalService.getAbsenceApprovalStatistics();
       return stats;
     } catch (error) {
-      console.error('부재 통계 조회 실패:', error);
       return null;
     }
   };
@@ -788,9 +783,7 @@ function Approval() {
         await fetchData();
       }
       updateDataVersion();
-    } catch (error) {
-      console.error('Approval 페이지 데이터 새로고침 실패:', error);
-    }
+    } catch (error) {}
   };
 
   // 실시간 업데이트 상태 표시를 위한 함수

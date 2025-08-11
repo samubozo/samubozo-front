@@ -39,7 +39,6 @@ export const AuthContextProvider = (props) => {
 
   // 로그인 시 실행할 핸들러
   const loginHandler = async (loginData) => {
-
     // accessToken, refreshToken 저장
     sessionStorage.setItem('ACCESS_TOKEN', loginData.accessToken);
     localStorage.setItem('REFRESH_TOKEN', loginData.refreshToken);
@@ -59,7 +58,6 @@ export const AuthContextProvider = (props) => {
       if (res.ok) {
         const data = await res.json();
         const userInfo = data.result;
-
 
         sessionStorage.setItem('USER_EMAIL', userInfo.email || '');
         sessionStorage.setItem('USER_NAME', userInfo.userName || '');
@@ -81,9 +79,7 @@ export const AuthContextProvider = (props) => {
         // 반드시 USER_ROLE(hrRole) 저장!
         sessionStorage.setItem('USER_ROLE', userInfo.hrRole || 'N');
       }
-    } catch (e) {
-      console.error('유저 상세정보 조회 실패:', e);
-    }
+    } catch (e) {}
 
     setIsLoggedIn(true);
     setUserRole(loginData.role);

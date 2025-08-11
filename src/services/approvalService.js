@@ -667,7 +667,6 @@ export const approvalService = {
         );
         return response.data;
       } catch (error) {
-        console.error(`requestType ${requestType} 조회 실패:`, error);
         return [];
       }
     }

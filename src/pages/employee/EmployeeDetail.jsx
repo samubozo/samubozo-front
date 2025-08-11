@@ -245,7 +245,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           setCertList(certificateRequests);
         })
         .catch((error) => {
-          console.error('새로운 API 에러:', error);
           setCertList([]);
         });
     } else if (isHR) {
@@ -270,7 +269,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           setCertList(certificateRequests);
         })
         .catch((error) => {
-          console.error('HR API 에러:', error);
           setCertList([]);
         });
     } else if (selectedEmployee?.id) {
@@ -384,9 +382,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       setCertDate(getKoreaToday());
       setCertPurpose('');
     } catch (e) {
-      // 에러 객체 전체를 출력하여 상세 원인을 확인합니다.
-      console.error('--- 에러 발생 ---', e);
-
       // 중복 신청 에러 메시지 처리
       if (e.message && e.message.includes('이미 유효한 동일한 유형')) {
         const certTypeName =
@@ -721,9 +716,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         try {
           await approvalService.rejectApprovalRequest(cert.id, comment);
           processedCount++;
-        } catch (e) {
-          console.error(`증명서 ${cert.id} 반려 실패:`, e);
-        }
+        } catch (e) {}
       }
 
       setShowRejectModal(false);
@@ -1146,9 +1139,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                             cert.employeeNo,
                           );
                           processedCount++;
-                        } catch (e) {
-                          console.error(`증명서 ${cert.id} 승인 실패:`, e);
-                        }
+                        } catch (e) {}
                       }
 
                       setSelectedCertIds([]);

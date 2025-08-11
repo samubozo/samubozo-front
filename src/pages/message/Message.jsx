@@ -761,7 +761,6 @@ const Message = () => {
         }
       }
     } catch (error) {
-      console.error('받은쪽지 조회 실패:', error);
       alert('받은쪽지 조회에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -799,7 +798,6 @@ const Message = () => {
         }
       }
     } catch (error) {
-      console.error('보낸쪽지 조회 실패:', error);
       alert('보낸쪽지 조회에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -816,7 +814,6 @@ const Message = () => {
 
     // messageId 유효성 검사
     if (!messageId) {
-      console.error('messageId가 없습니다:', messageId);
       alert('메시지 ID가 유효하지 않습니다.');
       return;
     }
@@ -837,8 +834,6 @@ const Message = () => {
         throw new Error('응답 데이터가 없습니다.');
       }
     } catch (error) {
-      console.error('쪽지 상세 조회 실패:', error);
-
       // 403 에러인 경우 권한 문제로 처리
       if (error.response && error.response.status === 403) {
         alert('이 쪽지를 조회할 권한이 없습니다.');
@@ -925,11 +920,6 @@ const Message = () => {
           await axiosInstance.delete(endpoint);
           successCount++;
         } catch (error) {
-          console.error(
-            `${tab === 'received' ? '삭제' : '발신 취소'} 실패:`,
-            messageId,
-            error,
-          );
           failCount++;
         }
       }
@@ -953,7 +943,6 @@ const Message = () => {
         }
       }
     } catch (error) {
-      console.error('삭제 처리 중 오류:', error);
       alert('삭제 처리 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -964,7 +953,6 @@ const Message = () => {
   const handleSendComplete = (messageData) => {
     // API 응답 데이터 확인
     if (messageData && messageData.success !== false) {
-      alert('쪽지가 성공적으로 전송되었습니다.');
       setShowWrite(false);
       setReplyData(null); // 답장 데이터 초기화
 
@@ -1230,7 +1218,6 @@ const Message = () => {
                       if (messageId) {
                         fetchMessageDetail(messageId);
                       } else {
-                        console.error('메시지 ID가 없습니다:', msg);
                         alert('메시지 ID를 찾을 수 없습니다.');
                       }
                     }}

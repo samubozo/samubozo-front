@@ -108,7 +108,6 @@ const VacationRequest = ({
 
         setDataLoaded(true);
       } catch (e) {
-        console.error('휴가 신청 모달 - 데이터 로딩 실패:', e);
         setMyVacations([]);
         setMyAbsences([]);
         setDataLoaded(true);
@@ -258,12 +257,6 @@ const VacationRequest = ({
 
       // 성공 시 모달은 SuccessModal에서 처리하도록 onClose() 호출 제거
     } catch (error) {
-      console.error('휴가 신청 에러:', error);
-
-      console.error('에러 응답:', error.response);
-      console.error('에러 상태:', error.response?.status);
-      console.error('에러 데이터:', error.response?.data);
-
       // 409 CONFLICT 에러 처리
       if (error.response && error.response.status === 409) {
         let errorMessage = '해당 기간에 이미 신청된 휴가가 있습니다.';

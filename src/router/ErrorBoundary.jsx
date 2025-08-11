@@ -33,7 +33,6 @@ class ErrorBoundary extends Component {
       }
     } else {
       // 다른 에러는 기존대로 처리
-      console.error('Uncaught error:', error, errorInfo);
       window.location.href = '/error.html';
     }
   }

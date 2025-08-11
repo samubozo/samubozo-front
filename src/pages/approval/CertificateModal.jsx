@@ -70,8 +70,6 @@ function CertificateModal({
         setShowSuccess(false);
       }
     } catch (err) {
-      console.error('증명서 신청 에러:', err);
-
       // 중복 신청 에러 메시지 처리 (다양한 메시지 패턴 처리)
       if (
         err.message &&
