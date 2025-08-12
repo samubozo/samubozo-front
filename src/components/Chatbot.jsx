@@ -198,7 +198,7 @@ const Chatbot = ({ inHeader }) => {
         </button>
         {showTooltip && (
           <div className={styles.chatbotTooltip}>
-            사이트안내와 인사 업무 정보를 알려주는 챗봇입니다.
+            업무에 어려움이 있으신가요? 인사 업무 정보를 알려주는 챗봇입니다.
           </div>
         )}
       </div>
