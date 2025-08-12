@@ -28,11 +28,11 @@ const fetchEmployees = async ({
   month,
 } = {}) => {
   try {
-    //  HR이 아니면 본인 정보만 반환
+    //  HR이 아니면 본인 정보만 반환
     if (!isHR) {
       const payload = parseJwt(sessionStorage.getItem('ACCESS_TOKEN'));
 
-      //  사용자 상세 정보 API 호출
+      //  사용자 상세 정보 API 호출
       const res = await axiosInstance.get(`${API_BASE_URL}${HR}/users/detail`, {
         params: { employeeNo: payload.employeeNo },
       });
@@ -44,8 +44,6 @@ const fetchEmployees = async ({
           id: emp.employeeNo,
           name: emp.userName,
           position: emp.positionName,
-          // ✅ departmentId 추가
-          departmentId: emp.department?.departmentId || '',
           department: emp.department?.name || '',
           imageUrl: emp.profileImage || '',
           activated: emp.activate || 'Y',
@@ -54,7 +52,7 @@ const fetchEmployees = async ({
       ];
     }
 
-    //  HR이면 전체 호출
+    //  HR이면 전체 호출
     let url = `${API_BASE_URL}${HR}/user/payrollList`;
     let params = { page, size, year, month };
 
@@ -75,8 +73,6 @@ const fetchEmployees = async ({
       id: emp.employeeNo,
       name: emp.userName,
       position: emp.positionName,
-      // ✅ departmentId 추가
-      departmentId: emp.department?.departmentId || '',
       department: emp.department?.name || '',
       activated: emp.activate || 'Y', // 재직 여부 (원본)
       isRetired: emp.activate !== 'Y' ? 'Y' : 'N', // 퇴직 여부 (EmployeeTable 호환)
@@ -85,6 +81,8 @@ const fetchEmployees = async ({
     return [];
   }
 };
+
+const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '영업팀'];
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
@@ -284,7 +282,6 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
 };
 
 const PayrollManagement = () => {
-  const [departmentOptions, setDepartmentOptions] = useState([]);
   const [isHR, setIsHR] = useState(false);
   const [employeeData, setEmployeeData] = useState([]);
   const [checkedList, setCheckedList] = useState([]);
@@ -298,35 +295,13 @@ const PayrollManagement = () => {
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
 
-  // ✅ selectedDepartment 초기값을 '전체'가 아닌 빈 문자열로 변경
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('전체');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchName, setSearchName] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   const { user } = useContext(AuthContext);
-  useEffect(() => {
-    axiosInstance.get('/departments')
-      .then(response => {
-        const departments = response.data?.result ?? []; // ✅ 안전한 접근
-        console.log('부서정보'+departments);
-        if (Array.isArray(departments)) {
-          const departmentData = departments.map(department => ({
-            id: department.departmentId,
-            name: department.name
-          }));
-          setDepartmentOptions(departmentData);
-        } else {
-          console.error('부서 목록 데이터는 배열이 아닙니다:', departments);
-        }
-      })
-      .catch(error => {
-        console.error('부서 목록 불러오기 실패', error);
-      });
-  }, []);
-  
-  
 
   useEffect(() => {
     const token = sessionStorage.getItem('ACCESS_TOKEN');
@@ -378,10 +353,8 @@ const PayrollManagement = () => {
           });
         })
         .catch((err) => {
-
           setSuccessMessage('해당 연월에 급여 기록이 없습니다.');
           setShowSuccessModal(true);
-
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',
@@ -468,8 +441,6 @@ const PayrollManagement = () => {
           id: data.employeeNo,
           name: data.userName,
           department: data.department?.name || '',
-          // ✅ departmentId 추가
-          departmentId: data.department?.departmentId || '',
           position: data.positionName || '',
           imageUrl: data.profileImage || '',
           bankName: data.bankName || '',
@@ -488,11 +459,11 @@ const PayrollManagement = () => {
     }
   };
 
-  // ✅ 부서 필터링 로직 수정 (ID로 비교)
+  // 부서 필터링
   const filteredEmployees =
-    selectedDepartment === ''
+    selectedDepartment === '전체'
       ? employeeData
-      : employeeData.filter((emp) => emp.departmentId === Number(selectedDepartment));
+      : employeeData.filter((emp) => emp.department === selectedDepartment);
 
   // 계산 로직
   const base = payrollData.basePayroll || 0;
@@ -672,6 +643,7 @@ const PayrollManagement = () => {
       ${emp.isRetired === 'Y' ? `<p style="text-align:center; color:red; font-weight:bold;">[퇴사자]</p>` : ''}
 
 
+      <!-- 직원 정보 -->
       <table class="info-table">
         <tr>
           <td>성명</td>
@@ -693,6 +665,7 @@ const PayrollManagement = () => {
         </tr>
       </table>
 
+      <!-- 급여 내역 -->
       <table class="salary-table">
         <thead>
           <tr>
@@ -736,6 +709,7 @@ const PayrollManagement = () => {
         </tbody>
       </table>
 
+      <!-- 푸터 -->
       <div class="footer">
         <p>주식회사 사무보조</p>
         <div class="ceo-signature">
@@ -768,10 +742,9 @@ const PayrollManagement = () => {
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
             >
-              <option value={''}>전체</option>
-              {departmentOptions.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
+              {departmentOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
                 </option>
               ))}
             </select>
