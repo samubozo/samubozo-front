@@ -308,14 +308,21 @@ const PayrollManagement = () => {
   useEffect(() => {
     axiosInstance.get('/departments')
       .then(response => {
-        // response.data가 배열 형태라면
-        const departmentNames = response.data.map(department => department.name);  // 이름만 추출
-        setDepartmentOptions(departmentNames);  // 이름 목록을 상태에 저장
+        // 응답 데이터가 배열 형태라면
+        console.log(response.data);  // 응답 확인
+        if (Array.isArray(response.data)) {
+          // name만 추출해서 새로운 배열 만들기
+          const departmentNames = response.data.map(department => department.name);
+          setDepartmentOptions(departmentNames);  // 이름 목록을 상태에 저장
+        } else {
+          console.error('응답 데이터는 배열이 아닙니다:', response.data);
+        }
       })
       .catch(error => {
         console.error('부서 목록 불러오기 실패', error);
       });
   }, []);
+  
 
   useEffect(() => {
     const token = sessionStorage.getItem('ACCESS_TOKEN');
