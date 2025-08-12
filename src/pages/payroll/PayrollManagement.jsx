@@ -305,9 +305,10 @@ const PayrollManagement = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   const { user } = useContext(AuthContext);
-  useEffect(() => {
-    axiosInstance.get('/departments')
-      .then(response => {
+  useEffect(async () => {
+     await axiosInstance.get(
+      `${API_BASE_URL}${HR}/departments`,
+    ).then(response => {
         // 응답 데이터가 배열 형태라면
         console.log(response.data);  // 응답 확인
         if (Array.isArray(response.data)) {
