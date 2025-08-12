@@ -57,11 +57,8 @@ export async function fetchHolidaysFromAPI(year) {
       `https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?serviceKey=${API_KEY}&solYear=${year}&numOfRows=100&_type=json`,
     );
 
-    console.log('API 응답 상태:', response.status, response.statusText);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API 응답 에러:', errorText);
       throw new Error(
         `API 요청 실패: ${response.status} ${response.statusText}`,
       );
@@ -71,7 +68,6 @@ export async function fetchHolidaysFromAPI(year) {
 
     // XML 응답인지 확인
     if (responseText.trim().startsWith('<')) {
-      console.warn('XML 응답 받음, 백업 데이터 사용');
       return getHolidaysForYear(year);
     }
 
@@ -90,7 +86,6 @@ export async function fetchHolidaysFromAPI(year) {
       };
     });
   } catch (error) {
-    console.warn('공휴일 API 호출 실패, 백업 데이터 사용:', error);
     return getHolidaysForYear(year);
   }
 }

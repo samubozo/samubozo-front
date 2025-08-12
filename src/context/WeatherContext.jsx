@@ -32,9 +32,7 @@ export const WeatherProvider = ({ children }) => {
           return { latitude, longitude };
         }
       }
-    } catch (error) {
-      console.warn('캐시 읽기 실패:', error);
-    }
+    } catch (error) {}
     return null;
   }
 
@@ -46,9 +44,7 @@ export const WeatherProvider = ({ children }) => {
         timestamp: Date.now(),
       };
       localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(cacheData));
-    } catch (error) {
-      console.warn('캐시 저장 실패:', error);
-    }
+    } catch (error) {}
   }
 
   // 여러 무료 위치 서비스에서 위치 정보 가져오기
@@ -126,7 +122,6 @@ export const WeatherProvider = ({ children }) => {
           throw new Error(`${service.name} 유효하지 않은 데이터`);
         }
       } catch (error) {
-        console.warn(`${service.name} 실패:`, error.message);
         continue;
       }
     }
@@ -347,7 +342,6 @@ export const WeatherProvider = ({ children }) => {
         error.message.includes('kCLErrorLocationUnknown')
       ) {
       } else {
-        console.error('날씨 데이터 가져오기 실패:', error);
       }
 
       // 기본값으로 설정

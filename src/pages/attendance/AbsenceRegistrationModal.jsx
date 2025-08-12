@@ -89,7 +89,6 @@ const AbsenceRegistrationModal = ({ open, onClose, onSubmit }) => {
 
       setDataLoaded(true);
     } catch (error) {
-      console.error('데이터 불러오기 실패:', error);
       setMyAbsences([]);
       setMyVacations([]);
       setDataLoaded(true);

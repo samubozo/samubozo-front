@@ -66,7 +66,6 @@ const Header = ({ showChatbot }) => {
 
       setUnreadCount(unreadCount);
     } catch (error) {
-      console.error('알림 목록 조회 실패:', error);
       // API 실패 시 알림 목록을 빈 배열로 처리
       setNotifications([]);
       setUnreadCount(0);
@@ -77,7 +76,6 @@ const Header = ({ showChatbot }) => {
   const markNotificationAsRead = async (notificationId) => {
     try {
       if (!notificationId) {
-        console.error('알림 ID가 없습니다');
         return;
       }
 
@@ -87,7 +85,6 @@ const Header = ({ showChatbot }) => {
       // 읽음 처리 후 목록 다시 조회 (개수는 목록에서 계산됨)
       await fetchNotifications();
     } catch (error) {
-      console.error('알림 읽음 처리 실패:', error);
       // 403 에러인 경우에도 UI 업데이트를 위해 로컬 상태 업데이트
       if (error.response?.status === 403) {
         setNotifications((prev) =>
@@ -186,7 +183,6 @@ const Header = ({ showChatbot }) => {
             }
           })
           .catch((e) => {
-            console.error('토큰 갱신 실패:', e);
             isRefreshingTokenRef.current = false;
             sessionStorage.clear();
             localStorage.removeItem('REFRESH_TOKEN');
@@ -194,7 +190,6 @@ const Header = ({ showChatbot }) => {
             return;
           });
       } else {
-        console.error('리프레시 토큰 없음 - 로그인 페이지로 이동');
         isRefreshingTokenRef.current = false;
         sessionStorage.clear();
         window.location.href = '/';
@@ -217,19 +212,14 @@ const Header = ({ showChatbot }) => {
           // 토스트 알림 표시
           addToastNotification(data);
         }
-      } catch (error) {
-        console.error('SSE 메시지 파싱 실패:', error);
-      }
+      } catch (error) {}
     };
 
     eventSource.onerror = async (error) => {
-      console.error('SSE 연결 오류:', error);
-
       // 500 에러나 서버 오류일 때는 재연결 중단
       if (eventSource.readyState === EventSource.CLOSED) {
         // 최대 재연결 횟수 초과 시 중단
         if (sseRetryCountRef.current >= SSE_MAX_RETRY_COUNT) {
-          console.error('SSE 최대 재연결 횟수 초과 - 재연결 중단');
           setSseConnectionStatus('error');
           return;
         }
@@ -257,14 +247,12 @@ const Header = ({ showChatbot }) => {
               return;
             }
           } catch (e) {
-            console.error('토큰 갱신 실패 - 재연결 중단');
             sessionStorage.clear();
             localStorage.removeItem('REFRESH_TOKEN');
             window.location.href = '/';
             return;
           }
         } else {
-          console.error('리프레시 토큰 없음 - 재연결 중단');
           sessionStorage.clear();
           localStorage.removeItem('REFRESH_TOKEN');
           window.location.href = '/';
@@ -328,9 +316,7 @@ const Header = ({ showChatbot }) => {
         setUserName(userInfo.userName || '');
         setUserDepartment(departmentName);
         setUserPosition(userInfo.positionName || '');
-      } catch (e) {
-        console.error('유저 상세정보 조회 실패:', e);
-      }
+      } catch (e) {}
     };
     fetchUserInfo();
   }, []);
@@ -429,22 +415,18 @@ const Header = ({ showChatbot }) => {
             if (notificationId) {
               return markNotificationAsRead(notificationId);
             } else {
-              console.error('알림 ID를 찾을 수 없습니다:', notification);
               return Promise.resolve();
             }
           }),
         );
       } catch (error) {
-        console.error('API 호출 실패, 로컬 상태만 업데이트:', error);
         // API 실패 시 로컬 상태만 업데이트
         setNotifications((prev) =>
           prev.map((notification) => ({ ...notification, isRead: true })),
         );
         setUnreadCount(0);
       }
-    } catch (error) {
-      console.error('모든 알림 읽음 처리 실패:', error);
-    }
+    } catch (error) {}
   };
 
   // 알림 아이콘 렌더링
@@ -493,9 +475,7 @@ const Header = ({ showChatbot }) => {
       if (notification.type === 'MESSAGE' && notification.messageId) {
         navigate(`/message?messageId=${notification.messageId}`);
       }
-    } catch (error) {
-      console.error('알림 읽음 처리 실패:', error);
-    }
+    } catch (error) {}
     setShowNotificationDropdown(false);
   };
 

@@ -199,7 +199,6 @@ export const useApprovalData = (
         setTotalElements(absenceTotalElements);
         setCurrentPage(result?.number || 0);
       } catch (error) {
-        console.error('부재 데이터 조회 에러:', error);
         setAbsenceData([]);
       } finally {
         setLoading(false);
@@ -284,7 +283,6 @@ export const useApprovalData = (
           return; // 부재 데이터는 별도 함수에서 처리 후 종료
         }
       } catch (e) {
-        console.error(`${tab} 데이터 조회 실패:`, e);
         setLeaveData([]);
         setCertData([]);
         setAbsenceData([]);

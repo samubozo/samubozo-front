@@ -66,9 +66,7 @@ function DashboardStats({ refresh, onAttendanceChange }) {
           color: '#8854d0',
         },
       ]);
-    } catch (e) {
-      console.error('통계 새로고침 실패:', e);
-    }
+    } catch (e) {}
   };
 
   useEffect(() => {
@@ -198,28 +196,22 @@ function DashboardProfile({ onAttendanceChange }) {
     attendanceService
       .getVacationBalance()
       .then((res) => {
-        console.log('연차 현황 응답:', res);
         if (res.result) {
           setVacationBalance(res.result);
         } else if (res.data && res.data.result) {
           setVacationBalance(res.data.result);
         }
       })
-      .catch((error) => {
-        console.error('연차 현황 조회 실패:', error);
-      });
+      .catch((error) => {});
 
     // 연차 요청 현황(이번 달 기준)
     const now = new Date();
     attendanceService
       .getPersonalStats(now.getFullYear(), now.getMonth() + 1)
       .then((res) => {
-        console.log('개인 통계 응답:', res);
         if (res.result) setPersonalStats(res.result);
       })
-      .catch((error) => {
-        console.error('개인 통계 조회 실패:', error);
-      });
+      .catch((error) => {});
   }, []);
 
   // 현재 시각/날짜 상태

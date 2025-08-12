@@ -236,7 +236,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           setCertList(certificateRequests);
         })
         .catch((error) => {
-          console.error('새로운 API 에러:', error);
           setCertList([]);
         });
     } else if (isHR) {
@@ -261,7 +260,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           setCertList(certificateRequests);
         })
         .catch((error) => {
-          console.error('HR API 에러:', error);
           setCertList([]);
         });
     } else if (selectedEmployee?.id) {
@@ -482,9 +480,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         try {
           await approvalService.rejectApprovalRequest(cert.id, comment);
           processedCount++;
-        } catch (e) {
-          console.error(`증명서 ${cert.id} 반려 실패:`, e);
-        }
+        } catch (e) {}
       }
 
       setShowRejectModal(false);
@@ -907,9 +903,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
                             cert.employeeNo,
                           );
                           processedCount++;
-                        } catch (e) {
-                          console.error(`증명서 ${cert.id} 승인 실패:`, e);
-                        }
+                        } catch (e) {}
                       }
 
                       setSelectedCertIds([]);

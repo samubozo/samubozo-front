@@ -377,9 +377,7 @@ export default function AttendanceDashboard() {
       });
 
       setAbsences(allAbsences);
-    } catch (error) {
-      console.error('부재 목록 불러오기 실패:', error);
-    }
+    } catch (error) {}
   };
 
   // 컴포넌트 마운트 시 부재 목록 불러오기
@@ -431,7 +429,6 @@ export default function AttendanceDashboard() {
       });
       setVacations(allVacations);
     } catch (error) {
-      console.error('휴가 목록 불러오기 실패:', error);
       setVacations([]);
     }
   };
@@ -470,7 +467,6 @@ export default function AttendanceDashboard() {
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
-      console.error('부재 신청 실패:', error);
       setSuccessMessage('부재 신청 중 오류가 발생했습니다.');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
@@ -556,8 +552,6 @@ export default function AttendanceDashboard() {
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
-      console.error('부재 신청 수정 실패:', error);
-
       // 409 Conflict 오류 처리 (중복 신청)
       if (error.response?.status === 409) {
         const errorMessage =
@@ -591,8 +585,6 @@ export default function AttendanceDashboard() {
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {
-      console.error('부재 삭제 실패:', error);
-
       // 409 Conflict 오류 처리 (이미 처리된 부재)
       if (error.response?.status === 409) {
         const errorMessage =
@@ -742,7 +734,6 @@ export default function AttendanceDashboard() {
   // 연차 승인 이벤트 감지
   useEffect(() => {
     const handleVacationApproved = () => {
-      console.log('연차 승인 감지됨, 휴가 데이터 새로고침');
       fetchVacations();
     };
 
@@ -1520,9 +1511,7 @@ export default function AttendanceDashboard() {
         fetchTodayAttendance(),
       ]);
       updateDataVersion();
-    } catch (error) {
-      console.error('데이터 새로고침 실패:', error);
-    }
+    } catch (error) {}
   };
 
   // 실시간 업데이트 상태 표시를 위한 함수

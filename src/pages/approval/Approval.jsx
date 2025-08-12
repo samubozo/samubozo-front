@@ -110,11 +110,9 @@ function Approval() {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'absenceUpdated') {
-        console.log('부재 수정/삭제 감지됨, 데이터 새로고침');
         refreshData();
       }
       if (e.key === 'absenceUpdatedStorage') {
-        console.log('부재 승인/반려 감지됨 (storage), 처리완료 탭으로 이동');
         setApprovalStatus('processed');
       }
     };
@@ -146,7 +144,6 @@ function Approval() {
       // 모달은 CertificateModal에서 성공 후에 닫도록 함
       return true; // 성공 시 true 반환 (CertificateModal에서 성공 모달 표시)
     } catch (error) {
-      console.error('증명서 신청 에러:', error);
       throw error; // 에러를 다시 던져서 CertificateModal에서 처리하도록 함
     } finally {
       setCertModalLoading(false);
@@ -167,7 +164,6 @@ function Approval() {
 
       return true;
     } catch (error) {
-      console.error('증명서 수정 에러:', error);
       throw error;
     } finally {
       setCertModalLoading(false);
@@ -228,13 +224,7 @@ function Approval() {
   }, [tab, approvalStatus]);
 
   // leaveData 상태 변화 확인
-  useEffect(() => {
-    console.log('leaveData 상태 변화:', {
-      tab,
-      leaveDataLength: leaveData.length,
-      leaveData: leaveData,
-    });
-  }, [leaveData, tab]);
+  useEffect(() => {}, [leaveData, tab]);
 
   // URL 쿼리(tab)가 바뀌면 탭 상태도 동기화
   useEffect(() => {
@@ -639,7 +629,6 @@ function Approval() {
       setToast({ message: '부재 승인 처리 완료', type: 'success' });
 
       // 승인 후 처리완료 탭으로 자동 이동
-      console.log('부재 승인 후 처리완료 탭으로 이동');
       setApprovalStatus('processed');
 
       // 변경사항 발생 시 즉시 데이터 새로고침
@@ -647,7 +636,6 @@ function Approval() {
 
       // 페이지 새로고침 (강제)
       setTimeout(() => {
-        console.log('페이지 새로고침 실행');
         window.location.reload();
       }, 500);
     } catch (err) {
@@ -672,7 +660,6 @@ function Approval() {
 
       // 페이지 새로고침 (강제)
       setTimeout(() => {
-        console.log('페이지 새로고침 실행');
         window.location.reload();
       }, 500);
     } catch (err) {
@@ -715,9 +702,7 @@ function Approval() {
           iframe.contentWindow.print();
         }, 100);
       };
-    } catch (err) {
-      console.error('PDF 인쇄 오류:', err);
-    }
+    } catch (err) {}
   };
 
   // 인쇄 버튼 클릭 핸들러
@@ -770,7 +755,6 @@ function Approval() {
       const stats = await approvalService.getAbsenceApprovalStatistics();
       return stats;
     } catch (error) {
-      console.error('부재 통계 조회 실패:', error);
       return null;
     }
   };
@@ -788,10 +772,6 @@ function Approval() {
   const updateDataVersion = () => {
     setDataVersion((prev) => prev + 1);
     setLastUpdateTime(Date.now());
-    console.log(
-      'Approval 페이지 데이터 버전 업데이트:',
-      new Date().toLocaleTimeString(),
-    );
   };
 
   // 데이터 새로고침 함수 (실시간 업데이트용)
@@ -803,13 +783,7 @@ function Approval() {
         await fetchData();
       }
       updateDataVersion();
-      console.log(
-        'Approval 페이지 데이터 수동 새로고침 완료:',
-        new Date().toLocaleTimeString(),
-      );
-    } catch (error) {
-      console.error('Approval 페이지 데이터 새로고침 실패:', error);
-    }
+    } catch (error) {}
   };
 
   // 실시간 업데이트 상태 표시를 위한 함수
