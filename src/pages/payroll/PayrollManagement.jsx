@@ -306,7 +306,7 @@ const PayrollManagement = () => {
 
   const { user } = useContext(AuthContext);
   useEffect(() => {
-    axiosInstance.get('/departments')
+    axios.get('/departments')
       .then(response => {
         // 응답 데이터가 배열 형태라면
         console.log(response.data);  // 응답 확인
