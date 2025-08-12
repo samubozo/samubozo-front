@@ -82,13 +82,9 @@ const fetchEmployees = async ({
   }
 };
 
-const [departmentOptions, setDepartmentOptions] = useState([]);
 
-useEffect(() => {
-  axiosInstance.get('/departments')
-    .then(response => setDepartmentOptions(response.data))
-    .catch(error => console.error('부서 목록 불러오기 실패', error));
-}, []);
+
+
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
@@ -288,6 +284,7 @@ const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
 };
 
 const PayrollManagement = () => {
+  const [departmentOptions, setDepartmentOptions] = useState([]);
   const [isHR, setIsHR] = useState(false);
   const [employeeData, setEmployeeData] = useState([]);
   const [checkedList, setCheckedList] = useState([]);
@@ -308,6 +305,11 @@ const PayrollManagement = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   const { user } = useContext(AuthContext);
+  useEffect(() => {
+    axiosInstance.get('/departments')
+      .then(response => setDepartmentOptions(response.data))
+      .catch(error => console.error('부서 목록 불러오기 실패', error));
+  }, []);
 
   useEffect(() => {
     const token = sessionStorage.getItem('ACCESS_TOKEN');
