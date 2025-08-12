@@ -758,9 +758,9 @@ const PayrollManagement = () => {
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
             >
-              {departmentOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
+              {departmentOptions.map((name, index) => (
+                <option key={index} value={name}>
+                  {name}
                 </option>
               ))}
             </select>
