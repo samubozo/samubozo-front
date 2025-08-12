@@ -310,6 +310,7 @@ const PayrollManagement = () => {
     axiosInstance.get('/departments')
       .then(response => {
         const departments = response.data?.result ?? []; // ✅ 안전한 접근
+        console.log('부서정보'+departments);
         if (Array.isArray(departments)) {
           const departmentData = departments.map(department => ({
             id: department.departmentId,
