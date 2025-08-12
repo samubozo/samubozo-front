@@ -353,8 +353,10 @@ const PayrollManagement = () => {
           });
         })
         .catch((err) => {
+
           setSuccessMessage('해당 연월에 급여 기록이 없습니다.');
           setShowSuccessModal(true);
+
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',

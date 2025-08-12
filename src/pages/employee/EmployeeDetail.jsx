@@ -314,6 +314,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     return () => clearInterval(interval);
   }, [isHR, selectedEmployee, certStatusFilter]);
 
+
   const handlePrint = () => {
     window.print();
   };

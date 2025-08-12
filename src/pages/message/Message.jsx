@@ -948,7 +948,6 @@ const Message = () => {
   const handleSendComplete = (messageData) => {
     // API 응답 데이터 확인
     if (messageData && messageData.success !== false) {
-      alert('쪽지가 성공적으로 전송되었습니다.');
       setShowWrite(false);
       setReplyData(null); // 답장 데이터 초기화
 
