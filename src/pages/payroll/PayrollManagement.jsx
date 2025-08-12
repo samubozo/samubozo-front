@@ -308,10 +308,14 @@ const PayrollManagement = () => {
   useEffect(() => {
     axiosInstance.get('/departments')
       .then(response => {
-        const departments = response.data.result;  // 'result' 안에 부서 데이터 있음
+        const departments = response.data.result;
         if (Array.isArray(departments)) {
-          const departmentNames = departments.map(department => department.name);  // 이름만 추출
-          setDepartmentOptions(departmentNames);  // 상태에 저장
+          // 2단계: map을 사용하여 ID와 이름을 가진 새로운 객체 배열 생성
+          const departmentData = departments.map(department => ({
+            id: department.departmentId,
+            name: department.name
+          }));
+          setDepartmentOptions(departmentData);
         } else {
           console.error('부서 목록 데이터는 배열이 아닙니다:', departments);
         }
@@ -764,9 +768,9 @@ const PayrollManagement = () => {
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
             >
-              {departmentOptions.map((name, index) => (
-                <option key={index} value={name}>
-                  {name}
+              {departmentOptions.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
                 </option>
               ))}
             </select>
