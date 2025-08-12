@@ -82,7 +82,13 @@ const fetchEmployees = async ({
   }
 };
 
-const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '영업팀'];
+const [departmentOptions, setDepartmentOptions] = useState([]);
+
+useEffect(() => {
+  axiosInstance.get('/departments')
+    .then(response => setDepartmentOptions(response.data))
+    .catch(error => console.error('부서 목록 불러오기 실패', error));
+}, []);
 
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
@@ -746,7 +752,7 @@ const PayrollManagement = () => {
             >
               {departmentOptions.map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt}
+                  {opt.name}
                 </option>
               ))}
             </select>
