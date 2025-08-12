@@ -307,8 +307,14 @@ const PayrollManagement = () => {
   const { user } = useContext(AuthContext);
   useEffect(() => {
     axiosInstance.get('/departments')
-      .then(response => setDepartmentOptions(response.data))
-      .catch(error => console.error('부서 목록 불러오기 실패', error));
+      .then(response => {
+        // response.data가 배열 형태라면
+        const departmentNames = response.data.map(department => department.name);  // 이름만 추출
+        setDepartmentOptions(departmentNames);  // 이름 목록을 상태에 저장
+      })
+      .catch(error => {
+        console.error('부서 목록 불러오기 실패', error);
+      });
   }, []);
 
   useEffect(() => {
@@ -754,7 +760,7 @@ const PayrollManagement = () => {
             >
               {departmentOptions.map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt.name}
+                  {opt}
                 </option>
               ))}
             </select>
