@@ -3,8 +3,8 @@ import styles from './Chatbot.module.scss';
 import axiosInstance from '../configs/axios-config';
 import { API_BASE_URL, CHATBOT } from '../configs/host-config';
 
-const BOT_GUIDE = '사이트 안내와 인사관련 업무 지식을 물어봐주세요';
-const PLACEHOLDER = '사이트안내 or 인사업무 지식을 물어보세요.';
+const BOT_GUIDE = '만나서 반가워요. 인사 관련 업무 지식을 물어봐주세요';
+const PLACEHOLDER = '인사업무와 관련된 지식을 물어보세요.';
 
 function RobotIcon() {
   // 녹색 계열로 변경된 SVG 로봇+말풍선 (임시)
