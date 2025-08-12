@@ -415,10 +415,10 @@ function MessageWriteModal({
 
     try {
       const requestData = {
-        receiverId: isNotice ? null : receivers[0].id,
+        receiverIds: isNotice ? [] : receivers.map((r) => r.id), // ✅ 배열로 전송
         subject: subject.trim(),
         content: content.trim(),
-        isNotice: isNotice,
+        isNotice,
       };
 
       const formData = new FormData();
@@ -426,9 +426,7 @@ function MessageWriteModal({
         'request',
         new Blob([JSON.stringify(requestData)], { type: 'application/json' }),
       );
-      files.forEach((file) => {
-        formData.append('attachments', file);
-      });
+      files.forEach((file) => formData.append('attachments', file));
 
       const response = await axiosInstance.post(
         `${API_BASE_URL}${MESSAGE}`,
@@ -437,15 +435,12 @@ function MessageWriteModal({
 
       if (response.status === 200 || response.status === 201) {
         alert(isNotice ? '공지가 등록되었습니다.' : '쪽지가 전송되었습니다.');
-        // 폼 초기화 등 기존 로직 유지
         setReceivers([]);
         setSubject('');
         setContent('');
         setFiles([]);
         setIsNotice(false);
-        if (editorRef.current) {
-          editorRef.current.getInstance().setMarkdown('');
-        }
+        if (editorRef.current) editorRef.current.getInstance().setMarkdown('');
         onSend({ success: true });
       } else {
         alert(

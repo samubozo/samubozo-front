@@ -140,7 +140,6 @@ const OrgChart = () => {
       const result = response.data?.result;
       const membersData = result?.content || [];
 
-
       // 배열이 아닌 경우 빈 배열로 처리
       if (!Array.isArray(membersData)) {
         console.error('membersData가 배열이 아닙니다:', membersData);
@@ -427,38 +426,27 @@ const OrgChart = () => {
                   marginLeft: 0,
                 }}
               >
-                <button
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#48b96c',
-                    background: '#fff',
-                    border: '1px solid #48b96c',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                  onClick={openEditModal}
-                >
-                  부서 수정
-                </button>
-                <button
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#ff4444',
-                    background: '#fff',
-                    border: '1px solid #ff4444',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                  onClick={handleDeleteDept}
-                >
-                  부서 삭제
-                </button>
+                {/* 부서 수정 버튼 */}
+                {deptView &&
+                  sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
+                    <button
+                      className={styles.editDeptBtn}
+                      onClick={openEditModal}
+                    >
+                      부서 수정
+                    </button>
+                  )}
+
+                {/* 부서 삭제 버튼 */}
+                {deptView &&
+                  sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
+                    <button
+                      className={styles.deleteDeptBtn}
+                      onClick={handleDeleteDept}
+                    >
+                      부서 삭제
+                    </button>
+                  )}
               </div>
             </div>
           )}
@@ -631,16 +619,18 @@ const OrgChart = () => {
           </div>
 
           {/* 부서 추가 버튼 - 부서 탭에서만 표시 */}
-          {tab === 'team' && !deptView && sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
-            <button
-              className={styles.addDeptHeaderBtn}
-              onClick={() => setShowAddDeptModal(true)}
-              title='부서 추가'
-            >
-              <span className={styles.addDeptHeaderIcon}>+</span>
-              부서 추가
-            </button>
-          )}
+          {tab === 'team' &&
+            !deptView &&
+            sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
+              <button
+                className={styles.addDeptHeaderBtn}
+                onClick={() => setShowAddDeptModal(true)}
+                title='부서 추가'
+              >
+                <span className={styles.addDeptHeaderIcon}>+</span>
+                부서 추가
+              </button>
+            )}
         </div>
       </div>
       <div className={styles.orgChartHeaderLine} />
@@ -757,7 +747,6 @@ const OrgChart = () => {
         existingDepartments={departments}
         onAdd={async (newDept) => {
           try {
-
             // 백엔드 API에 맞춰 데이터 전송 방식 결정
             let requestData;
             let headers = {};
@@ -790,7 +779,6 @@ const OrgChart = () => {
               requestData,
               { headers },
             );
-
 
             // 성공 시 부서 목록 새로고침
             await loadDepartments();

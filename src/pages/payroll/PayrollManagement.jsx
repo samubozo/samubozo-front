@@ -19,13 +19,14 @@ function parseJwt(token) {
   }
 }
 
-// 직원 목록 불러오는 함수
 const fetchEmployees = async ({
   page = 0,
   size = 100,
   searchName = '',
   includeRetired = false,
   isHR = false,
+  year,
+  month,
 } = {}) => {
   try {
     //  HR이 아니면 본인 정보만 반환
@@ -53,8 +54,8 @@ const fetchEmployees = async ({
     }
 
     //  HR이면 전체 호출
-    let url = `${API_BASE_URL}${HR}/user/list`;
-    let params = { page, size };
+    let url = `${API_BASE_URL}${HR}/user/payrollList`;
+    let params = { page, size, year, month };
 
     if (searchName) {
       url = `${API_BASE_URL}${HR}/users/search`;
@@ -354,29 +355,8 @@ const PayrollManagement = () => {
           });
         })
         .catch((err) => {
-          console.error('급여 조회 실패:', err);
-          setPayrollData({
-            basePayroll: '',
-            positionAllowance: '',
-            mealAllowance: '',
-            bonus: '',
-          });
-        });
-    } else {
-      // 월이 지정되지 않은 경우: 본인 기본 급여 조회 (기존 로직 유지)
-      axiosInstance
-        .get(`${API_BASE_URL}${PAYROLL}/me`, { headers })
-        .then((res) => {
-          const result = res.data.result;
-          setPayrollData({
-            basePayroll: Number(result?.basePayroll ?? 0),
-            positionAllowance: Number(result?.positionAllowance ?? 0),
-            mealAllowance: Number(result?.mealAllowance ?? 0),
-            bonus: Number(result?.bonus ?? 0),
-            overtimePay: Number(result?.overtimePay ?? 0),
-          });
-        })
-        .catch(() => {
+          setSuccessMessage('해당 연월에 급여 기록이 없습니다.');
+          setShowSuccessModal(true);
           setPayrollData({
             basePayroll: '',
             positionAllowance: '',
@@ -390,25 +370,39 @@ const PayrollManagement = () => {
   useEffect(() => {
     if (!user) return;
 
+    let cancelled = false; // 경쟁 상태 방지
+
     const token = sessionStorage.getItem('ACCESS_TOKEN');
     const payload = parseJwt(token);
     const hrRole = payload?.role === 'Y';
     setIsHR(hrRole);
 
+    let y, m;
+    if (selectedMonth) {
+      const [ys, ms] = selectedMonth.split('-');
+      y = Number(ys);
+      m = Number(ms);
+    }
+
     const loadEmployees = async () => {
       const employees = await fetchEmployees({
         isHR: hrRole,
         includeRetired: true,
+        year: y,
+        month: m,
       });
-      setEmployeeData(employees);
+      if (!cancelled) setEmployeeData(employees);
     };
 
     loadEmployees();
-  }, [user]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, selectedMonth]);
 
   useEffect(() => {
     if (!user) return;
-    fetchPayroll();
   }, [user]);
 
   const handleMonthChange = (e) => {

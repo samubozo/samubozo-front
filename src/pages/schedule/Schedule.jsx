@@ -783,8 +783,7 @@ function Schedule() {
                   });
                 // 2. 당일 단일 일정(기한 없는 할일은 무조건 제외)
                 const dayEvents = visibleEvents.filter((e) => {
-                  if (e.type === 'TODO' && (!e.startDate || !e.endDate))
-                    return false; // 기한 없는 할 일 제외
+                  if (e.type === 'TODO' && !e.startDate) return false; // 기한 없는 할 일 제외
                   if (eventBarIds.has(e.id)) return false; // 연속 일정 바로 처리되는 일정 제외
                   return isSameDay(date, e.startDate); // 해당 날짜에 시작하는 단일 일정
                 });
