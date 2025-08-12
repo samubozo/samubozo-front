@@ -1,11 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styles from './EmployeeDetail.module.scss';
-import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
-import { API_BASE_URL, HR, CERTIFICATE } from '../../configs/host-config';
+import { API_BASE_URL, HR } from '../../configs/host-config';
 import AuthContext from '../../context/UserContext';
 import { approvalService } from '../../services/approvalService';
-import { getKoreaToday } from '../../utils/dateUtils';
 import RejectModal from '../approval/RejectModal';
 import SuccessModal from '../../components/SuccessModal';
 
@@ -72,7 +70,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
-  const navigate = useNavigate();
   const [birthDate, setBirthDate] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -209,13 +206,7 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
   };
 
   const [certList, setCertList] = useState([]);
-  const [certType, setCertType] = useState('EMPLOYMENT');
-  const [certDate, setCertDate] = useState(getKoreaToday());
-  const [certPurpose, setCertPurpose] = useState('');
-
   const [selectedCertIds, setSelectedCertIds] = useState([]);
-  const [showCertModal, setShowCertModal] = useState(false);
-
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const [rejectLoading, setRejectLoading] = useState(false);
@@ -323,79 +314,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     return () => clearInterval(interval);
   }, [isHR, selectedEmployee, certStatusFilter]);
 
-  const handleSubmitCertificate = async () => {
-    if (!selectedEmployee?.id) {
-      return;
-    }
-
-    const isDuplicate = certList.some((row) => {
-      const rowType = (row.type || '').trim().toUpperCase();
-      const rowStatus = (row.status || '').trim().toUpperCase();
-      const currentType = (certType || '').trim().toUpperCase();
-
-      return (
-        rowType === currentType &&
-        ['REQUESTED', 'PENDING', 'APPROVED'].includes(rowStatus)
-      );
-    });
-
-    if (isDuplicate) {
-      setSuccessMessage(
-        `${certType === 'EMPLOYMENT' ? '재직증명서' : '경력증명서'}가 이미 신청되어 있습니다.`,
-      );
-      setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 2000);
-      return;
-    }
-
-    try {
-      const certificateFormData = {
-        employeeNo: selectedEmployee.id,
-        requestDate: certDate,
-        type: certType,
-        reason: certPurpose,
-      };
-      const createdCertificate =
-        await approvalService.applyCertificate(certificateFormData);
-
-      if (!createdCertificate || !createdCertificate.certificateId) {
-        throw new Error('증명서 생성 후 ID를 받지 못했습니다.');
-      }
-
-      const approvalData = {
-        title: `${createdCertificate.type === 'EMPLOYMENT' ? '재직' : '경력'} 증명서 발급 요청`,
-        reason: createdCertificate.reason,
-        certificateId: createdCertificate.certificateId,
-        type: createdCertificate.type,
-      };
-      await approvalService.requestCertificateApproval(approvalData);
-
-      setSuccessMessage('증명서 신청이 완료되었습니다.');
-      setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 2000);
-
-      const res = await axiosInstance.get(
-        `${API_BASE_URL}${CERTIFICATE}/list/${selectedEmployee.id}`,
-      );
-      setCertList(res.data.result?.content || []);
-      setCertType('EMPLOYMENT');
-      setCertDate(getKoreaToday());
-      setCertPurpose('');
-    } catch (e) {
-      // 중복 신청 에러 메시지 처리
-      if (e.message && e.message.includes('이미 유효한 동일한 유형')) {
-        const certTypeName =
-          certType === 'EMPLOYMENT' ? '재직증명서' : '경력증명서';
-        setSuccessMessage(
-          `이미 발급받으신 ${certTypeName}가 있습니다. 만료일을 확인해주세요.`,
-        );
-      } else {
-        setSuccessMessage(e.message || '증명서 신청 실패');
-      }
-      setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 2000);
-    }
-  };
 
   const handlePrint = () => {
     window.print();
@@ -413,37 +331,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
         setProfileImage(ev.target.result);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handleProfileUpload = async () => {
-    if (!profileFile || !selectedEmployee?.id) return;
-    const formData = new FormData();
-    formData.append('employeeNo', selectedEmployee.id);
-    formData.append('profileImage', profileFile);
-    try {
-      const res = await axiosInstance.post(
-        `${API_BASE_URL}${HR}/user/profile`,
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        },
-      );
-      setSuccessMessage('프로필 이미지가 업로드되었습니다.');
-      setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 2000);
-      if (
-        user?.employeeNo &&
-        String(user.employeeNo) === String(selectedEmployee.id)
-      ) {
-        const newProfileImage = res.data?.result?.profileImage || profileImage;
-        sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
-        window.location.reload();
-      }
-    } catch {
-      setSuccessMessage('프로필 이미지 업로드 실패');
-      setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 2000);
     }
   };
 
@@ -517,123 +404,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     }
   };
 
-  const EditIcon = () => (
-    <svg
-      width='18'
-      height='18'
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='#4cb072'
-      strokeWidth='2'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    >
-      <path d='M12 20h9' />
-      <path d='M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z' />
-    </svg>
-  );
-
-  const handleFormSubmit = async () => {
-    if (!selectedEmployee?.id) return;
-    await handleSubmitCertificate();
-  };
-
-  const printPdfFromServer = async (certificateId) => {
-    try {
-      const res = await axiosInstance.get(
-        `${API_BASE_URL}${CERTIFICATE}/my-print/${certificateId}`,
-        { responseType: 'arraybuffer' },
-      );
-
-      const contentType = res.headers['content-type'] || 'application/pdf';
-      const blob = new Blob([res.data], { type: contentType });
-      const fileURL = URL.createObjectURL(blob);
-
-      if (blob.size === 0) {
-        setSuccessMessage(
-          'PDF 데이터가 비어있습니다. 백엔드에서 PDF 생성에 실패했을 수 있습니다.',
-        );
-        setShowSuccessModal(true);
-        setTimeout(() => setShowSuccessModal(false), 2000);
-        return;
-      }
-
-      if (res.data.byteLength < 1000) {
-        setSuccessMessage(
-          'PDF 크기가 너무 작습니다. 백엔드에서 PDF 생성에 실패했을 수 있습니다.',
-        );
-        setShowSuccessModal(true);
-        setTimeout(() => setShowSuccessModal(false), 2000);
-        return;
-      }
-
-      const existingIframe = document.getElementById('pdf-iframe');
-      if (existingIframe) {
-        document.body.removeChild(existingIframe);
-      }
-
-      const iframe = document.createElement('iframe');
-      iframe.id = 'pdf-iframe';
-      iframe.style.position = 'fixed';
-      iframe.style.top = '50%';
-      iframe.style.left = '50%';
-      iframe.style.transform = 'translate(-50%, -50%)';
-      iframe.style.width = '80%';
-      iframe.style.height = '80%';
-      iframe.style.zIndex = '9999';
-      iframe.style.border = '2px solid #ccc';
-      iframe.style.backgroundColor = 'white';
-      iframe.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-      iframe.src = fileURL;
-      document.body.appendChild(iframe);
-
-      iframe.onload = () => {
-        try {
-          const iframeDoc =
-            iframe.contentDocument || iframe.contentWindow.document;
-
-          setTimeout(() => {
-            try {
-              iframe.contentWindow.focus();
-              iframe.contentWindow.print();
-
-              setTimeout(() => {
-                if (document.getElementById('pdf-iframe')) {
-                  document.body.removeChild(iframe);
-                  URL.revokeObjectURL(fileURL);
-                }
-              }, 2000);
-            } catch (printError) {
-              setSuccessMessage('인쇄 중 오류가 발생했습니다.');
-              setShowSuccessModal(true);
-              setTimeout(() => setShowSuccessModal(false), 2000);
-              if (document.getElementById('pdf-iframe')) {
-                document.body.removeChild(iframe);
-                URL.revokeObjectURL(fileURL);
-              }
-            }
-          }, 3000);
-        } catch (error) {
-          const newWindow = window.open(fileURL, '_blank');
-          if (newWindow) {
-            setTimeout(() => {
-              newWindow.print();
-            }, 2000);
-          }
-
-          if (document.getElementById('pdf-iframe')) {
-            document.body.removeChild(iframe);
-            URL.revokeObjectURL(fileURL);
-          }
-        }
-      };
-    } catch (err) {
-      setSuccessMessage('PDF 인쇄 중 오류 발생: ' + err.message);
-      setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 2000);
-    }
-  };
-
   const handleCertCheckbox = (id) => {
     setSelectedCertIds((prev) =>
       prev.includes(id)
@@ -674,11 +444,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
 
   const refreshCertList = async () => {
     loadCertList();
-  };
-
-  const getCertificateById = async (certificateId) => {
-    const res = await approvalService.getCertificateById(certificateId);
-    return res.result;
   };
 
   const handleCertReject = (certificateId) => {
@@ -1185,7 +950,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
               </div>
             )}
           </div>
-          {/* 증명서 신청 폼 완전히 삭제됨 */}
         </div>
       )}
       {activeTab !== 'cert' && (

@@ -422,38 +422,27 @@ const OrgChart = () => {
                   marginLeft: 0,
                 }}
               >
-                <button
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#48b96c',
-                    background: '#fff',
-                    border: '1px solid #48b96c',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                  onClick={openEditModal}
-                >
-                  부서 수정
-                </button>
-                <button
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#ff4444',
-                    background: '#fff',
-                    border: '1px solid #ff4444',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                  onClick={handleDeleteDept}
-                >
-                  부서 삭제
-                </button>
+                {/* 부서 수정 버튼 */}
+                {deptView &&
+                  sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
+                    <button
+                      className={styles.editDeptBtn}
+                      onClick={openEditModal}
+                    >
+                      부서 수정
+                    </button>
+                  )}
+
+                {/* 부서 삭제 버튼 */}
+                {deptView &&
+                  sessionStorage.getItem('USER_DEPARTMENT') === '인사팀' && (
+                    <button
+                      className={styles.deleteDeptBtn}
+                      onClick={handleDeleteDept}
+                    >
+                      부서 삭제
+                    </button>
+                  )}
               </div>
             </div>
           )}

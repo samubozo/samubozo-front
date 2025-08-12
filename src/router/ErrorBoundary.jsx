@@ -13,7 +13,6 @@ class ErrorBoundary extends Component {
 
       if (clientHostName === 'localhost') {
         // 개발 환경: 404 에러를 경고로 표시
-        console.warn('404 에러 (개발 환경):', error.message);
       } else {
         // 프로덕션 환경: 404 에러를 조용히 처리
       }
@@ -29,7 +28,6 @@ class ErrorBoundary extends Component {
 
       if (clientHostName === 'localhost') {
         // 개발 환경: 404 에러 상세 정보 표시
-        console.warn('404 에러 상세 정보 (개발 환경):', error, errorInfo);
       }
     } else {
       // 다른 에러는 기존대로 처리

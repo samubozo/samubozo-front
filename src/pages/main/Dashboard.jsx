@@ -1,20 +1,7 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
-import styles from './Dashboard.module.scss'; // styles import
-import { useWeather } from '../../context/WeatherContext';
+import styles from './Dashboard.module.scss';
 import { attendanceService } from '../../services/attendanceService';
 import AuthContext from '../../context/UserContext';
-
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
 // 대시보드 왼쪽 영역: 통계 현황을 보여주는 컴포넌트
 function DashboardStats({ refresh, onAttendanceChange }) {
@@ -227,11 +214,6 @@ function DashboardProfile({ onAttendanceChange }) {
       .catch((error) => {});
   }, []);
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  // === 오늘의 날씨 정보 상태 ===
-  const { todayWeatherState } = useWeather();
-
   // 현재 시각/날짜 상태
   const [now, setNow] = useState(() => {
     const d = new Date();
@@ -269,46 +251,6 @@ function DashboardProfile({ onAttendanceChange }) {
     fetchTodayAttendance();
   }, []);
 
-  // 3. 근태 관련 버튼 클릭 시 핸들러 예시 (실제 버튼에 연결 필요)
-  const handleCheckIn = async () => {
-    await attendanceService.checkIn();
-    await fetchTodayAttendance();
-    if (onAttendanceChange) onAttendanceChange();
-  };
-  const handleGoOut = async () => {
-    await attendanceService.goOut();
-    const today = await attendanceService.getTodayAttendance();
-    setAttendanceData({
-      checkInTime: today.checkInTime,
-      checkOutTime: today.checkOutTime,
-      goOutTime: today.goOutTime,
-      returnTime: today.returnTime,
-    });
-    if (onAttendanceChange) onAttendanceChange();
-  };
-  const handleReturn = async () => {
-    await attendanceService.returnFromOut();
-    const today = await attendanceService.getTodayAttendance();
-    setAttendanceData({
-      checkInTime: today.checkInTime,
-      checkOutTime: today.checkOutTime,
-      goOutTime: today.goOutTime,
-      returnTime: today.returnTime,
-    });
-    if (onAttendanceChange) onAttendanceChange();
-  };
-  const handleCheckOut = async () => {
-    await attendanceService.checkOut();
-    const today = await attendanceService.getTodayAttendance();
-    setAttendanceData({
-      checkInTime: today.checkInTime,
-      checkOutTime: today.checkOutTime,
-      goOutTime: today.goOutTime,
-      returnTime: today.returnTime,
-    });
-    if (onAttendanceChange) onAttendanceChange();
-  };
-
   // 시간 포맷팅 함수
   const formatTime = (time) => {
     if (!time) return '00:00';
@@ -329,23 +271,6 @@ function DashboardProfile({ onAttendanceChange }) {
     }
     return '00:00';
   };
-
-  // 출근 상태에 따른 상태 텍스트 반환
-  const getAttendanceStatus = () => {
-    if (attendanceData.checkOutTime) {
-      return { text: '퇴근완료', color: '#ccc' };
-    } else if (attendanceData.returnTime) {
-      return { text: '복귀완료', color: '#66be80' };
-    } else if (attendanceData.goOutTime) {
-      return { text: '외출중', color: '#f7b731' };
-    } else if (attendanceData.checkInTime) {
-      return { text: '출근중', color: '#4b7bec' };
-    } else {
-      return { text: '미출근', color: '#eb3b5a' };
-    }
-  };
-
-  const statusInfo = getAttendanceStatus();
 
   return (
     <div className={styles.dashboardProfile}>

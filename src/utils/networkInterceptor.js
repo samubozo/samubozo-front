@@ -9,7 +9,6 @@ window.fetch = function (...args) {
 
       if (clientHostName === 'localhost') {
         // 개발 환경: 404 에러를 경고로 표시
-        console.warn('404 에러 (개발 환경):', response.url);
       } else {
         // 프로덕션 환경: 404 에러를 조용히 처리
       }
