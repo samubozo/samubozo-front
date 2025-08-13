@@ -6,10 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../configs/axios-config';
 import { API_BASE_URL, AUTH } from '../../configs/host-config';
 import Tooltip from '@mui/material/Tooltip';
+import { set } from 'lodash';
 
 export default function PasswordFind() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [emailValid, setEmailValid] = useState(true);
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -18,7 +20,17 @@ export default function PasswordFind() {
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
+  const validateEmail = (email) => {
+    // 간단한 정규식으로 이메일 유효성 검사
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
   const handleSendOrResendCode = async () => {
+    if (!emailValid) {
+      setSuccessMessage('유효한 이메일 주소를 입력하세요.');
+      setShowSuccessModal(true);
+      return;
+    }
     if (!email || resendCooldown > 0) return;
     try {
       await axiosInstance.post(`${API_BASE_URL}${AUTH}/find-password`, {
@@ -37,6 +49,16 @@ export default function PasswordFind() {
     } catch (e) {
       setSuccessMessage(e.response?.data?.message || '인증번호 발송 실패');
       setShowSuccessModal(true);
+    }
+  };
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    if (validateEmail(newEmail)) {
+      setEmail(newEmail);
+      setEmailValid(true);
+    } else {
+      setEmailValid(false);
+      setEmail(newEmail);
     }
   };
 
@@ -105,7 +127,7 @@ export default function PasswordFind() {
             <input
               type='email'
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => handleEmailChange(e)}
               className={`${styles.input} ${styles.inputEmail}`}
             />
             <button
