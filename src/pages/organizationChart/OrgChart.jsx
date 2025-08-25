@@ -8,7 +8,6 @@ import { ChromePicker } from 'react-color';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
-import { FixedSizeList } from 'react-window';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 // Import separated components
