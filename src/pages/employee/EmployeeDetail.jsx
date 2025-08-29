@@ -314,7 +314,6 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
     return () => clearInterval(interval);
   }, [isHR, selectedEmployee, certStatusFilter]);
 
-
   const handlePrint = () => {
     window.print();
   };
@@ -374,7 +373,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       );
       setSuccessMessage('저장되었습니다.');
       setShowSuccessModal(true);
-      setTimeout(() => setShowSuccessModal(false), 2000);
+
+      // 현재 사용자 본인 정보 수정 시 프로필 이미지 업데이트
       if (
         user?.employeeNo &&
         String(user.employeeNo) === String(selectedEmployee.id)
@@ -386,15 +386,8 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
           const data = res.data.result;
           const newProfileImage = data.profileImage || profileImage;
           sessionStorage.setItem('USER_PROFILE_IMAGE', newProfileImage);
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
         } catch (err) {
-          setSuccessMessage(
-            '저장 후 상세정보를 불러오지 못했습니다. 새로고침 해주세요.',
-          );
-          setShowSuccessModal(true);
-          setTimeout(() => setShowSuccessModal(false), 2000);
+          console.error('프로필 이미지 업데이트 실패:', err);
         }
       }
     } catch {
@@ -1104,9 +1097,12 @@ const EmployeeDetail = ({ selectedEmployee, onRetireSuccess }) => {
       {showSuccessModal && (
         <SuccessModal
           message={successMessage}
-          onClose={() => setShowSuccessModal(false)}
-          autoClose={true}
-          autoCloseDelay={3000}
+          onClose={() => {
+            setShowSuccessModal(false);
+            // 확인 버튼 클릭 시 새로고침
+            window.location.reload();
+          }}
+          autoClose={false}
         />
       )}
 
