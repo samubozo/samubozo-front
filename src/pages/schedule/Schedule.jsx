@@ -30,6 +30,121 @@ function getContrastColor(backgroundColor) {
   }
 }
 
+// 랜덤 색상 생성 함수
+function generateRandomColor() {
+  // 보기 좋은 색상 범위로 제한 (너무 어둡거나 밝지 않게)
+  const hue = Math.floor(Math.random() * 360); // 0-359
+  const saturation = Math.floor(Math.random() * 40) + 60; // 60-100%
+  const lightness = Math.floor(Math.random() * 30) + 35; // 35-65%
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+// HSL을 HEX로 변환하는 함수
+function hslToHex(h, s, l) {
+  s /= 100;
+  l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0,
+    g = 0,
+    b = 0;
+
+  if (0 <= h && h < 60) {
+    r = c;
+    g = x;
+    b = 0;
+  } else if (60 <= h && h < 120) {
+    r = x;
+    g = c;
+    b = 0;
+  } else if (120 <= h && h < 180) {
+    r = 0;
+    g = c;
+    b = x;
+  } else if (180 <= h && h < 240) {
+    r = 0;
+    g = x;
+    b = c;
+  } else if (240 <= h && h < 300) {
+    r = x;
+    g = 0;
+    b = c;
+  } else if (300 <= h && h < 360) {
+    r = c;
+    g = 0;
+    b = x;
+  }
+
+  const toHex = (c) => {
+    const hex = Math.round(c * 255).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+
+  return `#${toHex(r + m)}${toHex(g + m)}${toHex(b + m)}`;
+}
+
+// 색상 겹침 검사 함수
+function isColorDuplicate(newColor, existingColors, tolerance = 30) {
+  // HEX를 HSL로 변환
+  const hexToHsl = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h,
+      s,
+      l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
+      }
+      h /= 6;
+    }
+
+    return [h * 360, s * 100, l * 100];
+  };
+
+  const newHsl = hexToHsl(newColor);
+
+  for (const existingColor of existingColors) {
+    const existingHsl = hexToHsl(existingColor);
+
+    // 색상(Hue) 차이 계산 (원형이므로 0-180 범위로 정규화)
+    let hueDiff = Math.abs(newHsl[0] - existingHsl[0]);
+    if (hueDiff > 180) hueDiff = 360 - hueDiff;
+
+    // 채도(Saturation)와 명도(Lightness) 차이 계산
+    const satDiff = Math.abs(newHsl[1] - existingHsl[1]);
+    const lightDiff = Math.abs(newHsl[2] - existingHsl[2]);
+
+    // 종합적인 색상 차이 계산
+    const totalDiff = hueDiff * 0.5 + satDiff * 0.3 + lightDiff * 0.2;
+
+    if (totalDiff < tolerance) {
+      return true; // 겹침
+    }
+  }
+
+  return false; // 겹치지 않음
+}
+
 const SCHEDULE_TYPES = [
   { label: '연차', value: 'ANNUAL_LEAVE' },
   { label: '반차', value: 'HALF_LEAVE' },
@@ -589,24 +704,26 @@ function Schedule() {
   // 일정 선택 시 해당 월/일로 이동
   const handleSearchSelect = (ev) => {
     setShowSearchDropdown(false);
-    setSearchTerm('');
+    // setSearchTerm(''); // 검색어 유지
+
     // 기한 없는 할일은 이동 없이 상세 모달만 띄움
-    if (!ev.startDate || !ev.endDate) {
+    if (!ev.startDate && !ev.endDate) {
       // 상세 모달 띄우기(오른쪽 사이드바 기준)
       setRightHoveredEvent(ev);
       setRightPopupPos({ left: 0, top: 100 }); // 적당한 위치
       return;
     }
-    // 해당 월/연도로 이동
-    const start = new Date(ev.startDate);
-    setCurrentYear(start.getFullYear());
-    setCurrentMonth(start.getMonth());
-    setHighlightedEventId(ev.id);
-    setTimeout(() => setHighlightedEventId(null), 2000);
-    setTimeout(() => {
-      setHoveredEvent({ ...ev, type: 'single', dateStr: ev.startDate });
-      setPopupPos({ left: 0, top: 100 });
-    }, 300);
+
+    // 해당 월/연도로 이동하고 하이라이팅
+    if (ev.startDate) {
+      const start = new Date(ev.startDate);
+      setCurrentYear(start.getFullYear());
+      setCurrentMonth(start.getMonth());
+
+      // 오늘 클릭과 동일한 하이라이팅 효과 (1초간 유지)
+      setHighlightedEventId(ev.id);
+      setTimeout(() => setHighlightedEventId(null), 1000);
+    }
   };
 
   // 달력 셀 렌더링 부분에서, 해당 셀 날짜가 하이라이트할 일정 구간에 포함되면 하이라이트 클래스 추가
@@ -1020,7 +1137,15 @@ function Schedule() {
             onKeyDown={handleSearchKeyDown}
             autoComplete='off'
           />
-          <button className={styles.searchBtn}>
+          <button
+            className={styles.searchBtn}
+            onClick={() => {
+              if (searchTerm.trim()) {
+                fetchSearchResults(searchTerm.trim());
+              }
+            }}
+            type='button'
+          >
             <span className={styles.searchIcon}>🔍</span>
           </button>
           {showSearchDropdown && searchResults.length > 0 && (
@@ -1689,6 +1814,8 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
   const [noDue, setNoDue] = useState(false);
   const [error, setError] = useState('');
   const [dateType, setDateType] = useState('single'); // 'single' | 'range'
+  const [selectedColor, setSelectedColor] = useState('');
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   // defaultEvent가 있으면 기존 값 세팅
   useEffect(() => {
@@ -1700,11 +1827,52 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
       setType(defaultEvent.type);
       setCategoryId(defaultEvent.categoryId);
       setNoDue(defaultEvent.isAllDay);
+      setSelectedColor(defaultEvent.color || '');
 
       // endDate가 null이면 당일 일정, null이 아니면 구간 일정
       setDateType(defaultEvent.endDate ? 'range' : 'single');
+    } else {
+      // 새 일정 추가 시 랜덤 색상 생성
+      generateUniqueColor();
     }
   }, [defaultEvent]);
+
+  // 고유한 색상 생성 함수
+  const generateUniqueColor = () => {
+    const existingColors = categories.map((cat) => cat.color).filter(Boolean);
+    let attempts = 0;
+    let newColor;
+
+    do {
+      newColor = hslToHex(
+        Math.floor(Math.random() * 360),
+        Math.floor(Math.random() * 40) + 60,
+        Math.floor(Math.random() * 30) + 35,
+      );
+      attempts++;
+
+      // 50번 시도 후에도 겹치면 기존 색상 중 하나를 선택
+      if (attempts > 50) {
+        const availableColors = [
+          '#FF6B6B',
+          '#4ECDC4',
+          '#45B7D1',
+          '#96CEB4',
+          '#FFEAA7',
+          '#DDA0DD',
+          '#98D8C8',
+          '#F7DC6F',
+          '#BB8FCE',
+          '#85C1E9',
+        ];
+        newColor =
+          availableColors[Math.floor(Math.random() * availableColors.length)];
+        break;
+      }
+    } while (isColorDuplicate(newColor, existingColors));
+
+    setSelectedColor(newColor);
+  };
 
   return (
     <div className={styles.modalOverlay}>
@@ -1836,6 +2004,47 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
             </select>
           )}
         </div>
+        <div className={styles.modalField}>
+          <label>색상</label>
+          <div className={styles.colorSelectionContainer}>
+            <div
+              className={styles.colorPreview}
+              style={{
+                backgroundColor: selectedColor,
+                border: '2px solid #ddd',
+                borderRadius: '4px',
+                width: '40px',
+                height: '40px',
+                cursor: 'pointer',
+              }}
+              onClick={() => setShowColorPicker(!showColorPicker)}
+              title='색상 선택'
+            />
+            <button
+              type='button'
+              className={styles.randomColorBtn}
+              onClick={generateUniqueColor}
+              style={{
+                marginLeft: '10px',
+                padding: '8px 12px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                backgroundColor: '#f8f9fa',
+                cursor: 'pointer',
+              }}
+            >
+              🎨 랜덤
+            </button>
+            {showColorPicker && (
+              <div className={styles.colorPickerContainer}>
+                <HexColorPicker
+                  color={selectedColor}
+                  onChange={setSelectedColor}
+                />
+              </div>
+            )}
+          </div>
+        </div>
         <div className={styles.modalBtnRow}>
           <button
             className={styles.modalOkBtn}
@@ -1875,6 +2084,22 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
                 setError('캘린더(카테고리)를 선택하세요.');
                 return;
               }
+
+              // 색상 겹침 검사
+              if (selectedColor) {
+                const existingColors = categories
+                  .filter((cat) => cat.id !== categoryId) // 현재 선택된 카테고리 제외
+                  .map((cat) => cat.color)
+                  .filter(Boolean);
+
+                if (isColorDuplicate(selectedColor, existingColors)) {
+                  setError(
+                    '선택한 색상이 기존 일정과 너무 비슷합니다. 다른 색상을 선택해주세요.',
+                  );
+                  return;
+                }
+              }
+
               setError('');
               const selectedCategory = categories.find(
                 (cat) => cat.id === categoryId,
@@ -1887,6 +2112,7 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
                 type,
                 categoryId,
                 isAllDay: noDue, // 기한 없음 상태와 연동
+                color: selectedColor, // 선택된 색상 추가
               };
               if (selectedCategory && selectedCategory.type === 'GROUP') {
                 const userDeptId = sessionStorage.getItem('USER_DEPARTMENT_ID');
@@ -1901,6 +2127,8 @@ function EventModal({ onClose, onAdd, categories, defaultEvent }) {
               setStart('');
               setEnd('');
               setNoDue(false);
+              setSelectedColor('');
+              setShowColorPicker(false);
             }}
           >
             확인
