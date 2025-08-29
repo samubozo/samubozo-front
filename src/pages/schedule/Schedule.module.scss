@@ -8,6 +8,44 @@
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
 }
 
+// 색상 선택 관련 스타일
+.colorSelectionContainer {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.colorPreview {
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    border-color: #48b96c !important;
+  }
+}
+
+.randomColorBtn {
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #e9ecef !important;
+    border-color: #48b96c !important;
+  }
+}
+
+.colorPickerContainer {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  margin-top: 8px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 .sidebar {
   width: 220px;
   background: #fff;
@@ -718,4 +756,5 @@
   box-shadow: 0 0 0 3px #e8f5e9;
   border-radius: 10px;
   z-index: 2;
+  animation: todayHighlightEffect 1s cubic-bezier(0.23, 1, 0.32, 1);
 }

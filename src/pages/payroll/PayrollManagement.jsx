@@ -82,8 +82,6 @@ const fetchEmployees = async ({
   }
 };
 
-const departmentOptions = ['전체', '경영지원', '인사팀', '회계팀', '영업팀'];
-
 const defaultImg = 'https://via.placeholder.com/140x180?text=Profile';
 
 const PayrollDetail = ({ employee, onClose, fetchPayroll, showModal }) => {
@@ -300,13 +298,33 @@ const PayrollManagement = () => {
   const [searchName, setSearchName] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [departmentOptions, setDepartmentOptions] = useState(['전체']);
 
   const { user } = useContext(AuthContext);
+
+  // 부서 정보 가져오기
+  const fetchDepartments = async () => {
+    try {
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${HR}/departments`,
+      );
+      const deptData = response.data.result || [];
+      const deptNames = ['전체', ...deptData.map((dept) => dept.name)];
+      setDepartmentOptions(deptNames);
+    } catch (error) {
+      console.error('부서 정보 가져오기 실패:', error);
+      // 실패 시 기본값 설정
+      setDepartmentOptions(['전체', '경영지원', '인사팀', '회계팀', '영업팀']);
+    }
+  };
 
   useEffect(() => {
     const token = sessionStorage.getItem('ACCESS_TOKEN');
     const payload = parseJwt(token);
     setIsHR(payload?.role === 'Y');
+
+    // 부서 정보 가져오기
+    fetchDepartments();
   }, []);
 
   useEffect(() => {
