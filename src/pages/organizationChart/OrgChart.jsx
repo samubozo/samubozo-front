@@ -1,7 +1,8 @@
-// OrgChart.jsx (Refactored)
+
 import React from 'react';
 import styles from './OrgChart.module.scss';
 import CircularProgress from '@mui/material/CircularProgress';
+
 
 // Import separated components
 import OrgCard from './OrgCard';
