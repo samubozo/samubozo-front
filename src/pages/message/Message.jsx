@@ -687,6 +687,13 @@ const Message = () => {
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // 컴포넌트 마운트 시 받은 쪽지함을 기본으로 설정
+  useEffect(() => {
+    // 쪽지함 메뉴 클릭 시마다 받은 쪽지함을 기본으로 보여주기 위해 localStorage 초기화
+    localStorage.removeItem('messageTab');
+    setTab('received');
+  }, []);
+
   // 초기 데이터 로드
   useEffect(() => {
     if (tab === 'received') {
@@ -821,6 +828,12 @@ const Message = () => {
       // 응답 데이터 확인
       if (response && response.data) {
         setModalMsg(response.data);
+
+        // 받은 쪽지함에서 읽은 경우 알림 카운트 감소
+        if (tab === 'received' && window.decreaseUnreadCount) {
+          window.decreaseUnreadCount();
+        }
+
         // 읽음 처리 후 목록 새로고침
         if (tab === 'received') {
           fetchReceivedMessages();
@@ -1001,6 +1014,11 @@ const Message = () => {
     setModalMsg(null);
     // 처리된 messageId 초기화
     sessionStorage.removeItem('lastProcessedMessageId');
+
+    // URL에서 messageId 파라미터 제거
+    const url = new URL(window.location);
+    url.searchParams.delete('messageId');
+    window.history.replaceState({}, '', url);
   };
 
   const handleTabChange = (newTab) => {
