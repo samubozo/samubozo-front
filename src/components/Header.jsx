@@ -822,12 +822,26 @@ const Header = ({ showChatbot }) => {
                 <NotificationIcon />
               </button>
 
+              {showNotificationDropdown && <NotificationDropdown />}
+            </div>
+
+            <div
+              className={styles.headerIcons}
+              style={{ position: 'relative' }}
+            >
+              <button
+                className={styles.icon}
+                onClick={() => setShowDropdown((prev) => !prev)}
+              >
+                👤
+              </button>
+
               {/* SSE 연결 상태 표시 */}
               <div
                 style={{
                   position: 'absolute',
-                  top: '-8px',
-                  right: '-8px',
+                  top: '12px',
+                  right: '-2px',
                   width: '12px',
                   height: '12px',
                   borderRadius: '50%',
@@ -845,19 +859,6 @@ const Header = ({ showChatbot }) => {
                 title={`SSE 상태: ${sseConnectionStatus}`}
               />
 
-              {showNotificationDropdown && <NotificationDropdown />}
-            </div>
-
-            <div
-              className={styles.headerIcons}
-              style={{ position: 'relative' }}
-            >
-              <button
-                className={styles.icon}
-                onClick={() => setShowDropdown((prev) => !prev)}
-              >
-                👤
-              </button>
               {showDropdown && (
                 <div
                   ref={dropdownRef}
