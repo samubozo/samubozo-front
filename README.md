@@ -137,7 +137,7 @@ https://github.com/samubozo/samubozo-backend
 
 ## 15. WBS (Work Breakdown Structure)
 
-[**WBS 전체 계획 웹페이지로 보기**](https://shinhyeonguk.github.io/samubozo-project-wbs/wbs.html)
+- [WBS 전체 계획 웹페이지로 보기](https://shinhyeonguk.github.io/samubozo-project-wbs/wbs.html)
 
 ---
 
